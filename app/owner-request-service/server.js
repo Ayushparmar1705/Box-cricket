@@ -3,8 +3,6 @@ const express = require("express");
 const sequelize = require("./config/config");
 const cors = require("cors");
 const routes = require("./route/route");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swagger");
 
 const User = require("./model/User");
 const OwnerRequest = require("./model/owner-request");
@@ -38,10 +36,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Swagger API Documentation UI & JSON Spec
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get("/api-docs-json", (req, res) => res.json(swaggerSpec));
-
 app.get("/health", (req, res) => {
     res.status(200).json({
         success: true,
@@ -64,7 +58,6 @@ async function startServer() {
     }
     app.listen(PORT, () => {
         console.log(`🚀 [Owner Request Service] Server listening on port ${PORT}`);
-        console.log(`📑 [Owner Request Service] Swagger API Docs available at http://localhost:${PORT}/api-docs`);
     });
 }
 
