@@ -1,0 +1,80 @@
+services:
+  auth-service:
+    build:
+      context: ./app/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=box_cricket_super_secret_key_2026
+    depends_on:
+      - postgres
+    restart: always
+
+  api-docs-hub:
+    build:
+      context: ./app/api-docs-hub
+      dockerfile: Dockerfile
+    container_name: api-docs-hub
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - AUTH_SERVICE_SPEC_URL=http://localhost:3001/api-docs-json
+      - OWNER_REQUEST_SERVICE_SPEC_URL=http://localhost:3006/api-docs-json
+    depends_on:
+      - auth-service
+      - owner-request-service
+    restart: always
+
+  owner-request-service:
+    build:
+      context: ./app/owner-request-service
+      dockerfile: Dockerfile
+    container_name: owner-request-service
+    ports:
+      - "3006:3006"
+    env_file:
+      - ./app/owner-request-service/.env
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - postgres
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: box-cricket-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=box_cricket_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: box-cricket-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@boxcricket.app
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+    restart: always
+
+volumes:
+  postgres_data:
