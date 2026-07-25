@@ -1,16 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import Authservice from '../service/Authservice';
 
 export interface LoginFormState {
   email: string;
   password: string;
-  rememberMe: boolean;
-  showPassword: boolean;
-  isLoading: boolean;
-  error: string;
 }
 
 export const DEMO_ADMIN_CREDENTIALS = {
-  email: 'admin@boxcricket.app',
+  email: 'admin@boxcricket.com',
   password: 'Admin@123',
 };
 
@@ -18,61 +16,47 @@ export function useLoginForm(onSuccess: () => void) {
   const [form, setForm] = useState<LoginFormState>({
     email: '',
     password: '',
-    rememberMe: true,
-    showPassword: false,
-    isLoading: false,
-    error: '',
   });
+  const [isHidden, setIsHidden] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  const setField = useCallback((field: keyof LoginFormState, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value, error: '' }));
-  }, []);
+  const togglePasswordVisiblity = () => {
+    setIsHidden(!isHidden);
+  };
 
-  const fillDemoCredentials = useCallback(() => {
-    setForm((prev) => ({
-      ...prev,
-      email: DEMO_ADMIN_CREDENTIALS.email,
-      password: DEMO_ADMIN_CREDENTIALS.password,
-      error: '',
-    }));
-  }, []);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      setForm((prev) => ({ ...prev, isLoading: true, error: '' }));
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoading(true);
+    try {
+      const result = await Authservice.login(form.email, form.password);
+      const data = result.data || result;
 
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      if (
-        form.email.trim().toLowerCase() === DEMO_ADMIN_CREDENTIALS.email &&
-        form.password === DEMO_ADMIN_CREDENTIALS.password
-      ) {
-        localStorage.setItem(
-          'bc_admin_session',
-          JSON.stringify({
-            userId: 'u-101',
-            role: 'SUPER_ADMIN',
-            fullName: 'Rajesh Sharma',
-            loginTime: new Date().toISOString(),
-          })
-        );
+      if (data.success || result.success) {
+        toast.success(data.message || 'Login successful!');
+        localStorage.setItem("user", JSON.stringify(data));
         onSuccess();
       } else {
-        setForm((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: 'Invalid credentials. Please use admin@boxcricket.app / Admin@123',
-        }));
+        toast.error(data.message || 'Login failed. Invalid credentials.');
       }
-    },
-    [form.email, form.password, onSuccess]
-  );
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.message || 'An error occurred during login. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     form,
-    setField,
-    fillDemoCredentials,
+    handleChange,
+    loading,
     handleSubmit,
+    setForm,
+    togglePasswordVisiblity,
+    isHidden,
   };
 }
