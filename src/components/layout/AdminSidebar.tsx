@@ -115,9 +115,8 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`${
-        collapsed ? 'w-14' : 'w-64'
-      } bg-white border-r border-slate-300 text-slate-800 flex flex-col shrink-0 min-h-screen transition-all duration-200 font-sans`}
+      className={`${collapsed ? 'w-14' : 'w-64'
+        } bg-white border-r border-slate-300 text-slate-800 flex flex-col shrink-0 min-h-screen transition-all duration-200 font-sans`}
     >
       {/* Console Home Header */}
       <div className="h-12 px-4 flex items-center justify-between border-b border-slate-200 bg-slate-50">
@@ -153,11 +152,10 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
               key={item.id}
               type="button"
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center justify-between px-4 py-2.5 text-xs transition-all cursor-pointer text-left border-none ${
-                isActive
+              className={`flex items-center justify-between px-4 py-2.5 text-xs transition-all cursor-pointer text-left border-none ${isActive
                   ? 'bg-[#f1f5f9] text-[#0066cc] font-bold border-l-4 border-[#0066cc]'
                   : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent'
-              }`}
+                }`}
               title={collapsed ? item.label : undefined}
             >
               <div className="flex items-center gap-2.5 min-w-0">

@@ -19,18 +19,16 @@ export const PaymentsModule: React.FC = () => {
           <button
             type="button"
             onClick={() => setTab('TRANSACTIONS')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'TRANSACTIONS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'TRANSACTIONS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Transactions ({payments.length})
           </button>
           <button
             type="button"
             onClick={() => setTab('COUPONS')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'COUPONS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'COUPONS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Coupons ({coupons.length})
           </button>
@@ -65,9 +63,8 @@ export const PaymentsModule: React.FC = () => {
                   <td className="px-5 py-3.5 font-extrabold text-emerald-700">₹{p.amount}</td>
                   <td className="px-5 py-3.5">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                        p.paymentStatus === 'SUCCESS' ? 'bg-emerald-55 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
-                      }`}
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${p.paymentStatus === 'SUCCESS' ? 'bg-emerald-55 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+                        }`}
                     >
                       {p.paymentStatus}
                     </span>

@@ -25,18 +25,16 @@ export const UsersStaffModule: React.FC = () => {
           <button
             type="button"
             onClick={() => setTab('USERS')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'USERS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'USERS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Users ({users.length})
           </button>
           <button
             type="button"
             onClick={() => setTab('STAFF')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'STAFF' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'STAFF' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Staff ({staff.length})
           </button>
@@ -82,11 +80,10 @@ export const UsersStaffModule: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => toggleUserActive(u.id)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold border cursor-pointer ${
-                        u.isActive
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border cursor-pointer ${u.isActive
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-red-50 hover:text-red-750'
                           : 'bg-red-50 text-red-700 border-red-200 hover:bg-emerald-50 hover:text-emerald-750'
-                      }`}
+                        }`}
                     >
                       {u.isActive ? 'Active' : 'Blocked'}
                     </button>
