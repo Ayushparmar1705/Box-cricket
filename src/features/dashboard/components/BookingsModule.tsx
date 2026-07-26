@@ -3,7 +3,7 @@ import type { Booking, Slot } from '../../../types/schema.types';
 import { MOCK_BOOKINGS, MOCK_SLOTS } from '../../../data/mockData';
 import { Calendar, Clock, CreditCard, CheckCircle2, XCircle } from 'lucide-react';
 
-export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success' | 'info' | 'error') => void }> = ({ onNotify }) => {
+export const BookingsModule: React.FC<{ onNotify?: (msg: string, type?: 'success' | 'info' | 'error') => void }> = ({ onNotify }) => {
   const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
   const [slots] = useState<Slot[]>(MOCK_SLOTS);
   const [tab, setTab] = useState<'BOOKINGS' | 'SLOTS'>('BOOKINGS');
@@ -18,7 +18,7 @@ export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success'
             bookingStatus: status,
             paymentStatus: status === 'CONFIRMED' ? ('SUCCESS' as const) : b.paymentStatus,
           };
-          onNotify(`Booking reference ${b.bookingReference} status updated to ${status}`, 'success');
+          onNotify?.(`Booking reference ${b.bookingReference} status updated to ${status}`, 'success');
           return updated;
         }
         return b;
@@ -39,18 +39,16 @@ export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success'
           <button
             type="button"
             onClick={() => setTab('BOOKINGS')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'BOOKINGS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'BOOKINGS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Bookings ({bookings.length})
           </button>
           <button
             type="button"
             onClick={() => setTab('SLOTS')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              tab === 'SLOTS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tab === 'SLOTS' ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+              }`}
           >
             Lock Matrix ({slots.length})
           </button>
@@ -65,9 +63,8 @@ export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success'
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  filter === f ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
-                }`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${filter === f ? 'bg-white text-slate-900 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-900'
+                  }`}
               >
                 {f}
               </button>
@@ -114,11 +111,10 @@ export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success'
                       </div>
                     </td>
                     <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                        b.bookingStatus === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        b.bookingStatus === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        'bg-red-50 text-red-700 border-red-200'
-                      }`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${b.bookingStatus === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          b.bookingStatus === 'PENDING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-red-50 text-red-700 border-red-200'
+                        }`}>
                         {b.bookingStatus === 'CONFIRMED' && <CheckCircle2 size={12} />}
                         {b.bookingStatus === 'CANCELLED' && <XCircle size={12} />}
                         {b.bookingStatus}
@@ -159,12 +155,11 @@ export const BookingsModule: React.FC<{ onNotify: (msg: string, type?: 'success'
             {slots.map((s) => (
               <div
                 key={s.id}
-                className={`p-4 rounded-xl border flex flex-col gap-1 text-xs ${
-                  s.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                  s.status === 'LOCKED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                  s.status === 'BOOKED' ? 'bg-blue-55 text-blue-800 border-blue-200' :
-                  'bg-red-50 text-red-800 border-red-200'
-                }`}
+                className={`p-4 rounded-xl border flex flex-col gap-1 text-xs ${s.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                    s.status === 'LOCKED' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                      s.status === 'BOOKED' ? 'bg-blue-55 text-blue-800 border-blue-200' :
+                        'bg-red-50 text-red-800 border-red-200'
+                  }`}
               >
                 <div className="font-bold text-sm text-slate-900">{s.startTime} - {s.endTime}</div>
                 <div className="font-extrabold uppercase">{s.status}</div>

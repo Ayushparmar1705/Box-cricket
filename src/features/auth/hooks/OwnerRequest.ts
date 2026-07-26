@@ -1,31 +1,31 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import OwnerRequestService from '../service/OwnerRequestService';
 
 export default function OwnerRequest() {
     const [result, setResult] = useState([]);
-    const [loading, setLoading] = useState(false);
-
+    const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
         setLoading(true);
+        const startTime = Date.now();
         try {
-            const result = await OwnerRequestService.viewAllRequest();
-
-            const data = await result.json();
-
+            const response = await OwnerRequestService.viewAllRequest();
+            const data = await response.json();
             setResult(data.data);
         } catch (err) {
-            setLoading(false);
             console.log(err);
         } finally {
-            setLoading(false);
+            // Ensure loading bar shows for at least 2 seconds
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 2000 - elapsed);
+            setTimeout(() => setLoading(false), remaining);
         }
-    }
+    };
+
     useEffect(() => {
         fetchData();
-    }, [])
-    return {
-        result,
-        loading,
-    }
+    }, []);
+
+    return { result, loading };
 }
+
