@@ -3,31 +3,7 @@ const express = require("express");
 const sequelize = require("./config/config");
 const cors = require("cors");
 const routes = require("./route/route");
-
-const User = require("./model/User");
-const OwnerRequest = require("./model/owner-request");
-
-// Applicant Association
-User.hasMany(OwnerRequest, {
-    foreignKey: "userId",
-    as: "ownerRequests",
-});
-
-OwnerRequest.belongsTo(User, {
-    foreignKey: "userId",
-    as: "owner",
-});
-
-// Admin Approver Association
-User.hasMany(OwnerRequest, {
-    foreignKey: "approvedBy",
-    as: "approvedRequests",
-});
-
-OwnerRequest.belongsTo(User, {
-    foreignKey: "approvedBy",
-    as: "approvedByAdmin",
-});
+require("./model"); // Load all models & unique associations from model/index.js
 
 const app = express();
 const PORT = process.env.PORT || 3006;

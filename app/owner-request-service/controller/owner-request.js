@@ -1,29 +1,31 @@
 const OwnerRequestService = require("../service/owner-request");
 
 /**
- * Controller: Handle Owner request
+ * Controller: Handle Owner request submission
  */
 async function ownerrequest(req, res) {
     try {
-        const { user_id, business_name, business_type, gst_number } = req.body;
+        const { user_id, business_name, business_type, gst_number, documents } = req.body;
 
         if (!user_id || !business_name || !business_type || !gst_number) {
             return res.status(400).json({
                 success: false,
-                message: "User name, business name, business type, and GST number are required.",
+                message: "User ID, business name, business type, and GST number are required.",
             });
         }
 
-        const message = await OwnerRequestService.ownerRequest({
+        const result = await OwnerRequestService.ownerRequest({
             userId: user_id,
             businessName: business_name,
             businessType: business_type,
-            gstNumber: gst_number
+            gstNumber: gst_number,
+            documents: documents,
         });
 
         return res.status(201).json({
             success: true,
-            message: message,
+            message: typeof result === "string" ? result : result.message,
+            data: result,
         });
     } catch (error) {
         return res.status(400).json({
@@ -34,6 +36,27 @@ async function ownerrequest(req, res) {
 }
 
 
+/**
+ * Controller: View all owner requests
+ */
+async function viewOwnerRequest(req, res) {
+    try {
+        const result = await OwnerRequestService.viewOwnerRequest();
+
+        return res.status(200).json({
+            success: true,
+            count: result.length,
+            data: result,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+}
+
 module.exports = {
     ownerrequest,
+    viewOwnerRequest,
 };

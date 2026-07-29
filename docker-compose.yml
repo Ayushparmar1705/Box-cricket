@@ -51,6 +51,35 @@ services:
       - postgres
     restart: always
 
+  owner-document-service:
+    build:
+      context: ./app/owner-document-service
+      dockerfile: Dockerfile
+    container_name: owner-document-service
+    ports:
+      - "3007:3007"
+    env_file:
+      - ./app/owner-document-service/.env
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - postgres
+    restart: always
+  category-service:
+    build:
+      context: ./app/category-service
+      dockerfile: Dockerfile
+    container_name: category-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - ./app/category-service/.env
+    environment:
+      - DB_HOST=postgres
+    depends_on:
+      - postgres
+    restart: always
+
   postgres:
     image: postgres:15-alpine
     container_name: box-cricket-postgres
