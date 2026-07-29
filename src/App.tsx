@@ -3,15 +3,17 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import DashboardPage from './features/dashboard/pages/DashboardPage';
-import { MetricsOverview } from './features/dashboard/components/MetricsOverview';
-import { OwnerApprovalModule } from './features/dashboard/components/OwnerApprovalModule';
-import { VenuesModule } from './features/dashboard/components/VenuesModule';
-import { CourtsModule } from './features/dashboard/components/CourtsModule';
-import { BookingsModule } from './features/dashboard/components/BookingsModule';
-import { PaymentsModule } from './features/dashboard/components/PaymentsModule';
-import { MasterDataModule } from './features/dashboard/components/MasterDataModule';
-import { UsersStaffModule } from './features/dashboard/components/UsersStaffModule';
-import { AuditLogsModule } from './features/dashboard/components/AuditLogsModule';
+import { MetricsOverview } from './features/auth/pages/MetricsOverview';
+import OwnerApprovalModule from './features/auth/pages/OwnerApprovalModule';
+import { VenuesModule } from './features/auth/pages/VenuesModule';
+import { CourtsModule } from './features/auth/pages/CourtsModule';
+import { BookingsModule } from './features/auth/pages/BookingsModule';
+import { PaymentsModule } from './features/auth/pages/PaymentsModule';
+import { MasterDataModule } from './features/auth/pages/MasterDataModule';
+import { UsersStaffModule } from './features/auth/pages/UsersStaffModule';
+import { AuditLogsModule } from './features/auth/pages/AuditLogsModule';
+import CategoryModule from './features/auth/pages/CategoryModule';
+
 
 /* Check if user is logged in */
 function isAuthenticated() {
@@ -39,15 +41,16 @@ function App() {
         {/* Dashboard layout with nested child routes — each is its own page */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard/overview" replace />} />
-          <Route path="overview"        element={<MetricsOverview />} />
+          <Route path="overview" element={<MetricsOverview />} />
           <Route path="owner-approvals" element={<OwnerApprovalModule />} />
-          <Route path="venues"          element={<VenuesModule />} />
-          <Route path="courts"          element={<CourtsModule />} />
-          <Route path="bookings"        element={<BookingsModule />} />
-          <Route path="payments"        element={<PaymentsModule />} />
-          <Route path="master-data"     element={<MasterDataModule />} />
-          <Route path="users-staff"     element={<UsersStaffModule />} />
-          <Route path="audit-logs"      element={<AuditLogsModule />} />
+          <Route path="venues" element={<VenuesModule />} />
+          <Route path="courts" element={<CourtsModule />} />
+          <Route path="bookings" element={<BookingsModule />} />
+          <Route path="payments" element={<PaymentsModule />} />
+          <Route path="master-data" element={<MasterDataModule />} />
+          <Route path="users-staff" element={<UsersStaffModule />} />
+          <Route path="categories" element={<CategoryModule />} />
+          <Route path="audit-logs" element={<AuditLogsModule />} />
         </Route>
 
         {/* Catch-all */}

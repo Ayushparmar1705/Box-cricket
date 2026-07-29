@@ -22,9 +22,9 @@ export default function DataTable<T>({
   emptyMessage = "No data found.",
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               {columns.map((column, index) => (
@@ -52,7 +52,7 @@ export default function DataTable<T>({
               </tr>
             ) : values && values.length > 0 ? (
               values.map((row: any, rowIndex: number) => (
-                <tr className="hover:bg-slate-50/80 transition-colors" key={rowIndex}>
+                <tr className="hover:bg-slate-50/80 transition-colors w-full" key={rowIndex}>
                   {columns.map((column, colIndex: number) => {
                     const fieldKey = column.key || column.id || '';
                     return (
@@ -60,8 +60,8 @@ export default function DataTable<T>({
                         {column.render
                           ? column.render(row)
                           : fieldKey && row[fieldKey] !== undefined && row[fieldKey] !== null
-                          ? String(row[fieldKey])
-                          : ''}
+                            ? String(row[fieldKey])
+                            : ''}
                       </td>
                     );
                   })}

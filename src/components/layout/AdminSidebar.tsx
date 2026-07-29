@@ -10,6 +10,7 @@ import {
   Globe,
   Users,
   ShieldCheck,
+  Tag,
   LogOut,
   Search,
   Menu,
@@ -28,6 +29,7 @@ const PATH_LABELS: Record<string, string> = {
   '/dashboard/payments':       'Payments & Coupons',
   '/dashboard/master-data':    'Master Reference Data',
   '/dashboard/users-staff':    'Users & Staff Roles',
+  '/dashboard/categories':     'Categories Management',
   '/dashboard/audit-logs':     'Security Audit Trail',
 };
 
@@ -111,6 +113,7 @@ export const AdminSidebar: React.FC<{ pendingOwnerCount?: number }> = ({ pending
     { path: '/dashboard/payments',        label: 'Payments & Coupons',          icon: CreditCard },
     { path: '/dashboard/master-data',     label: 'Master Data (Cities/Sports)', icon: Globe },
     { path: '/dashboard/users-staff',     label: 'Users & Staff Roles',         icon: Users },
+    { path: '/dashboard/categories',      label: 'Categories',                  icon: Tag },
     { path: '/dashboard/audit-logs',      label: 'Security & Audit Trail',      icon: ShieldCheck },
   ];
 

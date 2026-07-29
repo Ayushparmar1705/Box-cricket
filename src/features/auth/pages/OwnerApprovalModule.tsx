@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, FileText, Building2, User, CreditCard, MapPin, Phone, Mail, ExternalLink } from 'lucide-react';
 import DataTable from '../../../components/common/Table/DataTable';
 import OwnerRequest from '../../auth/hooks/OwnerRequest';
@@ -83,10 +83,10 @@ function DocumentModal({ row, onClose }: { row: any; onClose: () => void }) {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">KYC Status:</span>
             <span
               className={`px-3 py-1 rounded-full text-xs font-extrabold border ${String(row.status).toLowerCase() === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : String(row.status).toLowerCase() === 'rejected'
-                    ? 'bg-red-50 text-red-700 border-red-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : String(row.status).toLowerCase() === 'rejected'
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-amber-50 text-amber-700 border-amber-200'
                 }`}
             >
               {row.status || 'Pending'}
@@ -160,10 +160,10 @@ export function OwnerApprovalModule() {
       render: (row: any) => (
         <span
           className={`px-2 py-0.5 rounded-full text-xs font-bold border ${String(row.status).toLowerCase() === 'approved'
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : String(row.status).toLowerCase() === 'rejected'
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : 'bg-amber-50 text-amber-700 border-amber-200'
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : String(row.status).toLowerCase() === 'rejected'
+              ? 'bg-red-50 text-red-700 border-red-200'
+              : 'bg-amber-50 text-amber-700 border-amber-200'
             }`}
         >
           {row.status || 'Pending'}
