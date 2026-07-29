@@ -15,6 +15,13 @@ const Categoryservice = {
     async getCategory() {
         const result = await fetch(Api.category);
         return result;
+    },
+
+    async deleteCategory(id: number) {
+        const result = await fetch(`${Api.category}/${id}`, {
+            method: "DELETE",
+        });
+        return result;
     }
 }
 

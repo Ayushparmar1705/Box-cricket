@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import useCategory from '../hooks/useCategory';
 import AddModal from '../../dashboard/components/AddModel';
 import DataTable from '../../../components/common/Table/DataTable';
+import StatusFilter from '../../../components/common/Filter/StatusFilter';
+import type { StatusOption } from '../../../components/common/Filter/StatusFilter';
 
 // ── Category Page ───────────────────────────────────────────
 // Shows categories in DataTable with Add and Delete functionality.
@@ -15,8 +18,11 @@ export default function CategoryModule() {
         openModal,
         closeModal,
         handleAdd,
-
+        handleDelete,
     } = useCategory();
+
+    // UI-only filter state — logic will be wired later
+    const [activeFilter, setActiveFilter] = useState<StatusOption>('all');
 
     const columns = [
         {
@@ -28,7 +34,7 @@ export default function CategoryModule() {
             title: 'Actions',
             render: (row: any) => (
                 <button
-
+                    onClick={() => handleDelete(row.id)}
                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
                     title="Delete"
                 >
@@ -53,6 +59,11 @@ export default function CategoryModule() {
                     <Plus size={16} />
                     Add Category
                 </button>
+            </div>
+
+            {/* Status Filter — UI only */}
+            <div className="mb-4">
+                <StatusFilter value={activeFilter} onChange={setActiveFilter} />
             </div>
 
             {/* Common DataTable Component */}

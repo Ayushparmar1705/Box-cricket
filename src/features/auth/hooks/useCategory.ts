@@ -25,8 +25,6 @@ export default function useCategory() {
             const data = await result.json();
             if (data) {
                 toast.success(data.message);
-                closeModal();
-                await getCategory(); // ✅ refresh table after adding
             }
         } catch (err) {
             console.log(err);
