@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronDown,
   Info,
+  MapPin,
 } from 'lucide-react';
 
 /* ── PATH → BREADCRUMB LABEL MAP ────────────────────────────── */
@@ -30,6 +31,7 @@ const PATH_LABELS: Record<string, string> = {
   '/dashboard/master-data':    'Master Reference Data',
   '/dashboard/users-staff':    'Users & Staff Roles',
   '/dashboard/categories':     'Categories Management',
+  '/dashboard/cities':         'Operational Cities',
   '/dashboard/audit-logs':     'Security Audit Trail',
 };
 
@@ -114,6 +116,7 @@ export const AdminSidebar: React.FC<{ pendingOwnerCount?: number }> = ({ pending
     { path: '/dashboard/master-data',     label: 'Master Data (Cities/Sports)', icon: Globe },
     { path: '/dashboard/users-staff',     label: 'Users & Staff Roles',         icon: Users },
     { path: '/dashboard/categories',      label: 'Categories',                  icon: Tag },
+    { path: '/dashboard/cities',          label: 'Cities',                      icon: MapPin },
     { path: '/dashboard/audit-logs',      label: 'Security & Audit Trail',      icon: ShieldCheck },
   ];
 

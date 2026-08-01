@@ -1,20 +1,20 @@
-import { useState } from 'react';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
-import useCategory from '../hooks/useCategory';
+import useCity from '../hooks/useCity';
 import AddModal from '../../dashboard/components/AddModel';
 import DataTable from '../../../components/common/Table/DataTable';
 import StatusFilter from '../../../components/common/Filter/StatusFilter';
-import type { StatusOption } from '../../../components/common/Filter/StatusFilter';
 
-// ── Category Page ───────────────────────────────────────────
-// Shows categories in DataTable with Add, Edit and Delete functionality.
+// ── City Page ───────────────────────────────────────────
+// Shows cities in DataTable with Add, Edit and Delete functionality.
 
-export default function CategoryModule() {
+export default function CityModule() {
     const {
         result,
         isOpen,
-        categoryName,
-        setCategoryName,
+        cityName,
+        setCityName,
+        stateName,
+        setStateName,
         openModal,
         openEditModal,
         closeModal,
@@ -23,14 +23,21 @@ export default function CategoryModule() {
         activeFilter,
         setActiveFilter,
         editingId
-    } = useCategory();
+    } = useCity();
 
     const columns = [
         {
             id: 'name',
-            title: 'Category Name',
+            title: 'City Name',
             render: (row: any) => (
                 <div className="font-medium text-slate-900">{row.name}</div>
+            )
+        },
+        {
+            id: 'state',
+            title: 'State',
+            render: (row: any) => (
+                <div className="text-slate-600">{row.state}</div>
             )
         },
         {
@@ -59,7 +66,7 @@ export default function CategoryModule() {
                 return isActive ? (
                     <div className="flex items-center gap-1">
                         <button
-                            onClick={() => openEditModal(row.id, row.name)}
+                            onClick={() => openEditModal(row.id, row.name, row.state)}
                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
                             title="Edit"
                         >
@@ -82,12 +89,20 @@ export default function CategoryModule() {
 
     const formFields = [
         {
-            name: 'categoryName',
-            label: 'Category Name',
+            name: 'cityName',
+            label: 'City Name',
             type: 'text',
-            placeholder: 'e.g. Box Cricket',
-            value: categoryName,
-            onChange: setCategoryName
+            placeholder: 'e.g. Mumbai',
+            value: cityName,
+            onChange: setCityName
+        },
+        {
+            name: 'stateName',
+            label: 'State Name',
+            type: 'text',
+            placeholder: 'e.g. Maharashtra',
+            value: stateName,
+            onChange: setStateName
         }
     ];
 
@@ -96,8 +111,8 @@ export default function CategoryModule() {
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Categories</h1>
-                    <p className="text-sm text-slate-500 mt-1">Manage sport and venue categories</p>
+                    <h1 className="text-2xl font-bold text-slate-800">Cities</h1>
+                    <p className="text-sm text-slate-500 mt-1">Manage operational cities and states</p>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -108,7 +123,7 @@ export default function CategoryModule() {
                         className="flex items-center gap-2 px-4 py-2 bg-[#003365] text-white text-sm font-semibold rounded-lg hover:bg-[#004a8f] cursor-pointer shadow-sm transition-all"
                     >
                         <Plus size={16} />
-                        Add Category
+                        Add City
                     </button>
                 </div>
             </div>
@@ -118,13 +133,13 @@ export default function CategoryModule() {
                 columns={columns}
                 values={result}
                 loading={false}
-                emptyMessage="No categories found. Click 'Add Category' to create one."
+                emptyMessage="No cities found. Click 'Add City' to create one."
             />
 
-            {/* Add/Edit Category Modal */}
+            {/* Add/Edit City Modal */}
             <AddModal
                 isOpen={isOpen}
-                title={editingId ? "Edit Category" : "Add New Category"}
+                title={editingId ? "Edit City" : "Add New City"}
                 onClose={closeModal}
                 onAdd={handleAdd}
                 fields={formFields}

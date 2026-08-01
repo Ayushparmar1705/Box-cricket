@@ -21,24 +21,23 @@ export default function StatusFilter({ value, onChange }: StatusFilterProps) {
                     opt.value === 'active'
                         ? 'bg-emerald-500 text-white shadow-sm'
                         : opt.value === 'inactive'
-                        ? 'bg-red-500 text-white shadow-sm'
-                        : 'bg-white text-slate-700 shadow-sm';
+                            ? 'bg-red-500 text-white shadow-sm'
+                            : 'bg-white text-slate-700 shadow-sm';
 
                 const idleStyles =
                     opt.value === 'active'
                         ? 'text-emerald-600 hover:bg-emerald-50'
                         : opt.value === 'inactive'
-                        ? 'text-red-500 hover:bg-red-50'
-                        : 'text-slate-500 hover:bg-slate-200';
+                            ? 'text-red-500 hover:bg-red-50'
+                            : 'text-slate-500 hover:bg-slate-200';
 
                 return (
                     <button
                         key={opt.value}
                         id={`status-filter-${opt.value}`}
                         onClick={() => onChange(opt.value)}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
-                            isSelected ? selectedStyles : idleStyles
-                        }`}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${isSelected ? selectedStyles : idleStyles
+                            }`}
                     >
                         {opt.label}
                     </button>

@@ -13,6 +13,7 @@ import { MasterDataModule } from './features/auth/pages/MasterDataModule';
 import { UsersStaffModule } from './features/auth/pages/UsersStaffModule';
 import { AuditLogsModule } from './features/auth/pages/AuditLogsModule';
 import CategoryModule from './features/auth/pages/CategoryModule';
+import CityModule from './features/auth/pages/CityModule';
 
 
 /* Check if user is logged in */
@@ -50,6 +51,7 @@ function App() {
           <Route path="master-data" element={<MasterDataModule />} />
           <Route path="users-staff" element={<UsersStaffModule />} />
           <Route path="categories" element={<CategoryModule />} />
+          <Route path="cities" element={<CityModule />} />
           <Route path="audit-logs" element={<AuditLogsModule />} />
         </Route>
 
