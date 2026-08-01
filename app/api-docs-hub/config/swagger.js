@@ -208,6 +208,112 @@ const globalSwaggerSpec = {
                 },
             },
         },
+        "/api/v1/city": {
+            post: {
+                servers: [{ url: "http://localhost:3008", description: "City Service (Port 3008)" }],
+                tags: ["Master Data"],
+                summary: "Create a new city",
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                required: ["name", "state"],
+                                properties: {
+                                    name: { type: "string", example: "Mumbai" },
+                                    state: { type: "string", example: "Maharashtra" }
+                                }
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "201": { description: "City created successfully" },
+                    "400": { description: "Invalid city or state name" },
+                    "409": { description: "City already exists" },
+                    "500": { description: "Failed to create City" },
+                },
+            },
+        },
+        "/api/v1/city/{status}": {
+            get: {
+                servers: [{ url: "http://localhost:3008", description: "City Service (Port 3008)" }],
+                tags: ["Master Data"],
+                summary: "Get all cities (supports status filtering)",
+                parameters: [
+                    {
+                        name: "status",
+                        in: "path",
+                        required: true,
+                        schema: { type: "string", enum: ["active", "inactive", "all"] },
+                        description: "Filter cities by status",
+                    },
+                ],
+                responses: {
+                    "200": { description: "List of cities" },
+                    "500": { description: "Failed to fetch cities" },
+                },
+            },
+        },
+        "/api/v1/city/{id}": {
+            delete: {
+                servers: [{ url: "http://localhost:3008", description: "City Service (Port 3008)" }],
+                tags: ["Master Data"],
+                summary: "Soft delete a city by ID",
+                parameters: [
+                    {
+                        name: "id",
+                        in: "path",
+                        required: true,
+                        schema: { type: "integer" },
+                        description: "City ID",
+                    },
+                ],
+                responses: {
+                    "200": { description: "City deleted successfully" },
+                    "400": { description: "Invalid city id" },
+                    "404": { description: "City not found" },
+                    "500": { description: "Failed to delete City" },
+                },
+            },
+        },
+        "/api/v1/update-city/{id}": {
+            put: {
+                servers: [{ url: "http://localhost:3008", description: "City Service (Port 3008)" }],
+                tags: ["Master Data"],
+                summary: "Update a city by ID",
+                parameters: [
+                    {
+                        name: "id",
+                        in: "path",
+                        required: true,
+                        schema: { type: "integer" },
+                        description: "City ID",
+                    },
+                ],
+                requestBody: {
+                    required: true,
+                    content: {
+                        "application/json": {
+                            schema: {
+                                type: "object",
+                                properties: {
+                                    name: { type: "string", example: "Navi Mumbai" },
+                                    state: { type: "string", example: "Maharashtra" }
+                                }
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    "200": { description: "City updated successfully" },
+                    "400": { description: "Invalid city id" },
+                    "404": { description: "City not found" },
+                    "500": { description: "Failed to update City" },
+                },
+            },
+        },
     },
 };
 
