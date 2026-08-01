@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const sequelize = require("../config/config");
 const category = require("../Model/Category");
 
@@ -18,8 +19,16 @@ async function createCategory(name) {
     }
 }
 
-async function getCategory() {
-    const result = await category.findAll();
+async function getCategory(status) {
+    const options = { paranoid: false };
+    
+    if (status === "active") {
+        options.paranoid = true; // Sequelize natively handles deletedAt IS NULL when paranoid is true
+    } else if (status === "inactive") {
+        options.where = { deletedAt: { [Op.ne]: null } };
+    }
+
+    const result = await category.findAll(options);
     return result;
 }
 
@@ -32,8 +41,33 @@ async function deleteCategory(id) {
     return { message: "Category deleted successfully" };
 }
 
+async function getCategoryById(id) {
+    const found = await category.findByPk(id, { paranoid: false });
+    if (!found) {
+        throw new Error("Category not found");
+    }
+    return found;
+}
+
+async function updateCategory(id, name) {
+    const found = await category.findByPk(id, { paranoid: false });
+    if (!found) {
+        throw new Error("Category not found");
+    }
+    
+    found.name = name;
+    await found.save();
+    
+    return {
+        message: "Category updated successfully",
+        data: found
+    };
+}
+
 module.exports = {
     createCategory,
     getCategory,
-    deleteCategory
+    deleteCategory,
+    getCategoryById,
+    updateCategory
 };
