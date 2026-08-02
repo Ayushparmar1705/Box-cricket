@@ -21,7 +21,7 @@ export default function useCategory() {
 
     // Open and close modal
     const openModal = () => setIsOpen(true);
-    
+
     const openEditModal = (id: number, currentName: string) => {
         setEditingId(id);
         setCategoryName(currentName);
@@ -44,7 +44,7 @@ export default function useCategory() {
             } else {
                 result = await Categoryservice.AddCategory(categoryName);
             }
-            
+
             const data = await result.json();
             if (result.ok) {
                 toast.success(data.message || (editingId ? 'Category updated successfully' : 'Category added successfully'));

@@ -13,7 +13,7 @@ export default function useCity() {
     // The input values typed in the form
     const [cityName, setCityName] = useState('');
     const [stateName, setStateName] = useState('');
-    
+
     const [result, setResult] = useState<any[]>([]);
 
     // Status filter state
@@ -21,7 +21,7 @@ export default function useCity() {
 
     // Open and close modal
     const openModal = () => setIsOpen(true);
-    
+
     const openEditModal = (id: number, currentName: string, currentState: string) => {
         setEditingId(id);
         setCityName(currentName);
@@ -45,7 +45,7 @@ export default function useCity() {
             } else {
                 res = await Cityservice.addCity(cityName, stateName);
             }
-            
+
             const data = await res.json();
             if (res.ok) {
                 toast.success(data.message || (editingId ? 'City updated successfully' : 'City added successfully'));
