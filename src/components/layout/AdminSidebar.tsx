@@ -22,17 +22,17 @@ import {
 
 /* ── PATH → BREADCRUMB LABEL MAP ────────────────────────────── */
 const PATH_LABELS: Record<string, string> = {
-  '/dashboard/overview':       'Overview & Analytics',
-  '/dashboard/owner-approvals':'Owner Approvals & KYC',
-  '/dashboard/venues':         'Venues & Photo Gallery',
-  '/dashboard/courts':         'Courts & Dynamic Rates',
-  '/dashboard/bookings':       'Slots & Live Bookings',
-  '/dashboard/payments':       'Payments & Coupons',
-  '/dashboard/master-data':    'Master Reference Data',
-  '/dashboard/users-staff':    'Users & Staff Roles',
-  '/dashboard/categories':     'Categories Management',
-  '/dashboard/cities':         'Operational Cities',
-  '/dashboard/audit-logs':     'Security Audit Trail',
+  '/dashboard/overview': 'Overview & Analytics',
+  '/dashboard/owner-approvals': 'Owner Approvals & KYC',
+  '/dashboard/venues': 'Venues & Photo Gallery',
+  '/dashboard/courts': 'Courts & Dynamic Rates',
+  '/dashboard/bookings': 'Slots & Live Bookings',
+  '/dashboard/payments': 'Payments & Coupons',
+  '/dashboard/master-data': 'Master Reference Data',
+  '/dashboard/users-staff': 'Users & Staff Roles',
+  '/dashboard/categories': 'Categories Management',
+  '/dashboard/cities': 'Operational Cities',
+  '/dashboard/audit-logs': 'Security Audit Trail',
 };
 
 /* ── TOP NAVIGATION BAR ─────────────────────────────────────── */
@@ -107,17 +107,17 @@ export const AdminSidebar: React.FC<{ pendingOwnerCount?: number }> = ({ pending
   const navigate = useNavigate();
 
   const menuItems = [
-    { path: '/dashboard/overview',        label: 'Overview & Analytics',       icon: LayoutDashboard },
-    { path: '/dashboard/owner-approvals', label: 'Owner Approvals & KYC',      icon: CheckSquare, badge: pendingOwnerCount },
-    { path: '/dashboard/venues',          label: 'Venues & Photo Gallery',      icon: Building2 },
-    { path: '/dashboard/courts',          label: 'Courts & Pricing Rules',      icon: Layers },
-    { path: '/dashboard/bookings',        label: 'Slots & Live Bookings',       icon: Calendar },
-    { path: '/dashboard/payments',        label: 'Payments & Coupons',          icon: CreditCard },
-    { path: '/dashboard/master-data',     label: 'Master Data (Cities/Sports)', icon: Globe },
-    { path: '/dashboard/users-staff',     label: 'Users & Staff Roles',         icon: Users },
-    { path: '/dashboard/categories',      label: 'Categories',                  icon: Tag },
-    { path: '/dashboard/cities',          label: 'Cities',                      icon: MapPin },
-    { path: '/dashboard/audit-logs',      label: 'Security & Audit Trail',      icon: ShieldCheck },
+    { path: '/dashboard/overview', label: 'Overview & Analytics', icon: LayoutDashboard },
+    { path: '/dashboard/owner-approvals', label: 'Owner Approvals & KYC', icon: CheckSquare, badge: pendingOwnerCount },
+    { path: '/dashboard/venues', label: 'Venues & Photo Gallery', icon: Building2 },
+    { path: '/dashboard/courts', label: 'Courts & Pricing Rules', icon: Layers },
+    { path: '/dashboard/bookings', label: 'Slots & Live Bookings', icon: Calendar },
+    { path: '/dashboard/payments', label: 'Payments & Coupons', icon: CreditCard },
+    { path: '/dashboard/master-data', label: 'Master Data (Cities/Sports)', icon: Globe },
+    { path: '/dashboard/users-staff', label: 'Users & Staff Roles', icon: Users },
+    { path: '/dashboard/categories', label: 'Categories', icon: Tag },
+    { path: '/dashboard/cities', label: 'Cities', icon: MapPin },
+    { path: '/dashboard/audit-logs', label: 'Security & Audit Trail', icon: ShieldCheck },
   ];
 
   return (
@@ -150,11 +150,10 @@ export const AdminSidebar: React.FC<{ pendingOwnerCount?: number }> = ({ pending
               key={item.path}
               type="button"
               onClick={() => navigate(item.path)}
-              className={`flex items-center justify-between px-4 py-2.5 text-xs transition-all cursor-pointer text-left border-none ${
-                isActive
-                  ? 'bg-[#f1f5f9] text-[#0066cc] font-bold border-l-4 border-[#0066cc]'
-                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent'
-              }`}
+              className={`flex items-center justify-between px-4 py-2.5 text-xs transition-all cursor-pointer text-left border-none ${isActive
+                ? 'bg-[#f1f5f9] text-[#0066cc] font-bold border-l-4 border-[#0066cc]'
+                : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 border-l-4 border-transparent'
+                }`}
               title={collapsed ? item.label : undefined}
             >
               <div className="flex items-center gap-2.5 min-w-0">
