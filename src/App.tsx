@@ -15,7 +15,12 @@ const UsersStaffModule = lazy(() => import('./features/auth/pages/UsersStaffModu
 const AuditLogsModule = lazy(() => import('./features/auth/pages/AuditLogsModule').then(module => ({ default: module.AuditLogsModule })));
 const CategoryModule = lazy(() => import('./features/auth/pages/CategoryModule'));
 const CityModule = lazy(() => import('./features/auth/pages/CityModule'));
-const OwnerAuthPage = lazy(() => import('./features/auth/pages/OwnerAuthPage').then(module => ({ default: module.OwnerAuthPage })));
+const UserAuthPage = lazy(() => import('./features/auth/pages/UserAuthPage').then(module => ({ default: module.UserAuthPage })));
+
+// Player Routes
+const PlayerDashboardPage = lazy(() => import('./features/player/pages/PlayerDashboardPage').then(module => ({ default: module.PlayerDashboardPage })));
+const PlayerOverview = lazy(() => import('./features/player/pages/PlayerOverview').then(module => ({ default: module.PlayerOverview })));
+const PlayerProfile = lazy(() => import('./features/player/pages/PlayerProfile').then(module => ({ default: module.PlayerProfile })));
 
 
 /* Check if user is logged in */
@@ -39,11 +44,20 @@ function App() {
       <Toaster position="top-right" reverseOrder={false} />
       <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center text-lg text-gray-500">Loading...</div>}>
         <Routes>
-          {/* Login */}
+          {/* Admin Login */}
           <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
           
-          {/* Owner Auth */}
-          <Route path="/owner-auth" element={<PublicRoute><OwnerAuthPage /></PublicRoute>} />
+          {/* User Auth (Registration & Login) */}
+          <Route path="/user-auth" element={<PublicRoute><UserAuthPage /></PublicRoute>} />
+
+          {/* Player App (Normal Users) */}
+          <Route path="/home" element={<ProtectedRoute><PlayerDashboardPage /></ProtectedRoute>}>
+            <Route index element={<Navigate to="/home/discover" replace />} />
+            <Route path="discover" element={<PlayerOverview />} />
+            <Route path="profile" element={<PlayerProfile />} />
+            {/* Placeholder for bookings */}
+            <Route path="bookings" element={<div className="p-8 text-slate-500 font-bold">My Bookings coming soon...</div>} />
+          </Route>
 
           {/* Dashboard layout with nested child routes — each is its own page */}
           <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>

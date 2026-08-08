@@ -1,47 +1,30 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import OwnerAuthService from '../service/OwnerAuthService';
+import UserAuthService from '../service/UserAuthService';
 
-export function useOwnerAuth(onSuccess: () => void) {
+export function useUserAuth(onSuccess: () => void) {
   const [isLoginMode, setIsLoginMode] = useState(true);
-  const [registrationStep, setRegistrationStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isHidden, setIsHidden] = useState(true);
 
   const [form, setForm] = useState({
-    business_name: '',
-    business_type: '',
-    gst_number: '',
-    admin_remark: '',
-    full_name: '',
+    name: '',
     email: '',
-    password: '',
-    phone_number: ''
+    phoneNumber: '',
+    password: ''
   });
 
   const togglePasswordVisiblity = () => {
     setIsHidden(!isHidden);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleToggleMode = () => {
     setIsLoginMode((prev) => !prev);
-    setRegistrationStep(1); // reset step when toggling
   };
-
-  const handleNextStep = () => {
-    // Basic validation before moving to step 2
-    if (!form.full_name || !form.email || !form.password || !form.phone_number) {
-      toast.error('Please fill in all basic details to continue.');
-      return;
-    }
-    setRegistrationStep(2);
-  };
-
-  const handlePrevStep = () => setRegistrationStep(1);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -49,24 +32,30 @@ export function useOwnerAuth(onSuccess: () => void) {
 
     try {
       if (isLoginMode) {
-        const response = await OwnerAuthService.login(form.email, form.password);
+        const response = await UserAuthService.login(form.email, form.password);
         const data = await response.json();
-        
+
         if (response.ok || data.success) {
           toast.success(data.message || 'Login successful!');
-          localStorage.setItem("owner_session", JSON.stringify(data));
+          localStorage.setItem("user", JSON.stringify(data));
           onSuccess();
         } else {
           toast.error(data.message || 'Login failed. Please check your credentials.');
         }
       } else {
-        const response = await OwnerAuthService.register(form);
+        // Registration
+        if (!form.name || !form.email || !form.password || !form.phoneNumber) {
+          toast.error('Please fill in all details to register.');
+          setLoading(false);
+          return;
+        }
+
+        const response = await UserAuthService.register(form);
         const data = await response.json();
-        
+
         if (response.ok || data.success) {
           toast.success(data.message || 'Registration successful! You can now log in.');
           setIsLoginMode(true);
-          setRegistrationStep(1);
         } else {
           toast.error(data.message || 'Registration failed.');
         }
@@ -82,13 +71,10 @@ export function useOwnerAuth(onSuccess: () => void) {
   return {
     form,
     isLoginMode,
-    registrationStep,
     loading,
     isHidden,
     handleChange,
     handleToggleMode,
-    handleNextStep,
-    handlePrevStep,
     handleSubmit,
     togglePasswordVisiblity,
   };

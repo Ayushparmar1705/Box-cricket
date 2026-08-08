@@ -1,9 +1,7 @@
 const Api = {
     login: "http://localhost:3001/api/v1/auth/login",
     register: "http://localhost:3001/api/v1/auth/register",
-    ownerLogin: "http://localhost:3001/api/v1/owner/login",
-    ownerRegister: "http://localhost:3001/api/v1/owner/register",
-    ownerRequest: "http://localhost:3006/api/v1/get-owner-request",
+    becomeOwner: "http://localhost:3006/api/v1/owner-request",
     // Category Endpoints
     category: "http://localhost:3002/api/v1/category",
     getCategory: (status: string) => `http://localhost:3002/api/v1/category/${status}`,
