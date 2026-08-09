@@ -18,7 +18,7 @@ export const PlayerDashboardPage: React.FC = () => {
   ];
 
   return (
-    <div className="h-screen bg-slate-50 font-sans flex flex-col">
+    <div className="h-screen  bg-slate-50 font-sans flex flex-col">
       {/* Top Navigation */}
       <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">

@@ -21,31 +21,17 @@ export interface User {
 
 export type OwnerRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-// Table 2: owner_requests
 export interface OwnerRequest {
-  id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
   businessName: string;
   businessType: string;
   gstNumber: string;
-  status: OwnerRequestStatus;
-  adminRemark?: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  createdAt: string;
-  documentsCount: number;
+  documentUrl?: string;
 }
 
 // Table 3: owner_documents
 export interface OwnerDocument {
-  id: string;
-  ownerRequestId: string;
-  documentType: 'AADHAR' | 'PAN' | 'GST' | 'SHOP_LICENSE' | 'OTHER';
-  documentUrl: string;
-  verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
-  uploadedAt: string;
+  documentType: string;
+  file: File | null;
 }
 
 // Table 4: cities

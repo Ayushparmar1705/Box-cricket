@@ -11,6 +11,19 @@ const Authservice = {
         });
         return result.json();
 
+    },
+    async becomeOwner(formdata) {
+        const result = await fetch(Api.becomeOwner, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(formdata),
+        });
+
+
+        const data = await result.json();
+        return data;
     }
 }
 export default Authservice;
