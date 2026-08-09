@@ -7,44 +7,50 @@ export const AuditLogsModule: React.FC = () => {
   const [logs] = useState<AuditLog[]>(MOCK_AUDIT_LOGS);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-10">
       <div>
-        <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <ShieldCheck className="text-emerald-600" size={22} />
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight flex items-center gap-3">
+          <ShieldCheck className="text-indigo-600 dark:text-indigo-400" size={28} />
           System Audit Logs
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Review administrative platform actions and mutation history (Table: <code className="text-emerald-600 font-mono">audit_logs</code>)
+        </h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          Review administrative platform actions and mutation history (Table: <code className="text-indigo-600 dark:text-indigo-400 font-mono bg-indigo-50 dark:bg-indigo-500/10 px-1.5 py-0.5 rounded text-xs">audit_logs</code>)
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <th className="px-5 py-3.5">Log ID</th>
-              <th className="px-5 py-3.5">Admin Actor</th>
-              <th className="px-5 py-3.5">Action</th>
-              <th className="px-5 py-3.5">Target Table</th>
-              <th className="px-5 py-3.5">Record ID</th>
-              <th className="px-5 py-3.5">Source IP</th>
-              <th className="px-5 py-3.5">Timestamp</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 text-xs sm:text-sm">
-            {logs.map((l) => (
-              <tr key={l.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-5 py-3.5 font-mono text-slate-550">{l.id}</td>
-                <td className="px-5 py-3.5 font-bold text-slate-900">{l.userName}</td>
-                <td className="px-5 py-3.5 font-mono text-emerald-700 font-bold">{l.action}</td>
-                <td className="px-5 py-3.5 text-slate-700 font-mono">{l.tableName}</td>
-                <td className="px-5 py-3.5 text-slate-500 font-mono">{l.recordId}</td>
-                <td className="px-5 py-3.5 text-slate-400 font-mono">{l.ipAddress}</td>
-                <td className="px-5 py-3.5 text-slate-400 text-xs">{l.createdAt.slice(0, 19).replace('T', ' ')}</td>
+      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4">Log ID</th>
+                <th className="px-6 py-4">Admin Actor</th>
+                <th className="px-6 py-4">Action</th>
+                <th className="px-6 py-4">Target Table</th>
+                <th className="px-6 py-4">Record ID</th>
+                <th className="px-6 py-4">Source IP</th>
+                <th className="px-6 py-4 text-right">Timestamp</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50 text-sm">
+              {logs.map((l) => (
+                <tr key={l.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors group">
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-gray-400">{l.id}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">{l.userName}</td>
+                  <td className="px-6 py-4">
+                    <span className="bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider border border-gray-200 dark:border-gray-700">
+                      {l.action}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-700 dark:text-gray-300 font-mono text-xs">{l.tableName}</td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 font-mono text-xs">{l.recordId}</td>
+                  <td className="px-6 py-4 text-gray-400 dark:text-gray-500 font-mono text-xs">{l.ipAddress}</td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-xs text-right">{l.createdAt.slice(0, 19).replace('T', ' ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

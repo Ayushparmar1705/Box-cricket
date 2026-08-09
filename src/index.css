@@ -1,4 +1,23 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+@layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
+  }
+  [data-theme="dark"], .dark {
+    --bg-main: #0b0f19;
+    --bg-card: #111827;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #1e293b;
+    --border-hover: #334155;
+  }
+}
 
 /* ── Global Reset & Base Setup ─────────────────────────────────── */
 *,

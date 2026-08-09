@@ -3,6 +3,8 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { AdminHeader, AdminSidebar } from '../../../components/layout/AdminSidebar';
 import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 
+import { useTheme } from '../../../context/ThemeContext';
+
 export interface ToastMessage {
   id: string;
   text: string;
@@ -12,6 +14,7 @@ export interface ToastMessage {
 const DashboardPage: React.FC = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const handleLogout = () => {
     if (window.confirm('Sign out of Super Admin Console?')) {
@@ -22,29 +25,29 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans flex">
+    <div data-theme={theme} className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-gray-100 font-sans flex transition-colors duration-300">
       {/* Floating Toast Notification Stack */}
       <div className="fixed top-5 right-5 z-50 flex flex-col gap-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center gap-2.5 px-4 py-3 bg-white border rounded-xl shadow-2xl text-xs font-semibold ${toast.type === 'success'
-                ? 'border-emerald-500/60 text-emerald-700'
-                : toast.type === 'info'
-                  ? 'border-blue-500/60 text-blue-700'
-                  : 'border-red-500/60 text-red-700'
+            className={`flex items-center gap-3 px-4 py-3 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === 'success'
+              ? 'text-emerald-700 dark:text-emerald-400 border-l-4 border-l-emerald-500'
+              : toast.type === 'info'
+                ? 'text-blue-700 dark:text-blue-400 border-l-4 border-l-blue-500'
+                : 'text-red-700 dark:text-red-400 border-l-4 border-l-red-500'
               }`}
           >
-            {toast.type === 'success' && <CheckCircle2 size={16} className="text-emerald-600" />}
-            {toast.type === 'info' && <Info size={16} className="text-blue-600" />}
-            {toast.type === 'error' && <AlertTriangle size={16} className="text-red-600" />}
+            {toast.type === 'success' && <CheckCircle2 size={18} className="text-emerald-500" />}
+            {toast.type === 'info' && <Info size={18} className="text-blue-500" />}
+            {toast.type === 'error' && <AlertTriangle size={18} className="text-red-500" />}
             <span>{toast.text}</span>
             <button
               type="button"
-              className="text-slate-400 hover:text-slate-600 ml-2 cursor-pointer"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 ml-3 cursor-pointer transition-colors"
               onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
         ))}

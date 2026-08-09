@@ -21,18 +21,18 @@ export const PlayerProfile: React.FC = () => {
     <div className="flex flex-col gap-8 animate-in fade-in duration-500 max-w-3xl mx-auto">
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">My Profile</h1>
-        <p className="text-slate-500">Manage your personal details and account settings.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">My Profile</h1>
+        <p className="text-gray-500 dark:text-gray-400">Manage your personal details and account settings.</p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-slate-100 bg-slate-50/50">
-          <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm border-4 border-white">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+        <div className="p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+          <div className="w-24 h-24 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm border-4 border-white dark:border-[#111827]">
             <User size={40} />
           </div>
           <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-1">
-            <h2 className="text-2xl font-bold text-slate-900">{user?.name || 'Awesome Player'}</h2>
-            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{user?.name || 'Awesome Player'}</h2>
+            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
               <ShieldCheck size={14} />
               Verified Player
             </div>
@@ -41,16 +41,16 @@ export const PlayerProfile: React.FC = () => {
 
         <div className="p-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Email Address</span>
-            <div className="flex items-center gap-3 text-slate-800 font-medium bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100">
-              <Mail size={16} className="text-slate-400" />
+            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Email Address</span>
+            <div className="flex items-center gap-3 text-gray-800 dark:text-gray-200 font-medium bg-gray-50 dark:bg-gray-800/50 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+              <Mail size={16} className="text-gray-400 dark:text-gray-500" />
               {user?.email || 'player@example.com'}
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Phone Number</span>
-            <div className="flex items-center gap-3 text-slate-800 font-medium bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100">
-              <Phone size={16} className="text-slate-400" />
+            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Phone Number</span>
+            <div className="flex items-center gap-3 text-gray-800 dark:text-gray-200 font-medium bg-gray-50 dark:bg-gray-800/50 px-4 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800">
+              <Phone size={16} className="text-gray-400 dark:text-gray-500" />
               {user?.phoneNumber || '+91 9876543210'}
             </div>
           </div>
@@ -79,62 +79,62 @@ export const PlayerProfile: React.FC = () => {
 
       {/* Owner Application Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-gray-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
 
             {/* Modal Header */}
-            <div className="flex items-start justify-between p-6 sm:p-8 border-b border-slate-100 bg-white">
+            <div className="flex items-start justify-between p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111827]">
               <div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Partner Application</h3>
-                <p className="text-sm text-slate-500 font-medium mt-1">Submit your details to start hosting.</p>
+                <h3 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">Partner Application</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">Submit your details to start hosting.</p>
               </div>
               <button
                 onClick={() => { setIsModalOpen(false); setStep(1); }}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Visual Stepper */}
-            <div className="px-6 sm:px-8 pt-6 pb-2 bg-slate-50 border-b border-slate-100">
+            <div className="px-6 sm:px-8 pt-6 pb-2 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center justify-between relative">
                 {/* Progress Bar Background */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-slate-200 rounded-full"></div>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 {/* Active Progress */}
                 <div
-                  className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-600 rounded-full transition-all duration-500"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-indigo-600 dark:bg-indigo-500 rounded-full transition-all duration-500"
                   style={{ width: step === 1 ? '0%' : '100%' }}
                 ></div>
 
                 {/* Step 1 Node */}
-                <div className="relative flex flex-col items-center gap-2 bg-slate-50 px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-slate-50 transition-colors duration-300 ${step >= 1 ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                <div className="relative flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-800/30 px-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-gray-50 dark:border-[#111827] transition-colors duration-300 ${step >= 1 ? 'bg-indigo-600 dark:bg-indigo-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
                     <Briefcase size={16} />
                   </div>
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${step >= 1 ? 'text-indigo-600' : 'text-slate-400'}`}>Business</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${step >= 1 ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`}>Business</span>
                 </div>
 
                 {/* Step 2 Node */}
-                <div className="relative flex flex-col items-center gap-2 bg-slate-50 px-2">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-slate-50 transition-colors duration-300 ${step >= 2 ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                <div className="relative flex flex-col items-center gap-2 bg-gray-50 dark:bg-gray-800/30 px-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-gray-50 dark:border-[#111827] transition-colors duration-300 ${step >= 2 ? 'bg-indigo-600 dark:bg-indigo-500 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'}`}>
                     <FileText size={16} />
                   </div>
-                  <span className={`text-[10px] font-bold uppercase tracking-widest ${step >= 2 ? 'text-indigo-600' : 'text-slate-400'}`}>Documents</span>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${step >= 2 ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`}>Documents</span>
                 </div>
               </div>
             </div>
 
             {/* Scrollable Form Area */}
-            <div className="overflow-y-auto p-6 sm:p-8 bg-white flex-1">
+            <div className="overflow-y-auto p-6 sm:p-8 bg-white dark:bg-[#111827] flex-1">
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
                 {step === 1 ? (
                   <div className="flex flex-col gap-6 animate-in slide-in-from-right-8 duration-500">
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-slate-700 tracking-wide uppercase">Business Name</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide uppercase">Business Name</label>
                       <div className="relative group">
-                        <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
+                        <Briefcase size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         <input
                           name="business_name"
                           type="text"
@@ -142,21 +142,21 @@ export const PlayerProfile: React.FC = () => {
                           value={form.business_name}
                           onChange={handleChange}
                           required
-                          className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl text-sm text-slate-900 outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-semibold placeholder:font-normal placeholder:text-slate-400"
+                          className="w-full h-14 pl-12 pr-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl text-sm text-gray-900 dark:text-gray-100 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-semibold placeholder:font-normal placeholder:text-gray-400"
                         />
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-slate-700 tracking-wide uppercase">Business Type</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide uppercase">Business Type</label>
                       <select
                         name="business_type"
                         value={form.business_type}
                         onChange={handleChange}
                         required
-                        className="w-full h-14 px-4 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl text-sm text-slate-900 outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-semibold appearance-none"
+                        className="w-full h-14 px-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl text-sm text-gray-900 dark:text-gray-100 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-semibold appearance-none"
                       >
-                        <option value="" disabled className="font-normal">Select Business Structure</option>
+                        <option value="" disabled className="font-normal text-gray-400">Select Business Structure</option>
                         <option value="Sole Proprietorship">Sole Proprietorship</option>
                         <option value="Partnership">Partnership</option>
                         <option value="Private Limited">Private Limited</option>
@@ -164,9 +164,9 @@ export const PlayerProfile: React.FC = () => {
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <label className="text-xs font-bold text-slate-700 tracking-wide uppercase">GST Number</label>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide uppercase">GST Number</label>
                       <div className="relative group">
-                        <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
+                        <FileText size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         <input
                           name="gst_number"
                           type="text"
@@ -174,7 +174,7 @@ export const PlayerProfile: React.FC = () => {
                           value={form.gst_number}
                           onChange={handleChange}
                           required
-                          className="w-full h-14 pl-12 pr-4 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-2xl text-sm text-slate-900 outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-bold uppercase tracking-wider placeholder:font-normal placeholder:text-slate-400 placeholder:normal-case placeholder:tracking-normal"
+                          className="w-full h-14 pl-12 pr-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 rounded-2xl text-sm text-gray-900 dark:text-gray-100 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-bold uppercase tracking-wider placeholder:font-normal placeholder:text-gray-400 placeholder:normal-case placeholder:tracking-normal"
                         />
                       </div>
                     </div>
@@ -269,13 +269,13 @@ export const PlayerProfile: React.FC = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-4 mt-4 pt-6 border-t border-slate-100">
+                <div className="flex gap-4 mt-4 pt-6 border-t border-gray-100 dark:border-gray-800">
                   {step === 2 && (
                     <button
                       type="button"
                       onClick={() => setStep(1)}
                       disabled={loading}
-                      className="h-14 px-8 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 text-sm font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
+                      className="h-14 px-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-bold rounded-2xl transition-all shadow-sm cursor-pointer"
                     >
                       Back
                     </button>

@@ -32,7 +32,7 @@ export const UserAuthPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans bg-white">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans bg-gray-50 dark:bg-[#0B1120]">
 
       {/* ── LEFT PANEL: Marketing & Image ── */}
       <div className="hidden lg:flex flex-col justify-end p-12 relative overflow-hidden bg-emerald-900">
@@ -78,16 +78,16 @@ export const UserAuthPage: React.FC = () => {
       </div>
 
       {/* ── RIGHT PANEL: Auth Form ── */}
-      <div className="flex flex-col justify-center p-6 sm:p-12 lg:px-20 bg-white relative overflow-y-auto max-h-screen">
+      <div className="flex flex-col justify-center p-6 sm:p-12 lg:px-20 bg-gray-50 dark:bg-[#0B1120] relative overflow-y-auto max-h-screen">
 
-        <div className="w-full max-w-[400px] mx-auto">
+        <div className="w-full max-w-[400px] mx-auto bg-white dark:bg-[#111827] p-8 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-200/90 dark:border-gray-800">
 
           {/* Header */}
           <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">
               {isLoginMode ? 'Welcome back' : 'Create an account'}
             </h2>
-            <p className="text-sm text-slate-500 mt-2 font-medium">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium">
               {isLoginMode
                 ? 'Enter your credentials to access your account.'
                 : 'Join BoxCricket as a player to book turfs.'}
@@ -99,9 +99,9 @@ export const UserAuthPage: React.FC = () => {
             {!isLoginMode && (
               <div className="flex flex-col gap-5 animate-in fade-in duration-300">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700 tracking-wide">Full Name</label>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide">Full Name</label>
                   <div className="relative">
-                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       name="name"
                       type="text"
@@ -109,15 +109,15 @@ export const UserAuthPage: React.FC = () => {
                       value={form.name}
                       onChange={handleChange}
                       required={!isLoginMode}
-                      className="w-full h-11 pl-10 pr-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium shadow-sm"
+                      className="w-full h-11 pl-10 pr-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700 tracking-wide">Phone Number</label>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide">Phone Number</label>
                   <div className="relative">
-                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
                       name="phoneNumber"
                       type="tel"
@@ -125,7 +125,7 @@ export const UserAuthPage: React.FC = () => {
                       value={form.phoneNumber}
                       onChange={handleChange}
                       required={!isLoginMode}
-                      className="w-full h-11 pl-10 pr-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium shadow-sm"
+                      className="w-full h-11 pl-10 pr-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
                     />
                   </div>
                 </div>
@@ -133,11 +133,11 @@ export const UserAuthPage: React.FC = () => {
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 tracking-wide">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide">
                 Email Address
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input
                   name="email"
                   type="email"
@@ -145,18 +145,18 @@ export const UserAuthPage: React.FC = () => {
                   value={form.email}
                   onChange={handleChange}
                   required
-                  className="w-full h-11 pl-10 pr-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium shadow-sm"
+                  className="w-full h-11 pl-10 pr-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 tracking-wide flex items-center justify-between">
+              <label className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide flex items-center justify-between">
                 <span>Password</span>
-                {isLoginMode && <a href="#" className="text-[10px] text-emerald-600 hover:underline font-bold">Forgot?</a>}
+                {isLoginMode && <a href="#" className="text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold">Forgot?</a>}
               </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <input
                   name="password"
                   type={isHidden ? 'password' : 'text'}
@@ -164,12 +164,12 @@ export const UserAuthPage: React.FC = () => {
                   value={form.password}
                   onChange={handleChange}
                   required
-                  className="w-full h-11 pl-10 pr-10 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium shadow-sm"
+                  className="w-full h-11 pl-10 pr-10 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:bg-white dark:focus:bg-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all font-medium"
                 />
                 <button
                   type="button"
                   onClick={togglePasswordVisiblity}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-pointer"
                 >
                   {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -181,7 +181,7 @@ export const UserAuthPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -199,12 +199,12 @@ export const UserAuthPage: React.FC = () => {
           </form>
 
           {/* Toggle Form Mode */}
-          <div className="mt-10 text-center text-sm text-slate-500 font-medium">
+          <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
             {isLoginMode ? "Don't have an account?" : "Already have an account?"}{' '}
             <button
               type="button"
               onClick={handleToggleMode}
-              className="font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
+              className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline cursor-pointer transition-colors"
             >
               {isLoginMode ? 'Sign up now' : 'Sign in instead'}
             </button>

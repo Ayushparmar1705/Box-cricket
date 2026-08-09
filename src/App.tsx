@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then(module => ({ default: module.LoginPage })));
 const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'));
@@ -40,46 +41,48 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Toaster position="top-right" reverseOrder={false} />
-      <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center text-lg text-gray-500">Loading...</div>}>
-        <Routes>
-          {/* Admin Login */}
-          <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-          
-          {/* User Auth (Registration & Login) */}
-          <Route path="/user-auth" element={<PublicRoute><UserAuthPage /></PublicRoute>} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Toaster position="top-right" reverseOrder={false} />
+        <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center text-lg text-gray-500">Loading...</div>}>
+          <Routes>
+            {/* Admin Login */}
+            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+            
+            {/* User Auth (Registration & Login) */}
+            <Route path="/user-auth" element={<PublicRoute><UserAuthPage /></PublicRoute>} />
 
-          {/* Player App (Normal Users) */}
-          <Route path="/home" element={<ProtectedRoute><PlayerDashboardPage /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/home/discover" replace />} />
-            <Route path="discover" element={<PlayerOverview />} />
-            <Route path="profile" element={<PlayerProfile />} />
-            {/* Placeholder for bookings */}
-            <Route path="bookings" element={<div className="p-8 text-slate-500 font-bold">My Bookings coming soon...</div>} />
-          </Route>
+            {/* Player App (Normal Users) */}
+            <Route path="/home" element={<ProtectedRoute><PlayerDashboardPage /></ProtectedRoute>}>
+              <Route index element={<Navigate to="/home/discover" replace />} />
+              <Route path="discover" element={<PlayerOverview />} />
+              <Route path="profile" element={<PlayerProfile />} />
+              {/* Placeholder for bookings */}
+              <Route path="bookings" element={<div className="p-8 text-slate-500 font-bold">My Bookings coming soon...</div>} />
+            </Route>
 
-          {/* Dashboard layout with nested child routes — each is its own page */}
-          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
-            <Route index element={<Navigate to="/dashboard/overview" replace />} />
-            <Route path="overview" element={<MetricsOverview />} />
-            <Route path="owner-approvals" element={<OwnerApprovalModule />} />
-            <Route path="venues" element={<VenuesModule />} />
-            <Route path="courts" element={<CourtsModule />} />
-            <Route path="bookings" element={<BookingsModule />} />
-            <Route path="payments" element={<PaymentsModule />} />
-            <Route path="master-data" element={<MasterDataModule />} />
-            <Route path="users-staff" element={<UsersStaffModule />} />
-            <Route path="categories" element={<CategoryModule />} />
-            <Route path="cities" element={<CityModule />} />
-            <Route path="audit-logs" element={<AuditLogsModule />} />
-          </Route>
+            {/* Dashboard layout with nested child routes — each is its own page */}
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}>
+              <Route index element={<Navigate to="/dashboard/overview" replace />} />
+              <Route path="overview" element={<MetricsOverview />} />
+              <Route path="owner-approvals" element={<OwnerApprovalModule />} />
+              <Route path="venues" element={<VenuesModule />} />
+              <Route path="courts" element={<CourtsModule />} />
+              <Route path="bookings" element={<BookingsModule />} />
+              <Route path="payments" element={<PaymentsModule />} />
+              <Route path="master-data" element={<MasterDataModule />} />
+              <Route path="users-staff" element={<UsersStaffModule />} />
+              <Route path="categories" element={<CategoryModule />} />
+              <Route path="cities" element={<CityModule />} />
+              <Route path="audit-logs" element={<AuditLogsModule />} />
+            </Route>
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to={isAuthenticated() ? '/dashboard/overview' : '/login'} replace />} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to={isAuthenticated() ? '/dashboard/overview' : '/login'} replace />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

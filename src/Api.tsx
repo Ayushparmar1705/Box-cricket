@@ -13,6 +13,10 @@ const Api = {
     getCity: (status: string) => `http://localhost:3008/api/v1/city/${status}`,
     getCityById: (id: number) => `http://localhost:3008/api/v1/city-by-id/${id}`,
     updateCity: (id: number) => `http://localhost:3008/api/v1/update-city/${id}`,
+
+
+    // get all owner request with its documents
+    getOwnerRequest: "http://localhost:3006/api/v1/get-owner-request",
 }
 
 export default Api

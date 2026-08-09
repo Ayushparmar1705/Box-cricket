@@ -22,15 +22,15 @@ export default function DataTable<T>({
   emptyMessage = "No data found.",
 }: DataTableProps<T>) {
   return (
-    <div className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111827] shadow-sm">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
+            <tr className="bg-gray-50/50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800">
               {columns.map((column, index) => (
                 <th
                   key={index}
-                  className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center"
+                  className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 text-left"
                 >
                   {column.title}
                 </th>
@@ -38,10 +38,10 @@ export default function DataTable<T>({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
             {loading ? (
               <tr>
-                <td colSpan={columns.length || 1} className="py-10 px-6">
+                <td colSpan={columns.length || 1} className="py-12 px-6">
                   <Loadingbarcomponent
                     label="Loading data, please wait..."
                     subtext="Fetching latest records..."
@@ -52,11 +52,11 @@ export default function DataTable<T>({
               </tr>
             ) : values && values.length > 0 ? (
               values.map((row: any, rowIndex: number) => (
-                <tr className="hover:bg-slate-50/80 transition-colors w-full" key={rowIndex}>
+                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-colors w-full group" key={rowIndex}>
                   {columns.map((column, colIndex: number) => {
                     const fieldKey = column.key || column.id || '';
                     return (
-                      <td key={colIndex} className="p-5 text-center text-sm text-slate-700">
+                      <td key={colIndex} className="px-6 py-4 text-left text-sm text-gray-700 dark:text-gray-300 font-medium">
                         {column.render
                           ? column.render(row)
                           : fieldKey && row[fieldKey] !== undefined && row[fieldKey] !== null
@@ -69,7 +69,7 @@ export default function DataTable<T>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length || 1} className="py-12 px-6 text-center text-slate-400 font-medium">
+                <td colSpan={columns.length || 1} className="py-16 px-6 text-center text-gray-400 dark:text-gray-500 text-sm font-medium">
                   {emptyMessage}
                 </td>
               </tr>
