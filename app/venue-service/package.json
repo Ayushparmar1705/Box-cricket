@@ -1,7 +1,7 @@
 {
-  "name": "owner-request-service",
+  "name": "city-service",
   "version": "1.0.0",
-  "description": "This is owner request service",
+  "description": "This is category service",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,15 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.6",
+    "box-cricket-shared": "file:../shared",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^4.19.2",
-    "nodemailer": "^9.0.5",
-    "pg": "^8.12.0",
+    "express": "^5.2.1",
+    "pg": "^8.22.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
-    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   }
 }

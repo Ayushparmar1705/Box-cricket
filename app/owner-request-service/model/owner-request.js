@@ -1,7 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/config");
 
-const OwnerRequest = sequelize.define(
+
+const OwnerRequestModel = sequelize.define(
     "OwnerRequest",
     {
         id: {
@@ -83,4 +84,4 @@ const OwnerRequest = sequelize.define(
     }
 );
 
-module.exports = OwnerRequest;
+module.exports = OwnerRequestModel;

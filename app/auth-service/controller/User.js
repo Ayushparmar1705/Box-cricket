@@ -6,7 +6,7 @@ const userService = require("../service/User");
 async function register(req, res) {
     try {
         const { name, email, password, role, phoneNumber } = req.body;
-
+        console.log(name, email, password, role, phoneNumber);
         if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
@@ -78,8 +78,38 @@ async function getProfile(req, res) {
     }
 }
 
+/**
+ * Controller: Handle Update FCM Token HTTP Request
+ */
+async function updateFcmToken(req, res) {
+    try {
+        const { fcmToken } = req.body;
+        const userId = req.user ? req.user.id : req.body.userId;
+
+        if (!userId || !fcmToken) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID and FCM Token are required.",
+            });
+        }
+
+        await userService.updateFcmToken(userId, fcmToken);
+
+        return res.status(200).json({
+            success: true,
+            message: "FCM token updated successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+}
+
 module.exports = {
     register,
     login,
     getProfile,
+    updateFcmToken
 };

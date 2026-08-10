@@ -80,6 +80,7 @@ async function loginUser({ email, password }) {
 
     return {
         token,
+        user: userJson,
     };
 }
 
@@ -99,27 +100,8 @@ async function getUserById(userId) {
 }
 
 
-async function seedAdminUser() {
-    const adminEmail = "admin@gmail.com";
-    const password = "Admin@123";
-    const existingAdmin = await User.findOne({ where: { email: adminEmail } });
-    if (!existingAdmin) {
-        await User.create({
-            name: 'Admin',
-            email: adminEmail,
-            password: password,
-            role: 'Admin',
-            phoneNumber: '9876543210',
-            isActive: true,
-        });
-        console.log("[Seed] Admin user created successfully");
-    } else {
-        console.log("[Seed] Admin user already exists");
-    }
-}
 module.exports = {
     registerUser,
     loginUser,
     getUserById,
-    seedAdminUser
 };

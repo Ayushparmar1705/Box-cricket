@@ -1,8 +1,8 @@
 services:
   auth-service:
     build:
-      context: ./app/auth-service
-      dockerfile: Dockerfile
+      context: ./app
+      dockerfile: auth-service/Dockerfile
     container_name: auth-service
     ports:
       - "3001:3001"
@@ -21,8 +21,8 @@ services:
 
   api-docs-hub:
     build:
-      context: ./app/api-docs-hub
-      dockerfile: Dockerfile
+      context: ./app
+      dockerfile: api-docs-hub/Dockerfile
     container_name: api-docs-hub
     ports:
       - "3000:3000"
@@ -38,44 +38,110 @@ services:
 
   owner-request-service:
     build:
-      context: ./app/owner-request-service
-      dockerfile: Dockerfile
+      context: ./app
+      dockerfile: owner-request-service/Dockerfile
     container_name: owner-request-service
     ports:
       - "3006:3006"
     env_file:
-      - ./app/owner-request-service/.env
+      - path: ./app/owner-request-service/.env
+        required: false
     environment:
+      - PORT=3006
+      - NODE_ENV=production
       - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
     depends_on:
       - postgres
     restart: always
 
   owner-document-service:
     build:
-      context: ./app/owner-document-service
-      dockerfile: Dockerfile
+      context: ./app
+      dockerfile: owner-document-service/Dockerfile
     container_name: owner-document-service
     ports:
       - "3007:3007"
     env_file:
-      - ./app/owner-document-service/.env
+      - path: ./app/owner-document-service/.env
+        required: false
     environment:
+      - PORT=3007
+      - NODE_ENV=production
       - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
     depends_on:
       - postgres
     restart: always
+
   category-service:
     build:
-      context: ./app/category-service
-      dockerfile: Dockerfile
+      context: ./app
+      dockerfile: category-service/Dockerfile
     container_name: category-service
     ports:
       - "3002:3002"
     env_file:
-      - ./app/category-service/.env
+      - path: ./app/category-service/.env
+        required: false
     environment:
+      - PORT=3002
+      - NODE_ENV=production
       - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+    restart: always
+
+  city-service:
+    build:
+      context: ./app
+      dockerfile: city-service/Dockerfile
+    container_name: city-service
+    ports:
+      - "3008:3008"
+    env_file:
+      - path: ./app/city-service/.env
+        required: false
+    environment:
+      - PORT=3008
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+    restart: always
+
+  owner-basic-detail-service:
+    build:
+      context: ./app
+      dockerfile: owner-basic-detail-service/Dockerfile
+    container_name: owner-basic-detail-service
+    ports:
+      - "3003:3003"
+    env_file:
+      - path: ./app/owner-basic-detail-service/.env
+        required: false
+    environment:
+      - PORT=3003
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
     depends_on:
       - postgres
     restart: always

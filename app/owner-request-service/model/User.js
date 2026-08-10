@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/config");
-
 const User = sequelize.define("User", {
     id: {
         type: DataTypes.INTEGER,
@@ -15,6 +14,9 @@ const User = sequelize.define("User", {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
+        validate: {
+            isEmail: true,
+        },
     },
     password: {
         type: DataTypes.STRING,
@@ -27,15 +29,34 @@ const User = sequelize.define("User", {
     },
     phoneNumber: {
         type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    lastLogin: {
+        type: DataTypes.DATE,
         allowNull: true,
+    },
+    createdAt: {
+        type: DataTypes.DATE,
+        defaultValue: Date.now(),
+    },
+    updatedAt: {
+        type: DataTypes.DATE,
+        defaultValue: Date.now(),
     },
     isActive: {
         type: DataTypes.BOOLEAN,
+        allowNull: false,
         defaultValue: true,
     },
+
+    fcmToken: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+
+    }
 }, {
     timestamps: true,
     tableName: "users",
 });
-
 module.exports = User;

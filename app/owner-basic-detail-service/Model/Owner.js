@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/config");
-const User = sequelize.define("User", {
+const sequelize = require("../Config/config");
+
+const Owner = sequelize.define("Owner", {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -22,41 +23,26 @@ const User = sequelize.define("User", {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    role: {
-        type: DataTypes.ENUM("Admin", "Player", "Owner", "Staff"),
-        allowNull: false,
-        defaultValue: "Player",
-    },
     phoneNumber: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(15),
         allowNull: false,
         unique: true,
-    },
-    lastLogin: {
-        type: DataTypes.DATE,
-        allowNull: true,
+        validate: {
+            is: /^[0-9]{10,15}$/,
+        },
     },
     createdAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now(),
+        defaultValue: DataTypes.NOW,
     },
     updatedAt: {
         type: DataTypes.DATE,
-        defaultValue: Date.now(),
+        defaultValue: DataTypes.NOW,
     },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-        defaultValue: true,
-    },
-
-    fcmToken: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-
-    }
 }, {
     timestamps: true,
-    tableName: "users",
+    paranoid: true, // Soft deletes (adds deletedAt)
+    tableName: "owners",
 });
-module.exports = User;
+
+module.exports = Owner;
