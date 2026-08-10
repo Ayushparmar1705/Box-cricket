@@ -17,6 +17,7 @@ const Api = {
 
     // get all owner request with its documents
     getOwnerRequest: "http://localhost:3006/api/v1/get-owner-request",
+    approveOwnerRequest: (id: number) => `http://localhost:3006/api/v1/approve-request/${id}`,
 }
 
 export default Api

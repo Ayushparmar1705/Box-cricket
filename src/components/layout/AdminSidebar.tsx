@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Api from "../../Api"
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -48,6 +49,61 @@ export const AdminHeader: React.FC<{
   const { theme, toggleTheme } = useTheme();
   const label = PATH_LABELS[location.pathname] ?? 'Overview & Analytics';
 
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr);
+          const userId = userData?.data?.id || userData?.user?.id || userData?.id;
+          if (userId) {
+            const response = await fetch(Api.viewNotification, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId })
+            });
+            const result = await response.json();
+            if (result?.data) {
+              setNotifications(result.data);
+              setUnreadCount(result.data.filter((n: any) => !n.isRead).length);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+    fetchNotifications();
+
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const markAsRead = async (id: number) => {
+    try {
+      await fetch(Api.markNotificationAsRead(id), { method: 'PATCH' });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <header className="h-16 bg-white dark:bg-[#111827] border-b border-gray-200 dark:border-gray-800 px-6 flex items-center justify-between sticky top-0 z-30 transition-colors duration-300">
       <div className="flex items-center gap-4">
@@ -86,10 +142,49 @@ export const AdminHeader: React.FC<{
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors relative">
-            <Bell size={18} />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-[#111827]"></span>
-          </button>
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors relative"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white dark:ring-[#111827]"></span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg overflow-hidden z-50">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+                  <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">Notifications</h3>
+                  {unreadCount > 0 && <span className="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded-full">{unreadCount} unread</span>}
+                </div>
+                <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                  {notifications.length > 0 ? notifications.map(notif => (
+                    <div
+                      key={notif.id}
+                      className={`p-3 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors ${notif.isRead ? 'opacity-70' : 'bg-indigo-50/50 dark:bg-indigo-900/20'}`}
+                      onClick={() => !notif.isRead && markAsRead(notif.id)}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h4 className={`text-sm ${notif.isRead ? 'font-medium text-gray-700 dark:text-gray-300' : 'font-semibold text-gray-900 dark:text-gray-100'}`}>{notif.title}</h4>
+                        {!notif.isRead && <span className="w-2 h-2 bg-indigo-500 rounded-full mt-1.5 shrink-0"></span>}
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{notif.message}</p>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-2 block">
+                        {new Date(notif.createdAt || Date.now()).toLocaleString()}
+                      </span>
+                    </div>
+                  )) : (
+                    <div className="p-6 text-center text-sm text-gray-500 dark:text-gray-400 flex flex-col items-center">
+                      <Bell size={24} className="mb-2 text-gray-300 dark:text-gray-600" />
+                      No notifications found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Profile */}

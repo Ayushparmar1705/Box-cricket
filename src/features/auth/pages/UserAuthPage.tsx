@@ -26,9 +26,14 @@ export const UserAuthPage: React.FC = () => {
     handleToggleMode,
     togglePasswordVisiblity,
     isHidden
-  } = useUserAuth(() => {
-    // Navigate to a user dashboard or home page on successful login
-    navigate('/home');
+  } = useUserAuth((data) => {
+    // Navigate to respective dashboard based on user role
+    const role = data.data.user.role;
+    if (role === 'Owner') {
+      navigate('/owner/dashboard');
+    } else {
+      navigate('/home/discover');
+    }
   });
 
   return (

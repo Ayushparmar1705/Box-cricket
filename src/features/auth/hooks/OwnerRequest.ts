@@ -20,10 +20,28 @@ export default function OwnerRequest() {
             setLoading(false);
         }
     }
+
+
+    const approveOwnerRequest = async (id: number) => {
+        try {
+            setLoading(true);
+            const result = await OwnerRequestService.approveRequestService(id);
+            const data = await result.json();
+            if (result.ok) {
+                toast.success(data.message);
+                fetchData(); // Refresh the list
+            }
+        } catch (err) {
+            console.log(err);
+            toast.error(err);
+        } finally {
+            setLoading(false);
+        }
+    }
     useEffect(() => {
         fetchData();
     }, []);
 
-    return { result, loading };
+    return { result, loading, approveOwnerRequest };
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import UserAuthService from '../service/UserAuthService';
 
-export function useUserAuth(onSuccess: () => void) {
+export function useUserAuth(onSuccess: (data?: any) => void) {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [loading, setLoading] = useState(false);
   const [isHidden, setIsHidden] = useState(true);
@@ -37,8 +37,9 @@ export function useUserAuth(onSuccess: () => void) {
 
         if (response.ok || data.success) {
           toast.success(data.message || 'Login successful!');
+
           localStorage.setItem("user", JSON.stringify(data));
-          onSuccess();
+          onSuccess(data);
         } else {
           toast.error(data.message || 'Login failed. Please check your credentials.');
         }
@@ -52,7 +53,6 @@ export function useUserAuth(onSuccess: () => void) {
 
         const response = await UserAuthService.register(form);
         const data = await response.json();
-
         if (response.ok || data.success) {
           toast.success(data.message || 'Registration successful! You can now log in.');
           setIsLoginMode(true);

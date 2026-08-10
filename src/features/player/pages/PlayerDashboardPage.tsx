@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, LogOut, Home, CalendarCheck } from 'lucide-react';
-
 export const PlayerDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();

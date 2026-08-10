@@ -151,6 +151,7 @@ function DocumentModal({ row, onClose }: { row: any; onClose: () => void }) {
 /* ── Owner Approval Module ─────────────────────────────────── */
 export function OwnerApprovalModule() {
   const [selectedRow, setSelectedRow] = useState<any | null>(null);
+  const { loading, result, approveOwnerRequest } = OwnerRequest();
 
   const columns = [
     { id: 'businessName', title: 'Business Name' },
@@ -184,7 +185,9 @@ export function OwnerApprovalModule() {
             <FileText size={14} />
             Review
           </button>
-          <button className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-lg cursor-pointer transition-colors border border-emerald-200 dark:border-emerald-500/30">
+          <button onClick={() => {
+            approveOwnerRequest(row.id);
+          }} className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-lg cursor-pointer transition-colors border border-emerald-200 dark:border-emerald-500/30">
             Approve
           </button>
           <button className="px-3 py-1.5 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-semibold rounded-lg cursor-pointer transition-colors border border-rose-200 dark:border-rose-500/30">
@@ -195,10 +198,9 @@ export function OwnerApprovalModule() {
     },
   ];
 
-  const { loading, result } = OwnerRequest();
   useEffect(() => {
     console.log(result);
-  })
+  }, [result]);
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-10">

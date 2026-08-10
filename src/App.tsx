@@ -1,6 +1,6 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -12,6 +12,16 @@ const CourtsModule = lazy(() => import('./features/auth/pages/CourtsModule').the
 const BookingsModule = lazy(() => import('./features/auth/pages/BookingsModule').then(module => ({ default: module.BookingsModule })));
 const PaymentsModule = lazy(() => import('./features/auth/pages/PaymentsModule').then(module => ({ default: module.PaymentsModule })));
 const MasterDataModule = lazy(() => import('./features/auth/pages/MasterDataModule').then(module => ({ default: module.MasterDataModule })));
+
+// Owner Routes
+const OwnerDashboardPage = lazy(() => import('./features/owner/pages/OwnerDashboardPage').then(module => ({ default: module.OwnerDashboardPage })));
+const OwnerOverview = lazy(() => import('./features/owner/pages/OwnerOverview').then(module => ({ default: module.OwnerOverview })));
+const OwnerVenues = lazy(() => import('./features/owner/pages/OwnerVenues').then(module => ({ default: module.OwnerVenues })));
+const OwnerVenueForm = lazy(() => import('./features/owner/pages/OwnerVenueForm').then(module => ({ default: module.OwnerVenueForm })));
+const OwnerVenueDetails = lazy(() => import('./features/owner/pages/OwnerVenueDetails').then(module => ({ default: module.OwnerVenueDetails })));
+const OwnerCourts = lazy(() => import('./features/owner/pages/OwnerCourts').then(module => ({ default: module.OwnerCourts })));
+const OwnerBookings = lazy(() => import('./features/owner/pages/OwnerBookings').then(module => ({ default: module.OwnerBookings })));
+
 const UsersStaffModule = lazy(() => import('./features/auth/pages/UsersStaffModule').then(module => ({ default: module.UsersStaffModule })));
 const AuditLogsModule = lazy(() => import('./features/auth/pages/AuditLogsModule').then(module => ({ default: module.AuditLogsModule })));
 const CategoryModule = lazy(() => import('./features/auth/pages/CategoryModule'));
@@ -40,6 +50,12 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  useEffect(() => {
+    if (isAuthenticated()) {
+      // User is authenticated
+    }
+  }, []);
+
   return (
     <ThemeProvider>
       <BrowserRouter>
@@ -48,9 +64,22 @@ function App() {
           <Routes>
             {/* Admin Login */}
             <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-            
+
             {/* User Auth (Registration & Login) */}
             <Route path="/user-auth" element={<PublicRoute><UserAuthPage /></PublicRoute>} />
+
+            {/* Owner App */}
+            <Route path="/owner" element={<ProtectedRoute><OwnerDashboardPage /></ProtectedRoute>}>
+              <Route index element={<Navigate to="/owner/dashboard" replace />} />
+              <Route path="dashboard" element={<OwnerOverview />} />
+              <Route path="venues" element={<OwnerVenues />} />
+              <Route path="venues/create" element={<OwnerVenueForm />} />
+              <Route path="venues/:id" element={<OwnerVenueDetails />} />
+              <Route path="venues/:id/edit" element={<OwnerVenueForm />} />
+              <Route path="courts" element={<OwnerCourts />} />
+              <Route path="bookings" element={<OwnerBookings />} />
+              <Route path="analytics" element={<div className="p-8 text-slate-500 font-bold">Analytics coming soon...</div>} />
+            </Route>
 
             {/* Player App (Normal Users) */}
             <Route path="/home" element={<ProtectedRoute><PlayerDashboardPage /></ProtectedRoute>}>
