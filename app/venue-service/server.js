@@ -7,8 +7,10 @@ app.use(cors());
 
 const sequelize = require('./config/config');
 const cityRoutes = require('./Routes/City');
+const venueRoutes = require('./Routes/Venue');
 
 app.use('/api/v1', cityRoutes);
+app.use('/api/v1', venueRoutes);
 // Health check endpoint
 app.get("/health", (req, res) => {
     res.status(200).json({
@@ -18,7 +20,7 @@ app.get("/health", (req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-const PORT = process.env.PORT || 3008;
+const PORT = process.env.PORT || 3009;
 
 sequelize.sync()
     .then(() => {

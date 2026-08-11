@@ -124,6 +124,28 @@ services:
       - postgres
     restart: always
 
+  venue-service:
+    build:
+      context: ./app
+      dockerfile: venue-service/Dockerfile
+    container_name: venue-service
+    ports:
+      - "3009:3009"
+    env_file:
+      - path: ./app/venue-service/.env
+        required: false
+    environment:
+      - PORT=3009
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_cricket_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+    restart: always
+
   owner-basic-detail-service:
     build:
       context: ./app
