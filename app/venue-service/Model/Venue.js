@@ -6,14 +6,14 @@ const Venue = sequelize.define(
     {
         id: {
             type: DataTypes.INTEGER,
-            defaultValue: DataTypes.UUIDV4,
+            autoIncrement: true,
             primaryKey: true,
         },
         ownerId: {
             field: "owner_id",
             type: DataTypes.INTEGER,
             references: {
-                model: "user_accounts",
+                model: "users",
                 key: "id"
             },
             onUpdate: "CASCADE",

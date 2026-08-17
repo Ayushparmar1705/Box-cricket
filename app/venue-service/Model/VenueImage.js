@@ -12,7 +12,7 @@ const VenueImage = sequelize.define(
         },
         venueId: {
             field: "venue_id",
-            type: DataTypes.UUID,
+            type: DataTypes.INTEGER,
             allowNull: false,
             references: {
                 model: "venues", // or the Venue model

@@ -1,8 +1,8 @@
 FROM node:22-alpine
 WORKDIR /app
-COPY city-service/package.json city-service/package-lock.json* ./
+COPY venue-service/package.json venue-service/package-lock.json* ./
 COPY shared/ ../shared/
 RUN npm install
-COPY city-service/ .
-EXPOSE 3008
+COPY venue-service/ .
+EXPOSE 3009
 CMD [ "node", "server.js" ]

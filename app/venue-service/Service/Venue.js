@@ -40,5 +40,30 @@ const addVenue = async (data) => {
     }
 };
 
+const getActiveVenuesByOwnerId = async (ownerId) => {
+    try {
+        const venues = await Venue.findAll({
+            where: {
+                ownerId: ownerId,
+                status: "ACTIVE",
+                isActive: true
+            },
+            include: [
+                {
+                    model: VenueImage,
+                    as: "images"
+                }
+            ],
+            order: [["createdAt", "DESC"]]
+        });
+        return venues;
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Exporting using CommonJS (since your models use module.exports)
-module.exports = addVenue;
+module.exports = {
+    addVenue,
+    getActiveVenuesByOwnerId
+};
