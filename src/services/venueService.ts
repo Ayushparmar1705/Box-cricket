@@ -1,95 +1,134 @@
 import type { Venue } from '../types/venue';
+import Api from '../Api';
 
-// Mocked initial data
-const MOCK_VENUES: Venue[] = [
-  {
-    id: '1',
-    owner_id: '2',
-    city_id: 'mum_1',
-    venue_name: 'Premium Box Cricket Andheri',
-    description: 'A premium box cricket turf featuring high-quality artificial grass, floodlights, and professional scoreboards.',
-    address: 'Link Road, Andheri West',
-    contact_number: '9876543210',
-    email: 'contact@premiumboxandheri.com',
-    opening_time: '06:00:00',
-    closing_time: '23:59:00',
-    cancellation_policy: 'Strict 24 hour cancellation.',
-    status: 'ACTIVE',
-    average_rating: 4.8,
-    total_reviews: 124,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    cover_image: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&q=80&w=800',
-    amenities: ['Parking', 'Washroom', 'Floodlights', 'Drinking Water']
-  },
-  {
-    id: '2',
-    owner_id: '2',
-    city_id: 'mum_2',
-    venue_name: 'Bandra Turf Arena',
-    description: 'Spacious turf suitable for 6v6 matches. Located centrally in Bandra.',
-    address: 'Bandra Kurla Complex, Bandra East',
-    contact_number: '9876543211',
-    email: 'info@bandraturf.com',
-    opening_time: '05:00:00',
-    closing_time: '22:00:00',
-    cancellation_policy: 'Flexible 12 hour cancellation.',
-    status: 'ACTIVE',
-    average_rating: 4.5,
-    total_reviews: 89,
-    is_active: true,
-    created_at: new Date(Date.now() - 86400000 * 10).toISOString(),
-    updated_at: new Date().toISOString(),
-    cover_image: 'https://images.unsplash.com/photo-1588636734005-7f97fb5eddf0?auto=format&fit=crop&q=80&w=800',
-    amenities: ['Washroom', 'Floodlights', 'Cafeteria']
+const getStoredUserId = (): number | string | undefined => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const userData = JSON.parse(userStr);
+      return userData?.user?.id || userData?.data?.user?.id || userData?.data?.id || userData?.id;
+    } catch (e) {
+      console.error('Error parsing user data from localStorage', e);
+    }
   }
-];
+  return undefined;
+};
+
+const mapVenueData = (v: any): Venue => ({
+  ...v,
+  id: v.id,
+  owner_id: v.ownerId || v.owner_id,
+  city_id: v.cityId || v.city_id,
+  venue_name: v.venueName || v.venue_name,
+  description: v.description,
+  address: v.address,
+  latitude: v.latitude,
+  longitude: v.longitude,
+  google_map_link: v.googleMapLink || v.google_map_link,
+  contact_number: v.contactNumber || v.contact_number,
+  email: v.email,
+  opening_time: v.openingTime || v.opening_time,
+  closing_time: v.closingTime || v.closing_time,
+  cancellation_policy: v.cancellationPolicy || v.cancellation_policy,
+  status: v.status,
+  average_rating: Number(v.averageRating || v.average_rating || 0),
+  total_reviews: Number(v.totalReviews || v.total_reviews || 0),
+  is_active: v.isActive !== undefined ? v.isActive : v.is_active,
+  created_at: v.createdAt || v.created_at,
+  updated_at: v.updatedAt || v.updated_at,
+  cover_image: v.images?.find((img: any) => img.isCover)?.imageUrl || v.images?.[0]?.imageUrl || v.cover_image,
+  images: v.images?.map((img: any) => img.imageUrl) || [],
+  amenities: Array.isArray(v.venueAmenities) ? v.venueAmenities : (typeof v.venueAmenities === 'string' ? JSON.parse(v.venueAmenities || '[]') : [])
+});
 
 export const venueService = {
-  getVenues: async (): Promise<Venue[]> => {
-    // Simulating API call
-    return new Promise((resolve) => setTimeout(() => resolve(MOCK_VENUES), 800));
+  getVenuesByOwnerId: async (ownerId: number | string): Promise<Venue[]> => {
+    try {
+      const response = await fetch(Api.getVenuesByOwnerId(ownerId));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch venues');
+      }
+      const result = await response.json();
+      const rawVenues = Array.isArray(result.data) ? result.data : [];
+      return rawVenues.map(mapVenueData);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch venues');
+    }
   },
-  getVenueById: async (id: string): Promise<Venue> => {
-    return new Promise((resolve, reject) => {
+
+  getVenues: async (ownerId?: number | string): Promise<Venue[]> => {
+    const targetOwnerId = ownerId || getStoredUserId();
+    if (targetOwnerId) {
+      return venueService.getVenuesByOwnerId(targetOwnerId);
+    }
+    return [];
+  },
+
+  getVenueById: async (id: string | number): Promise<Venue> => {
+    try {
+      const venues = await venueService.getVenues();
+      const venue = venues.find(v => String(v.id) === String(id));
+      if (venue) return venue;
+      throw new Error('Venue not found');
+    } catch (error: any) {
+      throw new Error(error.message || 'Venue not found');
+    }
+  },
+
+  createVenue: async (data: Partial<Venue> & Record<string, any>): Promise<Venue> => {
+    try {
+      const ownerId = getStoredUserId() || 1;
+      const payload = {
+        venueName: data.venue_name || data.venueName,
+        description: data.description,
+        address: data.address,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        cityId: data.city_id || data.cityId,
+        contactNumber: data.contact_number || data.contactNumber,
+        email: data.email,
+        openingTime: data.opening_time || data.openingTime,
+        closingTime: data.closing_time || data.closingTime,
+        venueAmenities: data.Venue_amenities || data.venueAmenities,
+        cancellationPolicy: data.cancellation_policy || data.cancellationPolicy,
+        ownerId: ownerId
+      };
+
+      const response = await fetch(Api.addVenue, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create venue');
+      }
+      
+      const result = await response.json();
+      return result.data;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to create venue');
+    }
+  },
+
+  updateVenue: async (id: string | number, data: Partial<Venue>): Promise<Venue> => {
+    return new Promise((resolve) => {
       setTimeout(() => {
-        const venue = MOCK_VENUES.find(v => v.id === id);
-        if (venue) resolve(venue);
-        else reject(new Error('Venue not found'));
+        resolve({ ...data, id } as Venue);
       }, 500);
     });
   },
-  createVenue: async (data: Partial<Venue>): Promise<Venue> => {
+
+  deleteVenue: async (id: string | number): Promise<void> => {
     return new Promise((resolve) => {
       setTimeout(() => {
-        const newVenue = { ...data, id: String(Date.now()), is_active: true, status: 'ACTIVE' } as Venue;
-        MOCK_VENUES.push(newVenue);
-        resolve(newVenue);
-      }, 800);
-    });
-  },
-  updateVenue: async (id: string, data: Partial<Venue>): Promise<Venue> => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = MOCK_VENUES.findIndex(v => v.id === id);
-        if (index > -1) {
-          MOCK_VENUES[index] = { ...MOCK_VENUES[index], ...data, updated_at: new Date().toISOString() };
-          resolve(MOCK_VENUES[index]);
-        } else reject(new Error('Venue not found'));
-      }, 800);
-    });
-  },
-  deleteVenue: async (id: string): Promise<void> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = MOCK_VENUES.findIndex(v => v.id === id);
-        if (index > -1) {
-          MOCK_VENUES[index].is_active = false;
-          MOCK_VENUES[index].status = 'BLOCKED';
-        }
         resolve();
-      }, 800);
+      }, 500);
     });
   }
 };
+

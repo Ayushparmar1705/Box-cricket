@@ -2,7 +2,7 @@ import Api from "../../../Api"
 
 const Cityservice = {
     async addCity(cityName: string, stateName: string) {
-        const result = await fetch(Api.city, {
+        const result = await fetch(Api.getCity("all"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -18,9 +18,7 @@ const Cityservice = {
     },
 
     async deleteCity(id: number) {
-        const result = await fetch(`${Api.city}/${id}`, {
-            method: "DELETE",
-        });
+        const result = null;
         return result;
     },
 

@@ -37,11 +37,10 @@ export const VenuesModule: React.FC = () => {
               key={s}
               type="button"
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                statusFilter === s 
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100' 
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${statusFilter === s
+                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
+                }`}
             >
               {s}
             </button>
@@ -62,7 +61,7 @@ export const VenuesModule: React.FC = () => {
                   <Star size={12} fill="currentColor" /> {v.averageRating}
                 </div>
               </div>
-              
+
               <div className="p-5 flex flex-col gap-4">
                 <div>
                   <h3 className="font-bold text-gray-900 dark:text-gray-100 text-base">{v.venueName}</h3>
@@ -77,7 +76,7 @@ export const VenuesModule: React.FC = () => {
                   <div className="flex justify-between items-center"><strong className="text-gray-500 dark:text-gray-400">City</strong> <span className="text-gray-900 dark:text-gray-200 font-medium">{v.cityName}</span></div>
                   <div className="flex justify-between items-center"><strong className="text-gray-500 dark:text-gray-400">Hours</strong> <span className="text-gray-900 dark:text-gray-200 font-medium">{v.openingTime.slice(0, 5)} - {v.closingTime.slice(0, 5)}</span></div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-1.5">
                   {v.amenityNames.map((am) => (
                     <span key={am} className="text-[10px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700">{am}</span>
@@ -86,22 +85,20 @@ export const VenuesModule: React.FC = () => {
               </div>
 
               <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 flex items-center justify-between">
-                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  v.status === 'ACTIVE' 
-                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${v.status === 'ACTIVE'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                     : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                }`}>{v.status}</span>
+                  }`}>{v.status}</span>
 
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setSelectedVenue(v)} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer">View</button>
                   <button
                     type="button"
                     onClick={() => toggleVenueStatus(v.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
-                      v.status === 'ACTIVE' 
-                        ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400' 
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${v.status === 'ACTIVE'
+                        ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400'
                         : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                    }`}
+                      }`}
                   >
                     {v.status === 'ACTIVE' ? 'Block' : 'Unblock'}
                   </button>
@@ -119,7 +116,7 @@ export const VenuesModule: React.FC = () => {
               <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{selectedVenue.venueName}</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Detailed Venue Information</p>
             </div>
-            
+
             <div className="text-sm text-gray-700 dark:text-gray-300 flex flex-col gap-3">
               <div className="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-gray-800/50"><strong className="text-gray-500 dark:text-gray-400">Owner ID:</strong> <span className="font-mono">{selectedVenue.ownerId}</span></div>
               <div className="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-gray-800/50"><strong className="text-gray-500 dark:text-gray-400">City ID:</strong> <span>{selectedVenue.cityId} ({selectedVenue.cityName})</span></div>
@@ -127,7 +124,7 @@ export const VenuesModule: React.FC = () => {
               <div className="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-gray-800/50"><strong className="text-gray-500 dark:text-gray-400">Email:</strong> <span>{selectedVenue.email}</span></div>
               <div className="flex justify-between items-center pb-2 border-b border-gray-50 dark:border-gray-800/50"><strong className="text-gray-500 dark:text-gray-400">Phone:</strong> <span>{selectedVenue.contactNumber}</span></div>
               <div className="flex flex-col gap-1 pb-2 border-b border-gray-50 dark:border-gray-800/50">
-                <strong className="text-gray-500 dark:text-gray-400">Cancellation Policy:</strong> 
+                <strong className="text-gray-500 dark:text-gray-400">Cancellation Policy:</strong>
                 <span className="text-xs leading-relaxed">{selectedVenue.cancellationPolicy}</span>
               </div>
               <div className="flex justify-between items-center pt-1">
@@ -135,7 +132,7 @@ export const VenuesModule: React.FC = () => {
                 <a href={selectedVenue.googleMapLink} target="_blank" rel="noreferrer" className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium flex items-center gap-1"><ExternalLink size={14} /> Open in Maps</a>
               </div>
             </div>
-            
+
             <button type="button" className="mt-4 w-full py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 rounded-xl text-sm font-bold transition-colors cursor-pointer" onClick={() => setSelectedVenue(null)}>Close Details</button>
           </div>
         </div>

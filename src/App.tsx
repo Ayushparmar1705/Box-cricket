@@ -17,8 +17,6 @@ const MasterDataModule = lazy(() => import('./features/auth/pages/MasterDataModu
 const OwnerDashboardPage = lazy(() => import('./features/owner/pages/OwnerDashboardPage').then(module => ({ default: module.OwnerDashboardPage })));
 const OwnerOverview = lazy(() => import('./features/owner/pages/OwnerOverview').then(module => ({ default: module.OwnerOverview })));
 const OwnerVenues = lazy(() => import('./features/owner/pages/OwnerVenues').then(module => ({ default: module.OwnerVenues })));
-const OwnerVenueForm = lazy(() => import('./features/owner/pages/OwnerVenueForm').then(module => ({ default: module.OwnerVenueForm })));
-const OwnerVenueDetails = lazy(() => import('./features/owner/pages/OwnerVenueDetails').then(module => ({ default: module.OwnerVenueDetails })));
 const OwnerCourts = lazy(() => import('./features/owner/pages/OwnerCourts').then(module => ({ default: module.OwnerCourts })));
 const OwnerBookings = lazy(() => import('./features/owner/pages/OwnerBookings').then(module => ({ default: module.OwnerBookings })));
 
@@ -39,14 +37,38 @@ function isAuthenticated() {
   return Boolean(localStorage.getItem('bc_admin_session') || localStorage.getItem('user'));
 }
 
+/* Get appropriate redirect path based on user role */
+function getRedirectPath() {
+  if (localStorage.getItem('bc_admin_session')) {
+    return '/dashboard/overview';
+  }
+
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      const userData = JSON.parse(userStr);
+      const user = userData?.user || userData?.data?.user || userData;
+
+      if (user?.role === 'Owner') {
+        return '/owner/dashboard';
+      } else if (user?.role === 'Player' || user?.role === 'User') {
+        return '/home/discover';
+      }
+    } catch (e) {
+      console.error('Error parsing user data from localStorage', e);
+    }
+  }
+  return '/dashboard/overview'; // Fallback
+}
+
 /* Redirect to login if not authenticated */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
-/* Redirect to dashboard if already logged in */
+/* Redirect to appropriate dashboard if already logged in */
 function PublicRoute({ children }: { children: React.ReactNode }) {
-  return isAuthenticated() ? <Navigate to="/dashboard/overview" replace /> : <>{children}</>;
+  return isAuthenticated() ? <Navigate to={getRedirectPath()} replace /> : <>{children}</>;
 }
 
 function App() {
@@ -73,9 +95,6 @@ function App() {
               <Route index element={<Navigate to="/owner/dashboard" replace />} />
               <Route path="dashboard" element={<OwnerOverview />} />
               <Route path="venues" element={<OwnerVenues />} />
-              <Route path="venues/create" element={<OwnerVenueForm />} />
-              <Route path="venues/:id" element={<OwnerVenueDetails />} />
-              <Route path="venues/:id/edit" element={<OwnerVenueForm />} />
               <Route path="courts" element={<OwnerCourts />} />
               <Route path="bookings" element={<OwnerBookings />} />
               <Route path="analytics" element={<div className="p-8 text-slate-500 font-bold">Analytics coming soon...</div>} />
@@ -107,7 +126,7 @@ function App() {
             </Route>
 
             {/* Catch-all */}
-            <Route path="*" element={<Navigate to={isAuthenticated() ? '/dashboard/overview' : '/login'} replace />} />
+            <Route path="*" element={<Navigate to={isAuthenticated() ? getRedirectPath() : '/login'} replace />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

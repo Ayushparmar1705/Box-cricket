@@ -2,12 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { venueService } from '../services/venueService';
 import type { Venue } from '../types/venue';
 
-export const useVenues = () => {
+export const useVenues = (ownerId?: string | number) => {
   return useQuery({
-    queryKey: ['venues'],
-    queryFn: venueService.getVenues,
+    queryKey: ['venues', ownerId || 'default'],
+    queryFn: () => venueService.getVenues(ownerId),
   });
 };
+
 
 export const useVenue = (id: string) => {
   return useQuery({

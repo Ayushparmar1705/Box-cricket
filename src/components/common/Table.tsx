@@ -37,8 +37,8 @@ export function Table<T>({ data, columns, keyExtractor, emptyMessage = "No data 
               </tr>
             ) : (
               data.map((item) => (
-                <tr 
-                  key={keyExtractor(item)} 
+                <tr
+                  key={keyExtractor(item)}
                   onClick={() => onRowClick?.(item)}
                   className={`hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
                 >

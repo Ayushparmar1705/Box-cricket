@@ -1,7 +1,8 @@
 import { Plus, Trash2, Edit2 } from 'lucide-react';
 import useCity from '../hooks/useCity';
 import AddModal from '../../dashboard/components/AddModel';
-import DataTable from '../../../components/common/Table/DataTable';
+import { CommonTable } from '../../../components/common/CommonTable';
+import type { Column } from '../../../types/table.types';
 import StatusFilter from '../../../components/common/Filter/StatusFilter';
 
 // ── City Page ───────────────────────────────────────────
@@ -25,24 +26,24 @@ export default function CityModule() {
         editingId
     } = useCity();
 
-    const columns = [
+    const columns: Column<any>[] = [
         {
-            id: 'name',
-            title: 'City Name',
+            key: 'name',
+            label: 'City Name',
             render: (row: any) => (
                 <div className="font-semibold text-gray-900 dark:text-gray-100">{row.name}</div>
             )
         },
         {
-            id: 'state',
-            title: 'State',
+            key: 'state',
+            label: 'State',
             render: (row: any) => (
                 <div className="text-gray-600 dark:text-gray-400 font-medium">{row.state}</div>
             )
         },
         {
-            id: 'status',
-            title: 'Status',
+            key: 'status',
+            label: 'Status',
             render: (row: any) => {
                 const isActive = !row.deletedAt;
                 return (
@@ -59,8 +60,8 @@ export default function CityModule() {
             },
         },
         {
-            id: 'actions',
-            title: 'Actions',
+            key: 'actions',
+            label: 'Actions',
             render: (row: any) => {
                 const isActive = !row.deletedAt;
                 return isActive ? (
@@ -129,9 +130,9 @@ export default function CityModule() {
             </div>
 
             {/* Common DataTable Component */}
-            <DataTable
+            <CommonTable
                 columns={columns}
-                values={result}
+                data={result}
                 loading={false}
                 emptyMessage="No cities found. Click 'Add City' to create one."
             />
