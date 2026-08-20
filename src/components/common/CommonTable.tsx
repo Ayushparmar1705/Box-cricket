@@ -1,4 +1,3 @@
-import React from 'react';
 import { Loader2, Edit, Trash2, Eye } from 'lucide-react';
 import type { CommonTableProps } from '../../types/table.types';
 import { Pagination } from './Pagination';

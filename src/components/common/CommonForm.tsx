@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { CommonFormProps, FormField } from '../../types/form.types';
-import LocationPicker from '../LocationPicker';
+import MapPicker from '../../features/owner/components/MapPicker';
 
 export function CommonForm<T>({
   fields,
@@ -145,12 +145,15 @@ export function CommonForm<T>({
       case 'location':
         return (
           <div className="w-full mt-2 border rounded-xl overflow-hidden border-slate-200 dark:border-slate-700">
-            <LocationPicker
-              latitude={(formData as any).latitude || null}
-              longitude={(formData as any).longitude || null}
-              onLocationChange={(lat, lng) => {
-                handleChange('latitude', lat);
-                handleChange('longitude', lng);
+            <MapPicker
+              initialLat={(formData as any).latitude || 23.0225}
+              initialLng={(formData as any).longitude || 72.5714}
+              onLocationChange={(loc) => {
+                handleChange('latitude', loc.latitude);
+                handleChange('longitude', loc.longitude);
+                if (loc.address && !(formData as any).address) {
+                  handleChange('address', loc.address);
+                }
               }}
             />
           </div>

@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster, toast } from 'react-hot-toast';
+import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -13,18 +13,17 @@ const BookingsModule = lazy(() => import('./features/auth/pages/BookingsModule')
 const PaymentsModule = lazy(() => import('./features/auth/pages/PaymentsModule').then(module => ({ default: module.PaymentsModule })));
 const MasterDataModule = lazy(() => import('./features/auth/pages/MasterDataModule').then(module => ({ default: module.MasterDataModule })));
 
-// Owner Routes
-const OwnerDashboardPage = lazy(() => import('./features/owner/pages/OwnerDashboardPage').then(module => ({ default: module.OwnerDashboardPage })));
-const OwnerOverview = lazy(() => import('./features/owner/pages/OwnerOverview').then(module => ({ default: module.OwnerOverview })));
-const OwnerVenues = lazy(() => import('./features/owner/pages/OwnerVenues').then(module => ({ default: module.OwnerVenues })));
-const OwnerCourts = lazy(() => import('./features/owner/pages/OwnerCourts').then(module => ({ default: module.OwnerCourts })));
-const OwnerBookings = lazy(() => import('./features/owner/pages/OwnerBookings').then(module => ({ default: module.OwnerBookings })));
-
 const UsersStaffModule = lazy(() => import('./features/auth/pages/UsersStaffModule').then(module => ({ default: module.UsersStaffModule })));
 const AuditLogsModule = lazy(() => import('./features/auth/pages/AuditLogsModule').then(module => ({ default: module.AuditLogsModule })));
 const CategoryModule = lazy(() => import('./features/auth/pages/CategoryModule'));
 const CityModule = lazy(() => import('./features/auth/pages/CityModule'));
 const UserAuthPage = lazy(() => import('./features/auth/pages/UserAuthPage').then(module => ({ default: module.UserAuthPage })));
+
+// Owner Routes
+const OwnerDashboardPage = lazy(() => import('./features/owner/pages/OwnerDashboardPage').then(module => ({ default: module.OwnerDashboardPage })));
+const OwnerDashboard = lazy(() => import('./features/owner/pages/OwnerDashboard').then(module => ({ default: module.OwnerDashboard })));
+const OwnerVenues = lazy(() => import('./features/owner/pages/OwnerVenues').then(module => ({ default: module.OwnerVenues })));
+const OwnerCourts = lazy(() => import('./features/owner/pages/OwnerCourts').then(module => ({ default: module.OwnerCourts })));
 
 // Player Routes
 const PlayerDashboardPage = lazy(() => import('./features/player/pages/PlayerDashboardPage').then(module => ({ default: module.PlayerDashboardPage })));
@@ -47,7 +46,7 @@ function getRedirectPath() {
   if (userStr) {
     try {
       const userData = JSON.parse(userStr);
-      const user = userData?.user || userData?.data?.user || userData;
+      const user = userData?.user || userData?.data?.user || userData?.data || userData;
 
       if (user?.role === 'Owner') {
         return '/owner/dashboard';
@@ -93,11 +92,9 @@ function App() {
             {/* Owner App */}
             <Route path="/owner" element={<ProtectedRoute><OwnerDashboardPage /></ProtectedRoute>}>
               <Route index element={<Navigate to="/owner/dashboard" replace />} />
-              <Route path="dashboard" element={<OwnerOverview />} />
+              <Route path="dashboard" element={<OwnerDashboard />} />
               <Route path="venues" element={<OwnerVenues />} />
               <Route path="courts" element={<OwnerCourts />} />
-              <Route path="bookings" element={<OwnerBookings />} />
-              <Route path="analytics" element={<div className="p-8 text-slate-500 font-bold">Analytics coming soon...</div>} />
             </Route>
 
             {/* Player App (Normal Users) */}

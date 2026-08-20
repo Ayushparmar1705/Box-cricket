@@ -1,190 +1,141 @@
-import React, { useState } from 'react';
-import { MapPin, Plus, Loader2 } from 'lucide-react';
-import { useVenues, useCreateVenue, useUpdateVenue, useDeleteVenue } from '../../../hooks/useVenues';
+// ── React & Lucide Icons ──────────────────────────────────────────────────────
+import React from 'react';
+import { Plus, RefreshCw } from 'lucide-react';
+
+// ── Custom Hooks & Shared Components ──────────────────────────────────────────
+import { useVenue } from '../hook/useVenue';
+import { CommonTable } from '../../../components/common/CommonTable';
 import { CommonModal } from '../../../components/common/CommonModal';
 import { CommonForm } from '../../../components/common/CommonForm';
-import { CommonTable } from '../../../components/common/CommonTable';
-import type { FormField } from '../../../types/form.types';
-import toast from 'react-hot-toast';
-import Cityservice from '../../auth/service/Cityservice';
+import { DeleteConfirmationModal } from '../../../components/common/DeleteConfirmationModal';
 
-export const OwnerVenues = () => {
-  const userStr = localStorage.getItem('user');
-  let ownerId: string | number | undefined;
-  if (userStr) {
-    try {
-      const userData = JSON.parse(userStr);
-      ownerId = userData?.user?.id || userData?.data?.user?.id || userData?.data?.id || userData?.id;
-    } catch (e) {
-      console.error('Error reading user data from localStorage', e);
-    }
-  }
+// ── Types ─────────────────────────────────────────────────────────────────────
+import type { Venue } from '../../../types/venue';
 
-  const { data: venuesData, isLoading } = useVenues(ownerId);
-  const { mutateAsync: createVenue } = useCreateVenue();
-  const { mutateAsync: updateVenue } = useUpdateVenue();
-  const { mutateAsync: deleteVenue } = useDeleteVenue();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVenue, setSelectedVenue] = useState<any>(null);
-  const [searchValue, setSearchValue] = useState('');
-  const [cities, setCities] = useState<{label: string, value: any}[]>([]);
-
-  React.useEffect(() => {
-    const fetchCities = async () => {
-      try {
-        const response = await Cityservice.getCity('ACTIVE');
-        const data = await response.json();
-        if (data?.data && Array.isArray(data.data)) {
-          setCities(data.data.map((c: any) => ({ label: c.name, value: c.id })));
-        }
-      } catch (error) {
-        console.error("Failed to fetch cities", error);
-      }
-    };
-    fetchCities();
-  }, []);
-
-  // Extract venues array (assuming API might wrap it or return directly)
-  const venues = Array.isArray(venuesData) ? venuesData : venuesData?.data || [];
-  
-  const filteredVenues = venues.filter((v: any) => 
-    (v.venue_name || v.venueName || '').toLowerCase().includes(searchValue.toLowerCase()) ||
-    (v.address || '').toLowerCase().includes(searchValue.toLowerCase())
-  );
-
-  const handleOpenModal = (venue?: any) => {
-    setSelectedVenue(venue || null);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setSelectedVenue(null);
-    setIsModalOpen(false);
-  };
-
-  const handleSubmit = async (formData: any) => {
-    try {
-      if (selectedVenue) {
-        await updateVenue({ id: selectedVenue.id, data: formData });
-        toast.success("Venue updated successfully");
-      } else {
-        await createVenue(formData);
-        toast.success("Venue created successfully");
-      }
-      handleCloseModal();
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
-    }
-  };
-
-  const handleDelete = async (venue: any) => {
-    const venueName = venue.venue_name || venue.venueName || "this venue";
-    if (window.confirm(`Are you sure you want to delete ${venueName}?`)) {
-      try {
-        await deleteVenue(venue.id);
-        toast.success("Venue deleted successfully");
-      } catch (error: any) {
-        toast.error("Failed to delete venue");
-      }
-    }
-  };
-
-  const columns = [
-    {
-      key: 'venue_name',
-      label: 'Venue Name',
-      render: (v: any) => (
-        <div className="font-semibold text-slate-900 dark:text-slate-100">{v.venue_name || v.venueName}</div>
-      )
-    },
-    {
-      key: 'address',
-      label: 'Location',
-      render: (v: any) => (
-        <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300">
-          <MapPin size={14} className="text-slate-400" />
-          <span className="truncate max-w-[200px]">{v.address}</span>
-        </div>
-      )
-    },
-    {
-      key: 'contact_number',
-      label: 'Contact',
-      render: (v: any) => <span>{v.contact_number || v.contactNumber || '-'}</span>
-    },
-    {
-      key: 'email',
-      label: 'Email',
-      render: (v: any) => <span>{v.email || '-'}</span>
-    }
-  ];
-
-
-  const formFields: FormField<any>[] = [
-    { name: 'venue_name', label: 'Venue Name', type: 'text', required: true, placeholder: 'e.g. Premium Box Cricket' },
-    { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Describe your venue...' },
-    { name: 'address', label: 'Full Address', type: 'text', required: true, placeholder: 'Venue address...' },
-    { name: 'location', label: 'Location Map', type: 'location', halfWidth: false },
-    { name: 'city_id', label: 'City', type: 'select', required: true, halfWidth: true, options: cities },
-    { name: 'contact_number', label: 'Contact Phone', type: 'text', required: true, halfWidth: true, placeholder: '+91 XXXXXXXXXX' },
-    { name: 'email', label: 'Contact Email', type: 'email', required: true, halfWidth: true, placeholder: 'hello@venue.com' },
-    { name: 'opening_time', label: 'Opening Time', type: 'time', required: true, halfWidth: true },
-    { name: 'closing_time', label: 'Closing Time', type: 'time', required: true, halfWidth: true },
-    { name: 'Venue_amenities', label: 'Amenities (JSON format)', type: 'text', placeholder: 'e.g. ["WiFi", "Parking"]' },
-    { name: 'cancellation_policy', label: 'Cancellation Policy', type: 'textarea', placeholder: 'Describe your cancellation rules...' },
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center p-12 text-slate-400">
-        <Loader2 size={32} className="animate-spin" />
-      </div>
-    );
-  }
+/**
+ * OwnerVenues - React Page Component for Owners to manage their Box Cricket Venues.
+ * 
+ * Design for Freshers:
+ * - We fetch states & handlers from the `useVenue()` hook (Lines 11-33).
+ * - The JSX layout is divided into 4 clear sections:
+ *   1. Header (with statistics and "Add New Venue" action button)
+ *   2. Main Venues Data Grid/Table
+ *   3. Pop-up form modal for Adding or Editing venue profiles
+ *   4. Pop-up dialog to confirm deletion of venues
+ */
+export const OwnerVenues: React.FC = () => {
+  // Destructure (extract) everything we need from our custom useVenue hook
+  const {
+    venues,
+    filteredVenues,
+    loading,
+    submitting,
+    refreshVenues,
+    searchTerm,
+    setSearchTerm,
+    columns,
+    formFields,
+    initialFormValues,
+    isModalOpen,
+    selectedVenue,
+    handleOpenAdd,
+    handleOpenEdit,
+    handleCloseModal,
+    handleFormSubmit,
+    deleteModalOpen,
+    venueToDelete,
+    handleOpenDelete,
+    handleCloseDeleteModal,
+    handleConfirmDelete,
+  } = useVenue();
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">Venues</h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Manage your sports venues and facilities.</p>
+    <div className="space-y-6 animate-in fade-in duration-300 pb-10">
+      
+      {/* ── 1. Page Header Section ────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+              My Venues
+            </h1>
+            {/* Total counter pill */}
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              {venues.length} Total
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Manage your sports venues, operating schedules, and ground locations.
+          </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus size={18} />
-          Add Venue
-        </button>
+
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-3">
+          {/* Refresh Button */}
+          <button
+            onClick={refreshVenues}
+            disabled={loading}
+            className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Refresh list"
+          >
+            <RefreshCw size={17} className={loading ? 'animate-spin' : ''} />
+          </button>
+
+          {/* Add New Venue Action Button */}
+          <button
+            onClick={handleOpenAdd}
+            className="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-sm px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer whitespace-nowrap"
+          >
+            <Plus size={18} />
+            Add New Venue
+          </button>
+        </div>
       </div>
 
-      <CommonTable
+      {/* ── 2. Data Table Section ─────────────────────────────────────────── */}
+      {/* Renders filtered venues inside our custom reusable data table component */}
+      <CommonTable<Venue>
         data={filteredVenues}
         columns={columns}
-        keyExtractor={(item) => item.id}
-        emptyMessage="No venues found."
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
+        keyExtractor={(item) => String(item.id)}
+        loading={loading}
+        emptyMessage="No venues found. Click 'Add New Venue' to list your sports arena."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
         searchPlaceholder="Search venues by name or address..."
-        onEdit={(venue) => handleOpenModal(venue)}
-        onDelete={(venue) => handleDelete(venue)}
+        onEdit={handleOpenEdit}
+        onDelete={handleOpenDelete}
       />
 
+      {/* ── 3. Add / Edit Pop-up Form Modal ──────────────────────────────── */}
+      {/* Appears when clicking 'Add' or 'Edit' on a venue profile */}
       <CommonModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title={selectedVenue ? 'Edit Venue' : 'Add New Venue'}
+        title={selectedVenue ? 'Edit Venue' : 'Add New Venue'} // Update header title dynamically
+        maxWidth="max-w-3xl"
       >
         <CommonForm
           fields={formFields}
-          initialValues={selectedVenue || { opening_time: '06:00', closing_time: '23:00' }}
-          onSubmit={handleSubmit}
-          onCancel={handleCloseModal}
+          initialValues={initialFormValues}
           mode={selectedVenue ? 'edit' : 'add'}
-          submitLabel={selectedVenue ? 'Save Changes' : 'Create Venue'}
+          onSubmit={handleFormSubmit}
+          onCancel={handleCloseModal}
+          submitLabel={selectedVenue ? 'Update Venue' : 'Create Venue'} // Dynamic submit button label
         />
       </CommonModal>
+
+      {/* ── 4. Delete Confirmation Dialog ─────────────────────────────────── */}
+      {/* Prompts the user to confirm before removing a venue profile */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        itemName={venueToDelete?.venue_name || 'this venue'}
+        loading={submitting}
+      />
     </div>
   );
 };
+
+export default OwnerVenues;

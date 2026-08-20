@@ -27,9 +27,8 @@ export const UserAuthPage: React.FC = () => {
     togglePasswordVisiblity,
     isHidden
   } = useUserAuth((data) => {
-    // Navigate to respective dashboard based on user role
-    const role = data.data.user.role;
-    if (role === 'Owner') {
+    const user = data?.data?.user || data?.user || data?.data;
+    if (user?.role === 'Owner') {
       navigate('/owner/dashboard');
     } else {
       navigate('/home/discover');

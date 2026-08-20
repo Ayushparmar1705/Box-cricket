@@ -123,7 +123,7 @@ export const venueService = {
     });
   },
 
-  deleteVenue: async (id: string | number): Promise<void> => {
+  deleteVenue: async (_id: string | number): Promise<void> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve();
