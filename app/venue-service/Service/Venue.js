@@ -8,6 +8,11 @@ const addVenue = async (data) => {
     const transaction = await sequelize.transaction();
 
     try {
+        // Auto-generate Google Map Link if not already provided
+        if (!data.googleMapLink && data.latitude && data.longitude) {
+            data.googleMapLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+        }
+
         // Step 1: Save the basic venue details in the database
         // We pass { transaction } so Sequelize knows this is part of our safe transaction
         const newVenue = await Venue.create(data, { transaction: transaction });

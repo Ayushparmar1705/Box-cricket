@@ -77,8 +77,8 @@ const Venue = sequelize.define(
             type: DataTypes.TEXT,
         },
         status: {
-            type: DataTypes.ENUM("PENDING", "ACTIVE", "BLOCKED"),
-            defaultValue: "PENDING",
+            type: DataTypes.ENUM("ACTIVE", "INACTIVE"),
+            defaultValue: "ACTIVE",
         },
         averageRating: {
             field: "average_rating",
