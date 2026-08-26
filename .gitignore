@@ -1,0 +1,31 @@
+# IDE and Editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# Build and Output directories (Java / Maven)
+**/target/
+**/*.class
+**/*.war
+**/*.ear
+**/*.jar
+
+# Log files
+*.log
+**/logs/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Docker / Compose local states
+.docker/
+docker-compose.override.yml

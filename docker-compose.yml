@@ -1,197 +1,93 @@
 services:
+
+  mysql:
+    image: 'mysql:latest'
+    environment:
+      - 'MYSQL_DATABASE=box_cricket_db'
+      - 'MYSQL_ROOT_PASSWORD=Ayush#2004'
+    ports:
+      - '3309:3306' # MySQL (host:3309 → container:3306)
+
+  # ─────────────────────────────────────────────
+  # ADMINER - MySQL GUI (browser-based)
+  # Open: http://localhost:8888
+  # ─────────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    ports:
+      - '8888:8080'
+    depends_on:
+      - mysql
+    environment:
+      - ADMINER_DEFAULT_SERVER=mysql
+
+  # ─────────────────────────────────────────────
+  # AUTH SERVICE
+  # localhost:3030  →  container:8080
+  # ─────────────────────────────────────────────
   auth-service:
     build:
-      context: ./app
-      dockerfile: auth-service/Dockerfile
-    container_name: auth-service
+      context: ./auth-service
+      dockerfile: Dockerfile
     ports:
-      - "3001:3001"
-    environment:
-      - PORT=3001
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - JWT_SECRET=box_cricket_super_secret_key_2026
+      - '3030:8080'
     depends_on:
-      - postgres
-    restart: always
-
-  api-docs-hub:
-    build:
-      context: ./app
-      dockerfile: api-docs-hub/Dockerfile
-    container_name: api-docs-hub
-    ports:
-      - "3000:3000"
+      - mysql
     environment:
-      - PORT=3000
-      - NODE_ENV=production
-      - AUTH_SERVICE_SPEC_URL=http://localhost:3001/api-docs-json
-      - OWNER_REQUEST_SERVICE_SPEC_URL=http://localhost:3006/api-docs-json
-    depends_on:
-      - auth-service
-      - owner-request-service
-    restart: always
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
 
+  # ─────────────────────────────────────────────
+  # OWNER REQUEST SERVICE
+  # localhost:3031  →  container:8081
+  # ─────────────────────────────────────────────
   owner-request-service:
     build:
-      context: ./app
-      dockerfile: owner-request-service/Dockerfile
-    container_name: owner-request-service
+      context: ./owner-request-service
+      dockerfile: Dockerfile
     ports:
-      - "3006:3006"
-    env_file:
-      - path: ./app/owner-request-service/.env
-        required: false
-    environment:
-      - PORT=3006
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - '3031:8081'
     depends_on:
-      - postgres
-    restart: always
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
 
+  # ─────────────────────────────────────────────
+  # OWNER DOCUMENT SERVICE
+  # localhost:3032  →  container:8082
+  # ─────────────────────────────────────────────
   owner-document-service:
     build:
-      context: ./app
-      dockerfile: owner-document-service/Dockerfile
-    container_name: owner-document-service
+      context: ./owner-document-service/owner-document-service
+      dockerfile: Dockerfile
     ports:
-      - "3007:3007"
-    env_file:
-      - path: ./app/owner-document-service/.env
-        required: false
-    environment:
-      - PORT=3007
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - '3032:8082'
     depends_on:
-      - postgres
-    restart: always
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - CLOUDINARY_CLOUD_NAME=dblawr8bm
+      - CLOUDINARY_API_KEY=914174568446748
+      - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
 
-  category-service:
+  # ─────────────────────────────────────────────
+  # COUNTRY SERVICE
+  # localhost:3033  →  container:8083
+  # ─────────────────────────────────────────────
+  country-service:
     build:
-      context: ./app
-      dockerfile: category-service/Dockerfile
-    container_name: category-service
+      context: ./country-service
+      dockerfile: Dockerfile
     ports:
-      - "3002:3002"
-    env_file:
-      - path: ./app/category-service/.env
-        required: false
-    environment:
-      - PORT=3002
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - '3033:8083'
     depends_on:
-      - postgres
-    restart: always
-
-  city-service:
-    build:
-      context: ./app
-      dockerfile: city-service/Dockerfile
-    container_name: city-service
-    ports:
-      - "3008:3008"
-    env_file:
-      - path: ./app/city-service/.env
-        required: false
+      - mysql
     environment:
-      - PORT=3008
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-    depends_on:
-      - postgres
-    restart: always
-
-  venue-service:
-    build:
-      context: ./app
-      dockerfile: venue-service/Dockerfile
-    container_name: venue-service
-    ports:
-      - "3009:3009"
-    env_file:
-      - path: ./app/venue-service/.env
-        required: false
-    environment:
-      - PORT=3009
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-    depends_on:
-      - postgres
-    restart: always
-
-  owner-basic-detail-service:
-    build:
-      context: ./app
-      dockerfile: owner-basic-detail-service/Dockerfile
-    container_name: owner-basic-detail-service
-    ports:
-      - "3003:3003"
-    env_file:
-      - path: ./app/owner-basic-detail-service/.env
-        required: false
-    environment:
-      - PORT=3003
-      - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=box_cricket_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-    depends_on:
-      - postgres
-    restart: always
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: box-cricket-postgres
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=box_cricket_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: always
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: box-cricket-pgadmin
-    ports:
-      - "5050:80"
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@boxcricket.app
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    depends_on:
-      - postgres
-    restart: always
-
-volumes:
-  postgres_data:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
