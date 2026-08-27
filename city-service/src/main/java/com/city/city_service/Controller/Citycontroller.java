@@ -1,32 +1,28 @@
-package com.country.country_service.Controller;
+package com.city.city_service.Controller;
 
-import com.country.country_service.Model.Countrymodel;
-import com.country.country_service.Service.Countryservice;
+import com.city.city_service.Entity.Citymodel;
+import com.city.city_service.Service.Cityservice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/country")
-public class Countrycontroller {
-    private Countryservice service;
+@RequestMapping("/api/city")
+public class Citycontroller {
+    private final Cityservice service;
 
-    public Countrycontroller(Countryservice service) {
+    public Citycontroller(Cityservice service) {
         this.service = service;
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> Createcountry(@RequestBody(required = false) Countrymodel obj) {
+    public ResponseEntity<?> Createcity(
+            @RequestBody(required = false) Citymodel obj,
+            @RequestHeader(value = "Authorization", required = false) String token) {
         if (obj == null) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");
@@ -36,21 +32,26 @@ public class Countrycontroller {
         if (obj.getName() == null || obj.getName().trim().isEmpty()) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");
-            response.put("message", "Country name is required");
+            response.put("message", "City name is required");
             return ResponseEntity.badRequest().body(response);
         }
-        if (obj.getCode() == null || obj.getCode().trim().isEmpty()) {
+        if (obj.getStateId() == null) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");
-            response.put("message", "Country code is required");
+            response.put("message", "State ID is required");
             return ResponseEntity.badRequest().body(response);
         }
         try {
-            service.Addcountry(obj);
+            service.Addcity(obj, token);
             Map<String, String> response = new HashMap<>();
             response.put("status", "200");
-            response.put("message", "Country added succesfully");
+            response.put("message", "City added successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "400");
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -59,10 +60,10 @@ public class Countrycontroller {
     }
 
     @GetMapping("/view")
-    public ResponseEntity<List<Countrymodel>> viewcountry() {
+    public ResponseEntity<List<Citymodel>> viewcity() {
         try {
-            List<Countrymodel> list = service.viewCountry();
-            return ResponseEntity.status(HttpStatus.CREATED).body(list);
+            List<Citymodel> list = service.viewCity();
+            return ResponseEntity.status(HttpStatus.OK).body(list);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -70,7 +71,7 @@ public class Countrycontroller {
         }
     }
 
-    @PutMapping("/country-status/{id}")
+    @PutMapping("/city-status/{id}")
     public ResponseEntity<?> changeStatus(@PathVariable Long id) {
         try {
             int result = service.changeStatus(id);
@@ -79,16 +80,6 @@ public class Countrycontroller {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Internal Server Error");
-        }
-    }
-
-    @GetMapping("/get-by-id/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
-        try {
-            Countrymodel result = service.getCountryById(id);
-            return ResponseEntity.status(HttpStatus.OK).body(result);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal Server Error");
         }
     }
 }

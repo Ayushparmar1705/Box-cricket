@@ -37,4 +37,9 @@ public class Countryservice {
             return 1;
         }
     }
+
+    public Countrymodel getCountryById(Long id){
+        Countrymodel result = rep.findById(id).orElseThrow(()->new RuntimeException("Country not found with id: "+id));
+        return result;
+    }
 }

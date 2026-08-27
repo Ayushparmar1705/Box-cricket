@@ -91,3 +91,40 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+
+  # ─────────────────────────────────────────────
+  # STATE SERVICE
+  # localhost:3034  →  container:8084
+  # ─────────────────────────────────────────────
+  state-service:
+    build:
+      context: ./state-service
+      dockerfile: Dockerfile
+    ports:
+      - '3034:8084'
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SERVICES_COUNTRY_SERVICE_URL=http://country-service:8083
+
+  # ─────────────────────────────────────────────
+  # CITY SERVICE
+  # localhost:3035  →  container:8085
+  # ─────────────────────────────────────────────
+  city-service:
+    build:
+      context: ./city-service
+      dockerfile: Dockerfile
+    ports:
+      - '3035:8085'
+    depends_on:
+      - mysql
+      - state-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SERVICES_STATE_SERVICE_URL=http://state-service:8084
