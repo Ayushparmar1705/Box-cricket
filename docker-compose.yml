@@ -128,3 +128,21 @@ services:
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
       - SERVICES_STATE_SERVICE_URL=http://state-service:8084
+
+  # ─────────────────────────────────────────────
+  # CATEGORY SERVICE
+  # localhost:3036  →  container:8086
+  # ─────────────────────────────────────────────
+  category-service:
+    build:
+      context: ./category-service
+      dockerfile: Dockerfile
+    ports:
+      - '3036:8086'
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+

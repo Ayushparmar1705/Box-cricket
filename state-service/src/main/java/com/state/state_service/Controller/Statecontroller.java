@@ -5,6 +5,8 @@ import com.state.state_service.Service.Stateservice;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +22,16 @@ public class Statecontroller {
 
     @PostMapping("/create")
     public ResponseEntity<?> Createstate(
-            @RequestBody(required = false) Statemodel obj,
+            @Valid @RequestBody(required = false) Statemodel obj,
+            BindingResult bindingResult,
             @RequestHeader(value = "Authorization", required = false) String token) {
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        }
         if (obj == null) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");

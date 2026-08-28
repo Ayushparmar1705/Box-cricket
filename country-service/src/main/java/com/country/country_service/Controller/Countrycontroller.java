@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,25 +28,17 @@ public class Countrycontroller {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> Createcountry(@RequestBody(required = false) Countrymodel obj) {
-        if (obj == null) {
-            Map<String, String> response = new HashMap<>();
-            response.put("status", "400");
-            response.put("message", "Request body is missing");
-            return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<?> Createcountry(
+            @Valid @RequestBody(required = false) Countrymodel obj,
+            BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            bindingResult.getFieldErrors().forEach(error -> {
+                errors.put(error.getField(), error.getDefaultMessage());
+            });
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
         }
-        if (obj.getName() == null || obj.getName().trim().isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("status", "400");
-            response.put("message", "Country name is required");
-            return ResponseEntity.badRequest().body(response);
-        }
-        if (obj.getCode() == null || obj.getCode().trim().isEmpty()) {
-            Map<String, String> response = new HashMap<>();
-            response.put("status", "400");
-            response.put("message", "Country code is required");
-            return ResponseEntity.badRequest().body(response);
-        }
+
         try {
             service.Addcountry(obj);
             Map<String, String> response = new HashMap<>();
