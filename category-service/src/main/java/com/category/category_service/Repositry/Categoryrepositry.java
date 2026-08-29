@@ -11,4 +11,5 @@ import com.category.category_service.Entity.Categoryentity;
 public interface Categoryrepositry extends JpaRepository<Categoryentity, Integer> {
     @Query("SELECT COUNT(c) > 0 FROM Categoryentity c WHERE c.category_name = :name")
     boolean existsByName(@Param("name") String name);
+
 }

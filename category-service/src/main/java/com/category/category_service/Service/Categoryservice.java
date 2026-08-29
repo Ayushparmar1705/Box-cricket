@@ -31,4 +31,10 @@ public class Categoryservice {
             return null;
         }
     }
+
+    public Categoryentity categoryStatus(int id, String status) {
+        Categoryentity result = rep.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
+        result.setActive("Active".equalsIgnoreCase(status));
+        return rep.save(result);
+    }
 }
