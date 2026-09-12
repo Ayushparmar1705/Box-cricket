@@ -1,7 +1,6 @@
 package com.venue_service.venue_service.dto.request;
 
-import java.security.Timestamp;
-
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,10 +15,20 @@ import lombok.ToString;
 @Builder
 @ToString
 public class AmenitiesRequestdto {
-    private int id;
-    private String name;
-    private boolean is_active;
-    private Timestamp created_at;
-    private Timestamp updated_at;
 
+    private Integer id;
+
+    private String name;
+
+    @JsonProperty("is_active")
+    @Builder.Default
+    private Boolean isActive = true;
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

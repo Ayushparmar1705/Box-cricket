@@ -4,7 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.venue_service.venue_service.Entity.Venueentity;
 import com.venue_service.venue_service.Repositry.Venuerepositry;
-import com.venue_service.venue_service.dto.request.Requestdto;
+import com.venue_service.venue_service.dto.request.VenueRequestdto;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +18,7 @@ public class Venueservice {
 
 	private final Venuerepositry rep;
 	private final Cloudinary cloudinary;
+
 	public Venueservice(Venuerepositry rep, Cloudinary cloudinary) {
 		this.rep = rep;
 		this.cloudinary = cloudinary;
@@ -33,7 +34,7 @@ public class Venueservice {
 		}
 	}
 
-	public Venueentity addVenue(Requestdto obj, MultipartFile imageFile) {
+	public Venueentity addVenue(VenueRequestdto obj, MultipartFile imageFile) {
 		boolean isExists = rep.existsByVenueName(obj.getVenueName());
 		if (isExists) {
 			throw new RuntimeException("The venue already exists");
@@ -43,15 +44,17 @@ public class Venueservice {
 			String imageUrl = uploadImage(imageFile);
 			obj.setImageUrl(imageUrl);
 		}
-		Venueentity venue = new Venueentity(obj.getOwnerId(),obj.getCityId(),obj.getVenueName(),obj.getAddress(),obj.getLongitude(),obj.getLatitude(),obj.getGoogleMapLink(),obj.getContactNumber(),obj.getEmail(),obj.getOpeningTime(),obj.getClosingTime(),obj.getCancellationPolicy(),obj.getImageUrl());
+		Venueentity venue = new Venueentity(obj.getOwnerId(), obj.getCityId(), obj.getVenueName(), obj.getAddress(),
+				obj.getLongitude(), obj.getLatitude(), obj.getGoogleMapLink(), obj.getContactNumber(), obj.getEmail(),
+				obj.getOpeningTime(), obj.getClosingTime(), obj.getCancellationPolicy(), obj.getImageUrl());
 		return rep.save(venue);
 	}
-	public List<Venueentity> viewVenues(Boolean isActive){
+
+	public List<Venueentity> viewVenues(Boolean isActive) {
 		return rep.findByIsActive(isActive);
 	}
 
-
-	public Venueentity updateVenue(int id, Requestdto obj, MultipartFile imageFile) {
+	public Venueentity updateVenue(int id, VenueRequestdto obj, MultipartFile imageFile) {
 		Venueentity venue = rep.findById(id)
 				.orElseThrow(() -> new RuntimeException("Venue not found with id: " + id));
 

@@ -15,7 +15,7 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @ToString
-public class Requestdto {
+public class VenueRequestdto {
 
     @NotNull(message = "Owner ID is required")
     @Positive(message = "Owner ID must be a positive number")
