@@ -76,58 +76,23 @@ services:
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
 
   # ─────────────────────────────────────────────
-  # COUNTRY SERVICE
-  # localhost:3033  →  container:8083
-  # ─────────────────────────────────────────────
-  country-service:
-    build:
-      context: ./country-service
-      dockerfile: Dockerfile
-    ports:
-      - '3033:8083'
-    depends_on:
-      - mysql
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
-
-  # ─────────────────────────────────────────────
-  # STATE SERVICE
-  # localhost:3034  →  container:8084
-  # ─────────────────────────────────────────────
-  state-service:
-    build:
-      context: ./state-service
-      dockerfile: Dockerfile
-    ports:
-      - '3034:8084'
-    depends_on:
-      - mysql
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
-      - SERVICES_COUNTRY_SERVICE_URL=http://country-service:8083
-
-  # ─────────────────────────────────────────────
-  # CITY SERVICE
+  # LOCATION SERVICE (Countries, States, Cities)
   # localhost:3035  →  container:8085
   # ─────────────────────────────────────────────
-  city-service:
+  location-service:
     build:
-      context: ./city-service
+      context: ./location-service
       dockerfile: Dockerfile
     ports:
       - '3035:8085'
+      - '3033:8085'
+      - '3034:8085'
     depends_on:
       - mysql
-      - state-service
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
-      - SERVICES_STATE_SERVICE_URL=http://state-service:8084
 
   # ─────────────────────────────────────────────
   # CATEGORY SERVICE
@@ -145,4 +110,25 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+
+  # ─────────────────────────────────────────────
+  # VENUE SERVICE
+  # localhost:3037  →  container:8087
+  # ─────────────────────────────────────────────
+  venue-service:
+    build:
+      context: ./venue-service
+      dockerfile: Dockerfile
+    ports:
+      - '3037:8087'
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - CLOUDINARY_CLOUD_NAME=dblawr8bm
+      - CLOUDINARY_API_KEY=914174568446748
+      - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
+
 

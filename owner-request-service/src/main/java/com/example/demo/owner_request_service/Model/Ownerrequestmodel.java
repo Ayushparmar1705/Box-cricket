@@ -83,7 +83,7 @@ public class Ownerrequestmodel {
         return gstNumber;
     }
 
-    public void setGstNumber(String gstNumber) {
+    public void setGstNumber(String gstNumber) { 
         this.gstNumber = gstNumber;
     }
 
