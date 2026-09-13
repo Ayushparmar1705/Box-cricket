@@ -1,6 +1,7 @@
 package com.venue_service.venue_service.Entity;
 
 import java.util.Date;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,13 +14,13 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "venue_amenities")
-@Getter
+@Data
+@Table(name = "venueamenities")
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor

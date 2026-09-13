@@ -1,5 +1,7 @@
 package com.venue_service.venue_service.Service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.venue_service.venue_service.Entity.Venueamenities;
@@ -31,5 +33,16 @@ public class Amenitiesservice {
         amenities.setActive(obj.getIsActive() != null ? obj.getIsActive() : true);
 
         return rep.save(amenities);
+    }
+
+    public List<Venueamenities> getAmenities(boolean status){
+        return  rep.findByIsActive(status);
+    }
+
+    public Venueamenities changeStatus(int id, boolean status) {
+        Venueamenities amenity = rep.findById(id)
+                .orElseThrow(() -> new RuntimeException("Amenity not found with id: " + id));
+        amenity.setActive(status);
+        return rep.save(amenity);
     }
 }
