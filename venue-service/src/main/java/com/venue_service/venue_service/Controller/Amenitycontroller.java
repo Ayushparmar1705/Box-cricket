@@ -80,4 +80,20 @@ public class Venueamenitiescontroller {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapResult);
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> getAmenityById(@PathVariable int id) {
+        Map<String, Object> mapResult = new HashMap<>();
+        try {
+            Venueamenities amenity = service.getAmenityById(id);
+            mapResult.put("status", HttpStatus.OK.value());
+            mapResult.put("message", "Amenity fetched successfully");
+            mapResult.put("data", amenity);
+            return ResponseEntity.status(HttpStatus.OK).body(mapResult);
+        } catch (Exception error) {
+            mapResult.put("status", HttpStatus.NOT_FOUND.value());
+            mapResult.put("message", error.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapResult);
+        }
+    }
 }
