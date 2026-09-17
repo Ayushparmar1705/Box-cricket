@@ -131,4 +131,19 @@ services:
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
 
-
+  # ─────────────────────────────────────────────
+  # COURT SERVICE
+  # localhost:3038  →  container:8088
+  # ─────────────────────────────────────────────
+  court-service:
+    build:
+      context: ./court-service
+      dockerfile: Dockerfile
+    ports:
+      - '3038:8088'
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004

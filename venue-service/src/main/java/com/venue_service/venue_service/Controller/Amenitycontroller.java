@@ -8,17 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.venue_service.venue_service.Entity.Venueamenities;
-import com.venue_service.venue_service.Service.Amenitiesservice;
+import com.venue_service.venue_service.Entity.Amenityentity;
+import com.venue_service.venue_service.Service.Amenityservice;
 import com.venue_service.venue_service.dto.request.AmenitiesRequestdto;
 
 @RestController
 @RequestMapping("/api/amenities")
-public class Venueamenitiescontroller {
+public class Amenitycontroller {
 
-    private final Amenitiesservice service;
+    private final Amenityservice service;
 
-    public Venueamenitiescontroller(Amenitiesservice service) {
+    public Amenitycontroller(Amenityservice service) {
         this.service = service;
     }
 
@@ -27,7 +27,7 @@ public class Venueamenitiescontroller {
         Map<String, Object> mapResult = new HashMap<>();
         try {
             System.out.println("Venue amenities controller object = " + obj.toString());
-            Venueamenities created = service.createAmenity(obj);
+            Amenityentity created = service.createAmenity(obj);
             mapResult.put("status", HttpStatus.CREATED.value());
             mapResult.put("message", "Amenity created successfully");
             mapResult.put("data", created);
@@ -44,7 +44,7 @@ public class Venueamenitiescontroller {
     public ResponseEntity<Map<String, Object>> viewVenue(@RequestParam(defaultValue = "true") boolean status) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
-            List<Venueamenities> list = service.getAmenities(status);
+            List<Amenityentity> list = service.getAmenities(status);
             System.out.println("list : " + list);
             if (list.isEmpty()) {
                 mapResult.put("status", HttpStatus.NOT_FOUND.value());
@@ -69,7 +69,7 @@ public class Venueamenitiescontroller {
             @PathVariable boolean status) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
-            Venueamenities updated = service.changeStatus(id, status);
+            Amenityentity updated = service.changeStatus(id, status);
             mapResult.put("status", HttpStatus.OK.value());
             mapResult.put("message", "Amenity " + (status ? "activated" : "deactivated") + " successfully");
             mapResult.put("data", updated);
@@ -85,7 +85,7 @@ public class Venueamenitiescontroller {
     public ResponseEntity<Map<String, Object>> getAmenityById(@PathVariable int id) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
-            Venueamenities amenity = service.getAmenityById(id);
+            Amenityentity amenity = service.getAmenityById(id);
             mapResult.put("status", HttpStatus.OK.value());
             mapResult.put("message", "Amenity fetched successfully");
             mapResult.put("data", amenity);

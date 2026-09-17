@@ -25,7 +25,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Venueamenities {
+public class Amenityentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,7 +47,7 @@ public class Venueamenities {
     @Column(name = "updated_at")
     private Date updatedAt;
 
-    public Venueamenities(String name, boolean isActive) {
+    public Amenityentity(String name, boolean isActive) {
         this.name = name;
         this.isActive = isActive;
     }

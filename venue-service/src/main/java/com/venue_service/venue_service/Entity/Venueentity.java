@@ -12,7 +12,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
 
 
 @Table(name = "venues")
@@ -89,6 +92,13 @@ public class Venueentity {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
+    @ManyToMany
+    @JoinTable(
+        name = "venue_amenities",
+        joinColumns = @JoinColumn(name = "venue_id"),
+        inverseJoinColumns = @JoinColumn(name = "amenity_id")
+    )
+    private List<Amenityentity> amenities = new ArrayList<>();
 
     public Venueentity( int ownerId, int cityId, String venueName, String address, double longitude, double latitude, String googleMapLink, String contactNumber, String email, LocalTime openingTime, LocalTime closingTime, String cancellationPolicy, String imageUrl) {
 
@@ -104,7 +114,6 @@ public class Venueentity {
         this.openingTime = openingTime;
         this.closingTime = closingTime;
         this.cancellationPolicy = cancellationPolicy;
-
         this.imageUrl = imageUrl;
     }
 }

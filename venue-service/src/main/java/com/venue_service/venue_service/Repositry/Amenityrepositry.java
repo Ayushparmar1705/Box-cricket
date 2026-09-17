@@ -4,14 +4,14 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.venue_service.venue_service.Entity.Venueamenities;
+import com.venue_service.venue_service.Entity.Amenityentity;
 
-public interface Amenities extends JpaRepository<Venueamenities, Integer> {
+public interface Amenityrepositry extends JpaRepository<Amenityentity, Integer> {
     boolean existsByName(String name);
 
     boolean existsByNameIgnoreCase(String name);
 
     boolean existsByNameIgnoreCaseAndIdNot(String name, int id);
 
-    List<Venueamenities> findByIsActive(boolean isActive);
+    List<Amenityentity> findByIsActive(boolean isActive);
 }
