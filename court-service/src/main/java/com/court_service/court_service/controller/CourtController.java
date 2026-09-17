@@ -1,7 +1,10 @@
 package com.court_service.court_service.controller;
 
+import com.court_service.court_service.audit.Auditable;
 import com.court_service.court_service.dto.request.CourtRequestDto;
 import com.court_service.court_service.dto.response.CourtResponseDto;
+import com.court_service.court_service.model.AuditLogEntity;
+import com.court_service.court_service.service.AuditService;
 import com.court_service.court_service.service.CourtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,12 +22,14 @@ import java.util.UUID;
 public class CourtController {
 
     private final CourtService courtService;
+    private final AuditService auditService;
 
-    public CourtController(CourtService courtService) {
+    public CourtController(CourtService courtService, AuditService auditService) {
         this.courtService = courtService;
+        this.auditService = auditService;
     }
 
-    @PostMapping({"", "/create"})
+    @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createCourt(
             @Valid @RequestBody CourtRequestDto request,
             BindingResult bindingResult) {
@@ -86,7 +91,7 @@ public class CourtController {
         }
     }
 
-    @GetMapping({"", "/view"})
+    @GetMapping("/view")
     public ResponseEntity<Map<String, Object>> getAllCourts(
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
@@ -102,4 +107,5 @@ public class CourtController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
 }
