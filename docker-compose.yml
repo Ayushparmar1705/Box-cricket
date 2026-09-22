@@ -147,3 +147,24 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - CLOUDINARY_CLOUD_NAME=dblawr8bm
+      - CLOUDINARY_API_KEY=914174568446748
+      - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
+
+  # ─────────────────────────────────────────────
+  # STAFF SERVICE
+  # localhost:3039  →  container:8089
+  # ─────────────────────────────────────────────
+  staff-service:
+    build:
+      context: ./staff-service
+      dockerfile: Dockerfile
+    ports:
+      - '3039:8089'
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+

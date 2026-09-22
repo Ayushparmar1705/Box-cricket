@@ -56,14 +56,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             List<SimpleGrantedAuthority> authorities = List.of(
-                    new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())
-            );
+                    new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     subject,
                     null,
-                    authorities
-            );
+                    authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 

@@ -17,4 +17,8 @@ public interface CourtRepository extends JpaRepository<CourtEntity, UUID> {
     List<CourtEntity> findByVenueIdAndIsActive(Integer venueId, boolean isActive);
 
     List<CourtEntity> findByIsActive(boolean isActive);
+
+    boolean existsByCourtNameAndVenueId(String courtName, Integer venueId);
+
+    boolean existsByCourtNameAndVenueIdAndIdNot(String courtName, Integer venueId, UUID id);
 }

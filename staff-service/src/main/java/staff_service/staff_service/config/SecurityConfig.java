@@ -1,4 +1,4 @@
-package com.court_service.court_service.config;
+package staff_service.staff_service.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,8 +23,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {
-                })
+                .cors(cors -> {})
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. Allow preflight CORS
@@ -33,14 +32,15 @@ public class SecurityConfig {
                         // 2. Allow Spring error dispatch
                         .requestMatchers("/error").permitAll()
 
-                        // 3. Allow public GET for viewing courts
-                        .requestMatchers(HttpMethod.GET, "/api/court/**", "/api/courts/**").permitAll()
+                        // 3. Allow public GET for viewing staff
+                        .requestMatchers(HttpMethod.GET, "/api/staff/**").permitAll()
 
-                        // 4. Require SUPER_ADMIN, OWNER, or ADMIN for creating/modifying courts
-                        .requestMatchers("/api/court/**", "/api/courts/**").hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
+                        // 4. Require SUPER_ADMIN, OWNER, or ADMIN for creating/modifying staff
+                        .requestMatchers("/api/staff/**").hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
 
                         // 5. All other endpoints require authentication
-                        .anyRequest().authenticated())
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
