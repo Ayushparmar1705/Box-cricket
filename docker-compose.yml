@@ -37,7 +37,6 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
-
   # ─────────────────────────────────────────────
   # OWNER REQUEST SERVICE
   # localhost:3031  →  container:8081
@@ -85,8 +84,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3035:8085'
-      - '3033:8085'
-      - '3034:8085'
     depends_on:
       - mysql
     environment:
@@ -167,4 +164,3 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=Ayush#2004
-

@@ -7,6 +7,9 @@ import com.location.location_service.Entity.Stateentity;
 import com.location.location_service.Service.Cityservice;
 import com.location.location_service.Service.Stateservice;
 import jakarta.validation.Valid;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -67,11 +70,13 @@ public class Statecontroller {
         }
     }
 
-    @GetMapping({"/", "/view"})
+    @GetMapping({ "/", "/view" })
     public ResponseEntity<List<StateResponseDto>> viewState(
-            @RequestParam(value = "isActive", required = false) Boolean isActive) {
+            @RequestParam(value = "isActive", required = false) Boolean isActive,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         try {
-            List<Stateentity> list = service.viewState(isActive);
+            Pageable pageable = PageRequest.of(page, size);
+            List<Stateentity> list = service.viewState(isActive, pageable);
             List<StateResponseDto> result = list.stream()
                     .map(s -> service.mapToResponseDto(s, false))
                     .collect(Collectors.toList());

@@ -7,6 +7,8 @@ import com.location.location_service.Entity.Countryentity;
 import com.location.location_service.Entity.Stateentity;
 import com.location.location_service.Repositry.Countryrepositry;
 import com.location.location_service.Repositry.Staterepositry;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,8 @@ public class Stateservice {
                 .orElseThrow(() -> new RuntimeException("Country not found with id: " + dto.getCountryId()));
 
         if (stateRep.existsByNameAndCountryId(dto.getName(), dto.getCountryId())) {
-            throw new RuntimeException("State with name '" + dto.getName() + "' already exists in " + country.getName());
+            throw new RuntimeException(
+                    "State with name '" + dto.getName() + "' already exists in " + country.getName());
         }
 
         Stateentity state = new Stateentity();
@@ -39,15 +42,11 @@ public class Stateservice {
         return stateRep.save(state);
     }
 
-    public List<Stateentity> viewState() {
-        return stateRep.findAll();
-    }
 
-    public List<Stateentity> viewState(Boolean isActive) {
-        if (isActive != null) {
-            return stateRep.findByActive(isActive);
-        }
-        return stateRep.findAll();
+
+    public List<Stateentity> viewState(Boolean isActive, Pageable pageable) {
+     
+        return stateRep.findByActive(isActive, pageable);
     }
 
     public List<Stateentity> getStatesByCountryId(Long countryId, Boolean isActive) {

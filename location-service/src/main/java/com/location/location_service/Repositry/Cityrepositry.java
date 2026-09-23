@@ -23,7 +23,8 @@ public interface Cityrepositry extends JpaRepository<Cityentity, Long> {
     boolean existsByNameAndStateId(@Param("name") String name, @Param("stateId") Long stateId);
 
     @Query("SELECT COUNT(c) > 0 FROM Cityentity c WHERE LOWER(c.name) = LOWER(:name) AND c.state.id = :stateId AND c.id <> :id")
-    boolean existsByNameAndStateIdAndIdNot(@Param("name") String name, @Param("stateId") Long stateId, @Param("id") Long id);
+    boolean existsByNameAndStateIdAndIdNot(@Param("name") String name, @Param("stateId") Long stateId,
+            @Param("id") Long id);
 
     @Query("SELECT c FROM Cityentity c JOIN FETCH c.state s JOIN FETCH s.country WHERE c.id = :id")
     Cityentity findByIdWithHierarchy(@Param("id") Long id);
