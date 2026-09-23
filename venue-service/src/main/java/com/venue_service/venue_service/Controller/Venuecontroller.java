@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.venue_service.venue_service.dto.request.VenueRequestdto;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -63,10 +66,12 @@ public class Venuecontroller {
     }
 
     @GetMapping("/view")
-    public ResponseEntity<Map<String, Object>> getVenue(@RequestParam String isActive) {
+    public ResponseEntity<Map<String, Object>> getVenue(@RequestParam String isActive,
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
-            List<Venueentity> result = service.viewVenues(Boolean.parseBoolean(isActive));
+            Pageable pageable = PageRequest.of(page, size);
+            List<Venueentity> result = service.viewVenues(Boolean.parseBoolean(isActive), pageable);
 
             mapResult.put("status", 201);
             mapResult.put("message", result);

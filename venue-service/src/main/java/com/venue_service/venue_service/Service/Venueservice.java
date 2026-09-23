@@ -5,6 +5,8 @@ import com.cloudinary.utils.ObjectUtils;
 import com.venue_service.venue_service.Entity.Venueentity;
 import com.venue_service.venue_service.Repositry.Venuerepositry;
 import com.venue_service.venue_service.dto.request.VenueRequestdto;
+
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,8 +52,8 @@ public class Venueservice {
 		return rep.save(venue);
 	}
 
-	public List<Venueentity> viewVenues(Boolean isActive) {
-		return rep.findByIsActive(isActive);
+	public List<Venueentity> viewVenues(Boolean isActive, Pageable pageable) {
+		return rep.findByIsActive(isActive, pageable);
 	}
 
 	public Venueentity updateVenue(int id, VenueRequestdto obj, MultipartFile imageFile) {
