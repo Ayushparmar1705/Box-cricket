@@ -2,6 +2,8 @@ package com.example.demo.auth_service.service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 
@@ -14,42 +16,42 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY =
-            "my-super-secret-key-my-super-secret-key-123456";
+        private static final String SECRET_KEY = "my-super-secret-key-my-super-secret-key-123456";
 
-    private SecretKey getSigningKey() {
+        private SecretKey getSigningKey() {
 
-        return Keys.hmacShaKeyFor(
-                SECRET_KEY.getBytes(StandardCharsets.UTF_8)
-        );
-    }
+                return Keys.hmacShaKeyFor(
+                                SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        }
 
-    // Generate JWT Token
-    public String generateToken(String role, int userid) {
+        // Generate JWT Token
+        public String generateToken(String email, int userid) {
+                Map<String, Object> claims = new HashMap<>();
+                claims.put("userid", userid);
 
-        return Jwts.builder()
-                .subject(String.valueOf(userid))  // userId as subject
-                .claim("role", role)              // role as separate claim
-                .issuedAt(new Date())
-                .expiration(
-                        new Date(
-                                System.currentTimeMillis()
-                                        + 1000 * 60 * 60
-                        )
-                )
-                .signWith(getSigningKey())
-                .compact();
-    }
+                claims.put("email", email);
 
-    // Extract email from token
-    public String extractEmail(String token) {
+                return Jwts.builder()
+                                .claims(claims)
+                                .subject(email) // email as subject
+                                .issuedAt(new Date())
+                                .expiration(
+                                                new Date(
+                                                                System.currentTimeMillis()
+                                                                                + 1000 * 60 * 60))
+                                .signWith(getSigningKey())
+                                .compact();
+        }
 
-        Claims claims = Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        // Extract email from token
+        public String extractEmail(String token) {
 
-        return claims.getSubject();
-    }
+                Claims claims = Jwts.parser()
+                                .verifyWith(getSigningKey())
+                                .build()
+                                .parseSignedClaims(token)
+                                .getPayload();
+
+                return claims.getSubject();
+        }
 }

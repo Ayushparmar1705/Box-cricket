@@ -1,5 +1,9 @@
 package com.example.demo.auth_service.service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +30,7 @@ public class UserService {
         return userrepo.save(user);
     }
 
-    public String loginUser(String email, String password) {
+    public Map<String, String> loginUser(String email, String password) {
         User user = userrepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid email and password"));
 
         boolean passwordMatchers = passwordEncoder.matches(
@@ -36,8 +40,12 @@ public class UserService {
         if (!passwordMatchers) {
             throw new RuntimeException("Password not match");
         } else {
-            String token = jwtService.generateToken(String.valueOf(user.getRole()), user.getId());
-            return token;
+            String token = jwtService.generateToken(user.getEmail(), user.getId());
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "200");
+            response.put("token", token);
+            response.put("role", user.getRole().toString());
+            return response;
         }
     }
 

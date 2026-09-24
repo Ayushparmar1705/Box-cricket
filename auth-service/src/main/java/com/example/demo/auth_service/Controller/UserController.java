@@ -27,9 +27,10 @@ public class UserController {
     public ResponseEntity<Map<String, String>> loginUser(@RequestBody User data) {
         Map<String, String> map = new HashMap<>();
         try {
-            String token = userservice.loginUser(data.getEmail(), data.getPasswordHash());
-            map.put("status", "200");
-            map.put("token", token);
+            Map<String, String> loginResponse = userservice.loginUser(data.getEmail(), data.getPasswordHash());
+            map.put("status", loginResponse.get("status"));
+            map.put("token", loginResponse.get("token"));
+            map.put("role", loginResponse.get("role"));
             return ResponseEntity.ok(map);
         } catch (RuntimeException e) {
             System.out.println("Login failed: " + e.getMessage());
