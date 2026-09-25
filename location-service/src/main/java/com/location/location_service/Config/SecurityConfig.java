@@ -38,9 +38,6 @@ public class SecurityConfig {
                         // Allow public read for viewing countries/states/cities
                         .requestMatchers(HttpMethod.GET, "/api/country/**", "/api/state/**", "/api/city/**", "/api/location/**").permitAll()
 
-                        // Restrict create/update/delete to SUPER_ADMIN and OWNER roles
-                        .requestMatchers("/api/country/**", "/api/state/**", "/api/city/**", "/api/location/**").hasAnyRole("SUPER_ADMIN", "OWNER")
-
                         // Any other request must be authenticated
                         .anyRequest().authenticated())
 

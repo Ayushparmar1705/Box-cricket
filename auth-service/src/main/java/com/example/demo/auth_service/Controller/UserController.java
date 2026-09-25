@@ -18,9 +18,19 @@ public class UserController {
     UserService userservice;
 
     @PostMapping("/create")
-    public String createUser(@RequestBody User data) {
-        userservice.createUser(data);
-        return "Account created successfully";
+    public ResponseEntity<?> createUser(@RequestBody User data) {
+        try {
+            userservice.createUser(data);
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "200");
+            response.put("message", "Account created successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("status", "400");
+            err.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(err);
+        }
     }
 
     @PostMapping("/login")

@@ -2,8 +2,10 @@ package com.example.demo.auth_service.service;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -46,16 +48,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-
-            // 4. Extract email from JWT
+            // 4. Extract email and role from JWT
             String email = jwtService.extractEmail(token);
+            String role = jwtService.extractRole(token);
 
-            // 5. Create authenticated user
+            // Ensure role has ROLE_ prefix which Spring Security expects for hasRole()
+            if (role != null && !role.startsWith("ROLE_")) {
+                role = "ROLE_" + role;
+            }
+
+            // 5. Create authenticated user with Authorities!
+            List<SimpleGrantedAuthority> authorities = role != null 
+                    ? Collections.singletonList(new SimpleGrantedAuthority(role)) 
+                    : Collections.emptyList();
+
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                             email,
                             null,
-                            Collections.emptyList()
+                            authorities
                     );
 
             // 6. Store authentication in Spring Security

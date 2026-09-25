@@ -36,13 +36,8 @@ public class SecurityConfig {
                         // 2. Allow Spring error dispatch
                         .requestMatchers("/error").permitAll()
 
-                        // 3. Amenities endpoints
-                        .requestMatchers("/api/venue-amenities/**", "/api/amenities/**")
-                        .hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
-
                         // 4. Venue endpoints
                         .requestMatchers(HttpMethod.GET, "/api/venue/**", "/api/venues/**").permitAll()
-                        .requestMatchers("/api/venue/**", "/api/venues/**").hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
 
                         // 5. All other endpoints require authentication
                         .anyRequest().authenticated())

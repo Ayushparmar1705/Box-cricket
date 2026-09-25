@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,6 +38,7 @@ public class Categorycontroller {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createCategory(
             @Validated @RequestBody Categoryentity category,
             BindingResult bindingResult) {
@@ -64,6 +66,7 @@ public class Categorycontroller {
     }
 
     @GetMapping("/view")
+    @PreAuthorize("hasRole('SUPER_ADMIN','OWNER','PLAYER')")
     public ResponseEntity<?> viewCategory() {
         List<Categoryentity> result = service.viewCategory();
         if (result != null) {
@@ -74,6 +77,7 @@ public class Categorycontroller {
         }
     }
 
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     @PutMapping("/{status}/{id}")
     public ResponseEntity<?> categoryStatus(@PathVariable int id, @PathVariable String status) {
         try {

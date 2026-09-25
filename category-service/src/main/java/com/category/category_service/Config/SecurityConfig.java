@@ -9,14 +9,22 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.category.category_service.Component.CustomeAccessDeniedHandler;
+
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomeAccessDeniedHandler customeAccessDeniedHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+            CustomeAccessDeniedHandler customeAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.customeAccessDeniedHandler = customeAccessDeniedHandler;
     }
 
     @Bean
@@ -24,7 +32,8 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         SessionCreationPolicy.STATELESS))
 
@@ -36,11 +45,10 @@ public class SecurityConfig {
                         // Allow error dispatch
                         .requestMatchers("/error").permitAll()
 
-                        // Restrict all endpoints starting with /api/category/ to SUPER_ADMIN and OWNER roles
-                        .requestMatchers("/api/category/**").hasAnyRole("SUPER_ADMIN", "OWNER")
-
                         // Any other request must be authenticated
                         .anyRequest().authenticated())
+
+                .exceptionHandling(exception -> exception.accessDeniedHandler(customeAccessDeniedHandler))
 
                 .addFilterBefore(
                         jwtAuthenticationFilter,

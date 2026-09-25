@@ -40,7 +40,7 @@ public class UserService {
         if (!passwordMatchers) {
             throw new RuntimeException("Password not match");
         } else {
-            String token = jwtService.generateToken(user.getEmail(), user.getId());
+            String token = jwtService.generateToken(user.getEmail(), user.getId(), user.getRole().name());
             Map<String, String> response = new HashMap<>();
             response.put("status", "200");
             response.put("token", token);

@@ -25,11 +25,11 @@ public class JwtService {
         }
 
         // Generate JWT Token
-        public String generateToken(String email, int userid) {
+        public String generateToken(String email, int userid, String role) {
                 Map<String, Object> claims = new HashMap<>();
                 claims.put("userid", userid);
-
                 claims.put("email", email);
+                claims.put("role", role);
 
                 return Jwts.builder()
                                 .claims(claims)
@@ -45,7 +45,6 @@ public class JwtService {
 
         // Extract email from token
         public String extractEmail(String token) {
-
                 Claims claims = Jwts.parser()
                                 .verifyWith(getSigningKey())
                                 .build()
@@ -53,5 +52,16 @@ public class JwtService {
                                 .getPayload();
 
                 return claims.getSubject();
+        }
+
+        // Extract role from token
+        public String extractRole(String token) {
+                Claims claims = Jwts.parser()
+                                .verifyWith(getSigningKey())
+                                .build()
+                                .parseSignedClaims(token)
+                                .getPayload();
+
+                return claims.get("role", String.class);
         }
 }

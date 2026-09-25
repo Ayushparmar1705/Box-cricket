@@ -38,7 +38,10 @@ public class SecurityConfig {
 
                                                 // Public APIs - no token needed
                                                 .requestMatchers(
+                                                                "/error",
+                                                                "/api/users/login",
                                                                 "/api/users/login/**",
+                                                                "/api/users/create",
                                                                 "/api/users/create/**")
                                                 .permitAll()
 
@@ -50,21 +53,7 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                                                 .permitAll()
 
-                                                // SUPER_ADMIN APIs
-                                                .requestMatchers("/api/admin/**")
-                                                .hasRole("SUPER_ADMIN")
 
-                                                // Owner document APIs
-                                                .requestMatchers("/api/owner-documents/**")
-                                                .hasAnyRole("SUPER_ADMIN", "OWNER")
-
-                                                // OWNER APIs
-                                                .requestMatchers("/api/owner/**")
-                                                .hasRole("OWNER")
-
-                                                // PLAYER APIs
-                                                .requestMatchers("/api/player/**")
-                                                .hasRole("PLAYER")
 
                                                 // Any other API requires a valid JWT
                                                 .anyRequest()

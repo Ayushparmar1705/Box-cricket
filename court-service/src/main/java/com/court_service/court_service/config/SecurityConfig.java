@@ -36,9 +36,6 @@ public class SecurityConfig {
                         // 3. Allow public GET for viewing courts
                         .requestMatchers(HttpMethod.GET, "/api/court/**", "/api/courts/**").permitAll()
 
-                        // 4. Require SUPER_ADMIN, OWNER, or ADMIN for creating/modifying courts
-                        .requestMatchers("/api/court/**", "/api/courts/**").hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
-
                         // 5. All other endpoints require authentication
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

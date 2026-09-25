@@ -35,9 +35,6 @@ public class SecurityConfig {
                         // 3. Allow public GET for viewing staff
                         .requestMatchers(HttpMethod.GET, "/api/staff/**").permitAll()
 
-                        // 4. Require SUPER_ADMIN, OWNER, or ADMIN for creating/modifying staff
-                        .requestMatchers("/api/staff/**").hasAnyRole("SUPER_ADMIN", "OWNER", "ADMIN")
-
                         // 5. All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
