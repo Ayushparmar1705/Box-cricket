@@ -7,6 +7,7 @@ import com.location.location_service.Service.Cityservice;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,7 @@ public class Citycontroller {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createCity(
             @Valid @RequestBody(required = false) CityRequestDto dto,
             BindingResult bindingResult) {
@@ -64,6 +66,7 @@ public class Citycontroller {
     }
 
     @GetMapping("/view")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
     public ResponseEntity<List<CityResponseDto>> viewCity(
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
@@ -80,6 +83,7 @@ public class Citycontroller {
     }
 
     @GetMapping("/get-by-id/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             Cityentity result = service.getCityById(id);
@@ -92,6 +96,7 @@ public class Citycontroller {
     }
 
     @GetMapping("/state/{stateId}")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
     public ResponseEntity<List<CityResponseDto>> getCitiesByStateId(
             @PathVariable Long stateId,
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
@@ -106,6 +111,7 @@ public class Citycontroller {
     }
 
     @PutMapping("/city-status/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> changeStatus(@PathVariable Long id) {
         try {
             int result = service.changeStatus(id);
@@ -122,6 +128,7 @@ public class Citycontroller {
     }
 
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> updateCity(
             @PathVariable Long id,
             @Valid @RequestBody CityRequestDto dto) {
@@ -141,6 +148,7 @@ public class Citycontroller {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> deleteCity(@PathVariable Long id) {
         try {
             service.deleteCity(id);
