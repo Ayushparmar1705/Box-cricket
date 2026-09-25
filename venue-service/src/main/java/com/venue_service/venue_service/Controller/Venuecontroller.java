@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.venue_service.venue_service.Entity.Venueentity;
 import com.venue_service.venue_service.Service.Venueservice;
@@ -27,6 +28,7 @@ public class Venuecontroller {
     }
 
     @PostMapping("/create")
+    @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> addVenue(
             @RequestBody VenueRequestdto venue,
             @RequestParam(value = "file", required = false) MultipartFile file) {
@@ -47,6 +49,7 @@ public class Venuecontroller {
     }
 
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> updateVenue(
             @PathVariable int id,
             @RequestBody VenueRequestdto venue,
@@ -66,6 +69,7 @@ public class Venuecontroller {
     }
 
     @GetMapping("/view")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> getVenue(@RequestParam String isActive,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "100") int size) {
         Map<String, Object> mapResult = new HashMap<>();
@@ -86,6 +90,7 @@ public class Venuecontroller {
     }
 
     @PutMapping("/venue-status/{id}/{status}")
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> changeStatus(
             @PathVariable int id,
             @PathVariable boolean status) {
