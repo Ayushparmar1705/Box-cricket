@@ -71,6 +71,7 @@ public class Citycontroller {
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
             List<Cityentity> list = service.viewCity(isActive);
+
             List<CityResponseDto> result = list.stream()
                     .map(service::mapToResponseDto)
                     .collect(Collectors.toList());

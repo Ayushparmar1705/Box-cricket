@@ -1,15 +1,12 @@
 package com.location.location_service.Service;
 
 import com.location.location_service.Dto.CountryRequestDto;
-import com.location.location_service.Dto.CountryResponseDto;
-import com.location.location_service.Dto.StateResponseDto;
 import com.location.location_service.Entity.Countryentity;
 import com.location.location_service.Repositry.Countryrepositry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class Countryservice {
@@ -33,20 +30,6 @@ public class Countryservice {
         country.setCode(dto.getCode().toUpperCase());
         country.setActive(dto.getActive() != null ? dto.getActive() : true);
         return rep.save(country);
-    }
-
-    public Countryentity addCountry(Countryentity entity) {
-        if (rep.existsByCode(entity.getCode())) {
-            throw new RuntimeException("Country with code '" + entity.getCode() + "' already exists");
-        }
-        if (rep.existsByName(entity.getName())) {
-            throw new RuntimeException("Country with name '" + entity.getName() + "' already exists");
-        }
-        return rep.save(entity);
-    }
-
-    public List<Countryentity> viewCountry() {
-        return rep.findAll();
     }
 
     public List<Countryentity> viewCountry(Boolean isActive) {
@@ -89,47 +72,10 @@ public class Countryservice {
     public int changeStatus(Long id) {
         Countryentity result = rep.findById(id)
                 .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
-        if (result.isActive()) {
-            result.setActive(false);
-            rep.save(result);
-            return 0;
-        } else {
-            result.setActive(true);
-            rep.save(result);
-            return 1;
-        }
+        boolean newStatus = !result.isActive();
+        result.setActive(newStatus);
+        rep.save(result);
+        return newStatus ? 1 : 0;
     }
 
-    @Transactional
-    public void deleteCountry(Long id) {
-        if (!rep.existsById(id)) {
-            throw new RuntimeException("Country not found with id: " + id);
-        }
-        rep.deleteById(id);
-    }
-
-    public CountryResponseDto mapToResponseDto(Countryentity entity, boolean includeStates) {
-        List<StateResponseDto> stateDtos = null;
-        if (includeStates && entity.getStates() != null) {
-            stateDtos = entity.getStates().stream()
-                    .map(s -> StateResponseDto.builder()
-                            .id(s.getId())
-                            .name(s.getName())
-                            .countryId(entity.getId())
-                            .countryName(entity.getName())
-                            .active(s.isActive())
-                            .created_at(s.getCreated_at())
-                            .build())
-                    .collect(Collectors.toList());
-        }
-
-        return CountryResponseDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .code(entity.getCode())
-                .active(entity.isActive())
-                .created_at(entity.getCreated_at())
-                .states(stateDtos)
-                .build();
-    }
 }

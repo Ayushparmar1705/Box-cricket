@@ -44,6 +44,7 @@ public class Cityservice {
 
     public List<Cityentity> viewCity(Boolean isActive) {
         if (isActive != null) {
+
             return cityRep.findByActive(isActive);
         }
         return cityRep.findAll();

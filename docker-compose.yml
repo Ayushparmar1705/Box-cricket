@@ -1,26 +1,5 @@
 services:
 
-  mysql:
-    image: 'mysql:latest'
-    environment:
-      - 'MYSQL_DATABASE=box_cricket_db'
-      - 'MYSQL_ROOT_PASSWORD=Ayush#2004'
-    ports:
-      - '3309:3306' # MySQL (host:3309 → container:3306)
-
-  # ─────────────────────────────────────────────
-  # ADMINER - MySQL GUI (browser-based)
-  # Open: http://localhost:8888
-  # ─────────────────────────────────────────────
-  adminer:
-    image: adminer:latest
-    ports:
-      - '8888:8080'
-    depends_on:
-      - mysql
-    environment:
-      - ADMINER_DEFAULT_SERVER=mysql
-
   # ─────────────────────────────────────────────
   # AUTH SERVICE
   # localhost:3030  →  container:8080
@@ -31,12 +10,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3030:8080'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+
   # ─────────────────────────────────────────────
   # OWNER REQUEST SERVICE
   # localhost:3031  →  container:8081
@@ -47,12 +26,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3031:8081'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 
   # ─────────────────────────────────────────────
   # OWNER DOCUMENT SERVICE
@@ -64,12 +42,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3032:8082'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
@@ -84,12 +61,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3035:8085'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 
   # ─────────────────────────────────────────────
   # CATEGORY SERVICE
@@ -101,12 +77,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3036:8086'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 
   # ─────────────────────────────────────────────
   # VENUE SERVICE
@@ -118,12 +93,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3037:8087'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
@@ -138,12 +112,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3038:8088'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
@@ -158,9 +131,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - '3039:8089'
-    depends_on:
-      - mysql
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/box_cricket_db
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=Ayush#2004
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
