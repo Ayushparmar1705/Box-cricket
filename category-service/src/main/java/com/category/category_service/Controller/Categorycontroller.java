@@ -37,7 +37,7 @@ public class Categorycontroller {
         return map;
     }
 
-    @PostMapping("/create")
+    @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createCategory(
             @Validated @RequestBody Categoryentity category,
@@ -65,8 +65,8 @@ public class Categorycontroller {
         }
     }
 
-    @GetMapping("/view")
-    @PreAuthorize("hasRole('SUPER_ADMIN','OWNER','PLAYER')")
+    @GetMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
     public ResponseEntity<?> viewCategory() {
         List<Categoryentity> result = service.viewCategory();
         if (result != null) {
