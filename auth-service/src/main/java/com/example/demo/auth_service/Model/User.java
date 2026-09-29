@@ -1,6 +1,8 @@
 package com.example.demo.auth_service.Model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -18,13 +20,17 @@ public class User {
     private Integer id;
 
     @Column(name = "full_name", nullable = false, length = 100)
+    @NotBlank(message = "fullname is required")
     private String fullName;
 
     @Column(name = "email", nullable = false, unique = true, length = 255)
+    @NotBlank(message = "email is required")
+    @Email(message = "Invalid email address")
     private String email;
-
+    @NotBlank(message = "Phone number required")
     @Column(name = "phone", unique = true, length = 15)
     private String phone;
+    @NotBlank(message = "Password required")
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;

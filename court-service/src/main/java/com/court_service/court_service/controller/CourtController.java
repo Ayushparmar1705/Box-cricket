@@ -1,8 +1,7 @@
 package com.court_service.court_service.controller;
 
-import com.court_service.court_service.dto.request.CourtRequestDto;
-import com.court_service.court_service.dto.response.CourtImageResponseDto;
-import com.court_service.court_service.dto.response.CourtResponseDto;
+import com.court_service.court_service.model.CourtEntity;
+import com.court_service.court_service.model.CourtImageEntity;
 import com.court_service.court_service.service.CourtService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -30,7 +29,7 @@ public class CourtController {
     // 1. Create court with multipart form-data (Court details + optional image files)
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createCourtWithImages(
-            @Valid @ModelAttribute CourtRequestDto request,
+            @Valid @ModelAttribute CourtEntity request,
             BindingResult bindingResult,
             @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         Map<String, Object> response = new HashMap<>();
@@ -45,10 +44,10 @@ public class CourtController {
         }
 
         try {
-            CourtResponseDto responseDto = courtService.createCourt(request, files);
+            CourtEntity savedCourt = courtService.createCourt(request, files);
             response.put("status", HttpStatus.CREATED.value());
             response.put("message", "Court created successfully");
-            response.put("data", responseDto);
+            response.put("data", savedCourt);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -60,7 +59,7 @@ public class CourtController {
     // 2. Create court with JSON only (without image files)
     @PostMapping(value = "/create", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> createCourtJson(
-            @Valid @RequestBody CourtRequestDto request,
+            @Valid @RequestBody CourtEntity request,
             BindingResult bindingResult) {
         Map<String, Object> response = new HashMap<>();
 
@@ -74,10 +73,10 @@ public class CourtController {
         }
 
         try {
-            CourtResponseDto responseDto = courtService.createCourt(request, null);
+            CourtEntity savedCourt = courtService.createCourt(request, null);
             response.put("status", HttpStatus.CREATED.value());
             response.put("message", "Court created successfully");
-            response.put("data", responseDto);
+            response.put("data", savedCourt);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -91,10 +90,10 @@ public class CourtController {
     public ResponseEntity<Map<String, Object>> getCourtById(@PathVariable UUID id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            CourtResponseDto responseDto = courtService.getCourtById(id);
+            CourtEntity court = courtService.getCourtById(id);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Court fetched successfully");
-            response.put("data", responseDto);
+            response.put("data", court);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.NOT_FOUND.value());
@@ -110,7 +109,7 @@ public class CourtController {
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<CourtResponseDto> courts = courtService.getCourtsByVenueId(venueId, isActive);
+            List<CourtEntity> courts = courtService.getCourtsByVenueId(venueId, isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Courts fetched successfully");
             response.put("data", courts);
@@ -127,7 +126,7 @@ public class CourtController {
     public ResponseEntity<Map<String, Object>> getCourtsByCategory(@PathVariable Integer categoryId) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<CourtResponseDto> courts = courtService.getCourtsByCategoryId(categoryId);
+            List<CourtEntity> courts = courtService.getCourtsByCategoryId(categoryId);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Courts fetched successfully");
             response.put("data", courts);
@@ -145,7 +144,7 @@ public class CourtController {
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<CourtResponseDto> courts = courtService.getAllCourts(isActive);
+            List<CourtEntity> courts = courtService.getAllCourts(isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Courts fetched successfully");
             response.put("data", courts);
@@ -161,14 +160,14 @@ public class CourtController {
     @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateCourtWithImages(
             @PathVariable UUID id,
-            @ModelAttribute CourtRequestDto request,
+            @ModelAttribute CourtEntity request,
             @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         Map<String, Object> response = new HashMap<>();
         try {
-            CourtResponseDto responseDto = courtService.updateCourt(id, request, files);
+            CourtEntity updatedCourt = courtService.updateCourt(id, request, files);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Court updated successfully");
-            response.put("data", responseDto);
+            response.put("data", updatedCourt);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -181,13 +180,13 @@ public class CourtController {
     @PutMapping(value = "/update/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> updateCourtJson(
             @PathVariable UUID id,
-            @RequestBody CourtRequestDto request) {
+            @RequestBody CourtEntity request) {
         Map<String, Object> response = new HashMap<>();
         try {
-            CourtResponseDto responseDto = courtService.updateCourt(id, request, null);
+            CourtEntity updatedCourt = courtService.updateCourt(id, request, null);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Court updated successfully");
-            response.put("data", responseDto);
+            response.put("data", updatedCourt);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -203,7 +202,7 @@ public class CourtController {
             @RequestParam("files") List<MultipartFile> files) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<CourtImageResponseDto> images = courtService.addImagesToCourt(id, files);
+            List<CourtImageEntity> images = courtService.addImagesToCourt(id, files);
             response.put("status", HttpStatus.CREATED.value());
             response.put("message", "Images uploaded successfully");
             response.put("data", images);
@@ -222,10 +221,10 @@ public class CourtController {
             @PathVariable boolean status) {
         Map<String, Object> response = new HashMap<>();
         try {
-            CourtResponseDto responseDto = courtService.changeStatus(id, status);
+            CourtEntity updatedCourt = courtService.changeStatus(id, status);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Court status updated successfully");
-            response.put("data", responseDto);
+            response.put("data", updatedCourt);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());

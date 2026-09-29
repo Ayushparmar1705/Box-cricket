@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.court_service.court_service.dto.request.PricingRequestDto;
 import com.court_service.court_service.model.Pricingruleentity;
 import com.court_service.court_service.service.PricingruleService;
 
@@ -34,7 +33,7 @@ public class PricingRuleController {
     // 1. Create a new pricing rule
     @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createPricing(
-            @Valid @RequestBody PricingRequestDto pricingRequestDto,
+            @Valid @RequestBody Pricingruleentity pricing,
             BindingResult bindingResult) {
         Map<String, Object> response = new HashMap<>();
 
@@ -48,7 +47,7 @@ public class PricingRuleController {
         }
 
         try {
-            Pricingruleentity createdPricing = pricingService.createPricing(pricingRequestDto);
+            Pricingruleentity createdPricing = pricingService.createPricing(pricing);
             response.put("status", HttpStatus.CREATED.value());
             response.put("message", "Pricing rule created successfully");
             response.put("data", createdPricing);

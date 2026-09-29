@@ -1,10 +1,8 @@
 package com.location.location_service.Service;
 
-import com.location.location_service.Dto.CountryRequestDto;
 import com.location.location_service.Entity.Countryentity;
 import com.location.location_service.Repositry.Countryrepositry;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,18 +15,17 @@ public class Countryservice {
         this.rep = rep;
     }
 
-    public Countryentity addCountry(CountryRequestDto dto) {
-        if (rep.existsByCode(dto.getCode())) {
-            throw new RuntimeException("Country with code '" + dto.getCode() + "' already exists");
+    public Countryentity addCountry(Countryentity country) {
+        if (rep.existsByCode(country.getCode())) {
+            throw new RuntimeException("Country with code '" + country.getCode() + "' already exists");
         }
-        if (rep.existsByName(dto.getName())) {
-            throw new RuntimeException("Country with name '" + dto.getName() + "' already exists");
+        if (rep.existsByName(country.getName())) {
+            throw new RuntimeException("Country with name '" + country.getName() + "' already exists");
         }
 
-        Countryentity country = new Countryentity();
-        country.setName(dto.getName());
-        country.setCode(dto.getCode().toUpperCase());
-        country.setActive(dto.getActive() != null ? dto.getActive() : true);
+        if (country.getCode() != null) {
+            country.setCode(country.getCode().toUpperCase());
+        }
         return rep.save(country);
     }
 
@@ -44,29 +41,27 @@ public class Countryservice {
                 .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
     }
 
-    public Countryentity updateCountry(Long id, CountryRequestDto dto) {
-        Countryentity country = rep.findById(id)
+    public Countryentity updateCountry(Long id, Countryentity country) {
+        Countryentity existing = rep.findById(id)
                 .orElseThrow(() -> new RuntimeException("Country not found with id: " + id));
 
-        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
-            if (rep.existsByNameAndIdNot(dto.getName(), id)) {
-                throw new RuntimeException("Country with name '" + dto.getName() + "' already exists");
+        if (country.getName() != null && !country.getName().trim().isEmpty()) {
+            if (rep.existsByNameAndIdNot(country.getName(), id)) {
+                throw new RuntimeException("Country with name '" + country.getName() + "' already exists");
             }
-            country.setName(dto.getName());
+            existing.setName(country.getName());
         }
 
-        if (dto.getCode() != null && !dto.getCode().trim().isEmpty()) {
-            if (rep.existsByCodeAndIdNot(dto.getCode(), id)) {
-                throw new RuntimeException("Country with code '" + dto.getCode() + "' already exists");
+        if (country.getCode() != null && !country.getCode().trim().isEmpty()) {
+            if (rep.existsByCodeAndIdNot(country.getCode(), id)) {
+                throw new RuntimeException("Country with code '" + country.getCode() + "' already exists");
             }
-            country.setCode(dto.getCode().toUpperCase());
+            existing.setCode(country.getCode().toUpperCase());
         }
 
-        if (dto.getActive() != null) {
-            country.setActive(dto.getActive());
-        }
+        existing.setActive(country.isActive());
 
-        return rep.save(country);
+        return rep.save(existing);
     }
 
     public int changeStatus(Long id) {
@@ -77,5 +72,4 @@ public class Countryservice {
         rep.save(result);
         return newStatus ? 1 : 0;
     }
-
 }

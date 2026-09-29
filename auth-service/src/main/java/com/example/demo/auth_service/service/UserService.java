@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.demo.auth_service.exception.DuplicateResourceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class UserService {
 
     public User createUser(User user) {
         if (userrepo.existsByEmail(user.getEmail())) {
-            throw new RuntimeException("User with email alredy exists");
+            throw new DuplicateResourceException("Student with email "+user.getEmail()+" alredy exists");
         }
         user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         return userrepo.save(user);

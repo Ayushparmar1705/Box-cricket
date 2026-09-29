@@ -9,7 +9,7 @@ import com.category.category_service.Repositry.Categoryrepositry;
 
 @Service
 public class Categoryservice {
-    Categoryrepositry rep;
+    private final Categoryrepositry rep;
 
     public Categoryservice(Categoryrepositry rep) {
         this.rep = rep;
@@ -20,6 +20,7 @@ public class Categoryservice {
         if (isExists) {
             return null;
         }
+
         return rep.save(cat);
     }
 
@@ -38,9 +39,8 @@ public class Categoryservice {
         return rep.save(result);
     }
 
-
-    public Categoryentity getCategoryById(int id){
-        Categoryentity result = rep.findById(id).orElseThrow(()->new RuntimeException("Category not found"));
+    public Categoryentity getCategoryById(int id) {
+        Categoryentity result = rep.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
         return result;
     }
 }

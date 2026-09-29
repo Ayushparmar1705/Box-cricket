@@ -3,6 +3,7 @@ package com.example.demo.auth_service.Controller;
 import com.example.demo.auth_service.Model.User;
 import com.example.demo.auth_service.service.UserService;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,19 +19,13 @@ public class UserController {
     UserService userservice;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createUser(@RequestBody User data) {
-        try {
+    public ResponseEntity<?> createUser(@Valid  @RequestBody User data) {
+
             userservice.createUser(data);
             Map<String, String> response = new HashMap<>();
             response.put("status", "200");
             response.put("message", "Account created successfully");
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> err = new HashMap<>();
-            err.put("status", "400");
-            err.put("message", e.getMessage());
-            return ResponseEntity.status(400).body(err);
-        }
     }
 
     @PostMapping("/login")

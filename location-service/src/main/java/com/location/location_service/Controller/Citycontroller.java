@@ -1,7 +1,5 @@
 package com.location.location_service.Controller;
 
-import com.location.location_service.Dto.CityRequestDto;
-import com.location.location_service.Dto.CityResponseDto;
 import com.location.location_service.Entity.Cityentity;
 import com.location.location_service.Service.Cityservice;
 import jakarta.validation.Valid;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/city")
@@ -29,7 +26,7 @@ public class Citycontroller {
     @PostMapping("/create")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createCity(
-            @Valid @RequestBody(required = false) CityRequestDto dto,
+            @Valid @RequestBody(required = false) Cityentity city,
             BindingResult bindingResult) {
         if (bindingResult != null && bindingResult.hasErrors()) {
             Map<String, String> errors = new HashMap<>();
@@ -39,7 +36,7 @@ public class Citycontroller {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
         }
 
-        if (dto == null) {
+        if (city == null) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");
             response.put("message", "Request body is missing");
@@ -47,11 +44,11 @@ public class Citycontroller {
         }
 
         try {
-            Cityentity saved = service.addCity(dto);
+            Cityentity saved = service.addCity(city);
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "City added successfully");
-            response.put("data", service.mapToResponseDto(saved));
+            response.put("data", saved);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
@@ -67,15 +64,11 @@ public class Citycontroller {
 
     @GetMapping("/view")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
-    public ResponseEntity<List<CityResponseDto>> viewCity(
+    public ResponseEntity<List<Cityentity>> viewCity(
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
             List<Cityentity> list = service.viewCity(isActive);
-
-            List<CityResponseDto> result = list.stream()
-                    .map(service::mapToResponseDto)
-                    .collect(Collectors.toList());
-            return ResponseEntity.status(HttpStatus.OK).body(result);
+            return ResponseEntity.status(HttpStatus.OK).body(list);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -88,7 +81,7 @@ public class Citycontroller {
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             Cityentity result = service.getCityById(id);
-            return ResponseEntity.status(HttpStatus.OK).body(service.mapToResponseDto(result));
+            return ResponseEntity.status(HttpStatus.OK).body(result);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("City not found with id: " + id);
         } catch (Exception e) {
@@ -98,13 +91,11 @@ public class Citycontroller {
 
     @GetMapping("/state/{stateId}")
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
-    public ResponseEntity<List<CityResponseDto>> getCitiesByStateId(
+    public ResponseEntity<List<Cityentity>> getCitiesByStateId(
             @PathVariable Long stateId,
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
-            List<CityResponseDto> list = service.getCitiesByStateId(stateId, isActive).stream()
-                    .map(service::mapToResponseDto)
-                    .collect(Collectors.toList());
+            List<Cityentity> list = service.getCitiesByStateId(stateId, isActive);
             return ResponseEntity.ok(list);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -132,13 +123,13 @@ public class Citycontroller {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> updateCity(
             @PathVariable Long id,
-            @Valid @RequestBody CityRequestDto dto) {
+            @Valid @RequestBody Cityentity city) {
         try {
-            Cityentity updated = service.updateCity(id, dto);
+            Cityentity updated = service.updateCity(id, city);
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "City updated successfully");
-            response.put("data", service.mapToResponseDto(updated));
+            response.put("data", updated);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();

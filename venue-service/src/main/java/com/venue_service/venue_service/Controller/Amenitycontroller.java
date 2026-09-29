@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import com.venue_service.venue_service.Entity.Amenityentity;
 import com.venue_service.venue_service.Service.Amenityservice;
-import com.venue_service.venue_service.dto.request.AmenitiesRequestdto;
 
 @RestController
 @RequestMapping("/api/amenities")
@@ -23,7 +22,7 @@ public class Amenitycontroller {
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Map<String, Object>> createVenue(@RequestBody AmenitiesRequestdto obj) {
+    public ResponseEntity<Map<String, Object>> createVenue(@RequestBody Amenityentity obj) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
             System.out.println("Venue amenities controller object = " + obj.toString());

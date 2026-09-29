@@ -1,7 +1,5 @@
 package com.location.location_service.Service;
 
-import com.location.location_service.Dto.CityRequestDto;
-import com.location.location_service.Dto.CityResponseDto;
 import com.location.location_service.Entity.Cityentity;
 import com.location.location_service.Entity.Stateentity;
 import com.location.location_service.Repositry.Cityrepositry;
@@ -10,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class Cityservice {
@@ -23,18 +20,20 @@ public class Cityservice {
         this.stateRep = stateRep;
     }
 
-    public Cityentity addCity(CityRequestDto dto) {
-        Stateentity state = stateRep.findById(dto.getStateId())
-                .orElseThrow(() -> new RuntimeException("State not found with id: " + dto.getStateId()));
-
-        if (cityRep.existsByNameAndStateId(dto.getName(), dto.getStateId())) {
-            throw new RuntimeException("City with name '" + dto.getName() + "' already exists in " + state.getName());
+    public Cityentity addCity(Cityentity city) {
+        Long stateId = (city.getState() != null) ? city.getState().getId() : null;
+        if (stateId == null) {
+            throw new RuntimeException("State ID is required");
         }
 
-        Cityentity city = new Cityentity();
-        city.setName(dto.getName());
+        Stateentity state = stateRep.findById(stateId)
+                .orElseThrow(() -> new RuntimeException("State not found with id: " + stateId));
+
+        if (cityRep.existsByNameAndStateId(city.getName(), stateId)) {
+            throw new RuntimeException("City with name '" + city.getName() + "' already exists in " + state.getName());
+        }
+
         city.setState(state);
-        city.setActive(dto.getActive() != null ? dto.getActive() : true);
         return cityRep.save(city);
     }
 
@@ -44,7 +43,6 @@ public class Cityservice {
 
     public List<Cityentity> viewCity(Boolean isActive) {
         if (isActive != null) {
-
             return cityRep.findByActive(isActive);
         }
         return cityRep.findAll();
@@ -65,29 +63,27 @@ public class Cityservice {
                 .orElseThrow(() -> new RuntimeException("City not found with id: " + id));
     }
 
-    public Cityentity updateCity(Long id, CityRequestDto dto) {
-        Cityentity city = cityRep.findById(id)
+    public Cityentity updateCity(Long id, Cityentity city) {
+        Cityentity existing = cityRep.findById(id)
                 .orElseThrow(() -> new RuntimeException("City not found with id: " + id));
 
-        if (dto.getStateId() != null) {
-            Stateentity state = stateRep.findById(dto.getStateId())
-                    .orElseThrow(() -> new RuntimeException("State not found with id: " + dto.getStateId()));
-            city.setState(state);
+        if (city.getState() != null && city.getState().getId() != null) {
+            Stateentity state = stateRep.findById(city.getState().getId())
+                    .orElseThrow(() -> new RuntimeException("State not found with id: " + city.getState().getId()));
+            existing.setState(state);
         }
 
-        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
-            Long stateId = city.getState().getId();
-            if (cityRep.existsByNameAndStateIdAndIdNot(dto.getName(), stateId, id)) {
-                throw new RuntimeException("City with name '" + dto.getName() + "' already exists in this state");
+        if (city.getName() != null && !city.getName().trim().isEmpty()) {
+            Long stateId = existing.getState().getId();
+            if (cityRep.existsByNameAndStateIdAndIdNot(city.getName(), stateId, id)) {
+                throw new RuntimeException("City with name '" + city.getName() + "' already exists in this state");
             }
-            city.setName(dto.getName());
+            existing.setName(city.getName());
         }
 
-        if (dto.getActive() != null) {
-            city.setActive(dto.getActive());
-        }
+        existing.setActive(city.isActive());
 
-        return cityRep.save(city);
+        return cityRep.save(existing);
     }
 
     public int changeStatus(Long id) {
@@ -114,19 +110,5 @@ public class Cityservice {
 
     public List<Cityentity> searchCities(String name) {
         return cityRep.findByNameContainingIgnoreCase(name);
-    }
-
-    public CityResponseDto mapToResponseDto(Cityentity entity) {
-        Stateentity state = entity.getState();
-        return CityResponseDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .stateId(state != null ? state.getId() : null)
-                .stateName(state != null ? state.getName() : null)
-                .countryId((state != null && state.getCountry() != null) ? state.getCountry().getId() : null)
-                .countryName((state != null && state.getCountry() != null) ? state.getCountry().getName() : null)
-                .active(entity.isActive())
-                .created_at(entity.getCreated_at())
-                .build();
     }
 }

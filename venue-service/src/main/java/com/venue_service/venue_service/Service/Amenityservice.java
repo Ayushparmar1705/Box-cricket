@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import com.venue_service.venue_service.Entity.Amenityentity;
 import com.venue_service.venue_service.Repositry.Amenityrepositry;
-import com.venue_service.venue_service.dto.request.AmenitiesRequestdto;
 
 @Service
 public class Amenityservice {
@@ -18,7 +17,7 @@ public class Amenityservice {
         this.rep = rep;
     }
 
-    public Amenityentity createAmenity(AmenitiesRequestdto obj) {
+    public Amenityentity createAmenity(Amenityentity obj) {
         if (obj.getName() == null || obj.getName().trim().isEmpty()) {
             throw new RuntimeException("Amenity name cannot be empty");
         }
@@ -29,11 +28,7 @@ public class Amenityservice {
             throw new RuntimeException("The amenity '" + name + "' already exists");
         }
 
-        Amenityentity amenities = new Amenityentity();
-        amenities.setName(name);
-        amenities.setActive(obj.getIsActive() != null ? obj.getIsActive() : true);
-
-        return rep.save(amenities);
+        return rep.save(obj);
     }
 
     public List<Amenityentity> getAmenities(boolean status) {
@@ -55,5 +50,4 @@ public class Amenityservice {
             throw new RuntimeException("Amenity not found with id: " + id);
         }
     }
-
 }

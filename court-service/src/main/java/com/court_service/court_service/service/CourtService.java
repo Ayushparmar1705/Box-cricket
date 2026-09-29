@@ -2,9 +2,6 @@ package com.court_service.court_service.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.court_service.court_service.dto.request.CourtRequestDto;
-import com.court_service.court_service.dto.response.CourtImageResponseDto;
-import com.court_service.court_service.dto.response.CourtResponseDto;
 import com.court_service.court_service.model.CourtEntity;
 import com.court_service.court_service.model.CourtImageEntity;
 import com.court_service.court_service.repository.CourtImageRepository;
@@ -19,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class CourtService {
@@ -65,62 +61,43 @@ public class CourtService {
     }
 
     @Transactional
-    public CourtResponseDto createCourt(CourtRequestDto request, List<MultipartFile> files) {
+    public CourtEntity createCourt(CourtEntity request, List<MultipartFile> files) {
         if (courtRepository.existsByCourtNameAndVenueId(request.getCourtName().trim(), request.getVenueId())) {
             throw new RuntimeException("Court with name '" + request.getCourtName() + "' already exists for venue id: " + request.getVenueId());
         }
 
-        CourtEntity entity = CourtEntity.builder()
-                .venueId(request.getVenueId())
-                .categoryId(request.getCategoryId())
-                .courtName(request.getCourtName().trim())
-                .surfaceType(request.getSurfaceType())
-                .maxPlayers(request.getMaxPlayers())
-                .description(request.getDescription())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .build();
-
-        CourtEntity savedCourt = courtRepository.save(entity);
-        List<CourtImageEntity> savedImages = uploadAndSaveImages(savedCourt.getId(), files);
-        return CourtResponseDto.fromEntity(savedCourt, savedImages);
+        CourtEntity savedCourt = courtRepository.save(request);
+        if (files != null && !files.isEmpty()) {
+            uploadAndSaveImages(savedCourt.getId(), files);
+        }
+        return savedCourt;
     }
 
-    public CourtResponseDto getCourtById(UUID id) {
-        CourtEntity entity = courtRepository.findById(id)
+    public CourtEntity getCourtById(UUID id) {
+        return courtRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
-        List<CourtImageEntity> images = courtImageRepository.findByCourtId(id);
-        return CourtResponseDto.fromEntity(entity, images);
     }
 
-    public List<CourtResponseDto> getCourtsByVenueId(Integer venueId, Boolean isActive) {
-        List<CourtEntity> list = (isActive != null)
-                ? courtRepository.findByVenueIdAndIsActive(venueId, isActive)
-                : courtRepository.findByVenueId(venueId);
-
-        return list.stream()
-                .map(court -> CourtResponseDto.fromEntity(court, courtImageRepository.findByCourtId(court.getId())))
-                .collect(Collectors.toList());
+    public List<CourtEntity> getCourtsByVenueId(Integer venueId, Boolean isActive) {
+        if (isActive != null) {
+            return courtRepository.findByVenueIdAndIsActive(venueId, isActive);
+        }
+        return courtRepository.findByVenueId(venueId);
     }
 
-    public List<CourtResponseDto> getCourtsByCategoryId(Integer categoryId) {
-        List<CourtEntity> list = courtRepository.findByCategoryId(categoryId);
-        return list.stream()
-                .map(court -> CourtResponseDto.fromEntity(court, courtImageRepository.findByCourtId(court.getId())))
-                .collect(Collectors.toList());
+    public List<CourtEntity> getCourtsByCategoryId(Integer categoryId) {
+        return courtRepository.findByCategoryId(categoryId);
     }
 
-    public List<CourtResponseDto> getAllCourts(Boolean isActive) {
-        List<CourtEntity> list = (isActive != null)
-                ? courtRepository.findByIsActive(isActive)
-                : courtRepository.findAll();
-
-        return list.stream()
-                .map(court -> CourtResponseDto.fromEntity(court, courtImageRepository.findByCourtId(court.getId())))
-                .collect(Collectors.toList());
+    public List<CourtEntity> getAllCourts(Boolean isActive) {
+        if (isActive != null) {
+            return courtRepository.findByIsActive(isActive);
+        }
+        return courtRepository.findAll();
     }
 
     @Transactional
-    public CourtResponseDto updateCourt(UUID id, CourtRequestDto request, List<MultipartFile> files) {
+    public CourtEntity updateCourt(UUID id, CourtEntity request, List<MultipartFile> files) {
         CourtEntity court = courtRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
 
@@ -139,34 +116,30 @@ public class CourtService {
             if (request.getSurfaceType() != null) court.setSurfaceType(request.getSurfaceType());
             if (request.getMaxPlayers() != null) court.setMaxPlayers(request.getMaxPlayers());
             if (request.getDescription() != null) court.setDescription(request.getDescription());
-            if (request.getIsActive() != null) court.setActive(request.getIsActive());
+            court.setActive(request.isActive());
         }
 
         CourtEntity updatedCourt = courtRepository.save(court);
         if (files != null && !files.isEmpty()) {
             uploadAndSaveImages(updatedCourt.getId(), files);
         }
-        List<CourtImageEntity> images = courtImageRepository.findByCourtId(id);
-        return CourtResponseDto.fromEntity(updatedCourt, images);
+        return updatedCourt;
     }
 
     @Transactional
-    public List<CourtImageResponseDto> addImagesToCourt(UUID courtId, List<MultipartFile> files) {
+    public List<CourtImageEntity> addImagesToCourt(UUID courtId, List<MultipartFile> files) {
         if (!courtRepository.existsById(courtId)) {
             throw new RuntimeException("Court not found with id: " + courtId);
         }
-        List<CourtImageEntity> saved = uploadAndSaveImages(courtId, files);
-        return saved.stream().map(CourtImageResponseDto::fromEntity).collect(Collectors.toList());
+        return uploadAndSaveImages(courtId, files);
     }
 
     @Transactional
-    public CourtResponseDto changeStatus(UUID id, boolean status) {
+    public CourtEntity changeStatus(UUID id, boolean status) {
         CourtEntity court = courtRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
         court.setActive(status);
-        CourtEntity updatedCourt = courtRepository.save(court);
-        List<CourtImageEntity> images = courtImageRepository.findByCourtId(id);
-        return CourtResponseDto.fromEntity(updatedCourt, images);
+        return courtRepository.save(court);
     }
 
     @Transactional

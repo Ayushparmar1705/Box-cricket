@@ -1,8 +1,5 @@
 package com.location.location_service.Service;
 
-import com.location.location_service.Dto.CityResponseDto;
-import com.location.location_service.Dto.StateRequestDto;
-import com.location.location_service.Dto.StateResponseDto;
 import com.location.location_service.Entity.Countryentity;
 import com.location.location_service.Entity.Stateentity;
 import com.location.location_service.Repositry.Countryrepositry;
@@ -13,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class Stateservice {
@@ -26,26 +22,25 @@ public class Stateservice {
         this.countryRep = countryRep;
     }
 
-    public Stateentity addState(StateRequestDto dto) {
-        Countryentity country = countryRep.findById(dto.getCountryId())
-                .orElseThrow(() -> new RuntimeException("Country not found with id: " + dto.getCountryId()));
-
-        if (stateRep.existsByNameAndCountryId(dto.getName(), dto.getCountryId())) {
-            throw new RuntimeException(
-                    "State with name '" + dto.getName() + "' already exists in " + country.getName());
+    public Stateentity addState(Stateentity state) {
+        Long countryId = (state.getCountry() != null) ? state.getCountry().getId() : null;
+        if (countryId == null) {
+            throw new RuntimeException("Country ID is required");
         }
 
-        Stateentity state = new Stateentity();
-        state.setName(dto.getName());
+        Countryentity country = countryRep.findById(countryId)
+                .orElseThrow(() -> new RuntimeException("Country not found with id: " + countryId));
+
+        if (stateRep.existsByNameAndCountryId(state.getName(), countryId)) {
+            throw new RuntimeException(
+                    "State with name '" + state.getName() + "' already exists in " + country.getName());
+        }
+
         state.setCountry(country);
-        state.setActive(dto.getActive() != null ? dto.getActive() : true);
         return stateRep.save(state);
     }
 
-
-
     public List<Stateentity> viewState(Boolean isActive, Pageable pageable) {
-     
         return stateRep.findByActive(isActive, pageable);
     }
 
@@ -64,29 +59,27 @@ public class Stateservice {
                 .orElseThrow(() -> new RuntimeException("State not found with id: " + id));
     }
 
-    public Stateentity updateState(Long id, StateRequestDto dto) {
-        Stateentity state = stateRep.findById(id)
+    public Stateentity updateState(Long id, Stateentity state) {
+        Stateentity existing = stateRep.findById(id)
                 .orElseThrow(() -> new RuntimeException("State not found with id: " + id));
 
-        if (dto.getCountryId() != null) {
-            Countryentity country = countryRep.findById(dto.getCountryId())
-                    .orElseThrow(() -> new RuntimeException("Country not found with id: " + dto.getCountryId()));
-            state.setCountry(country);
+        if (state.getCountry() != null && state.getCountry().getId() != null) {
+            Countryentity country = countryRep.findById(state.getCountry().getId())
+                    .orElseThrow(() -> new RuntimeException("Country not found with id: " + state.getCountry().getId()));
+            existing.setCountry(country);
         }
 
-        if (dto.getName() != null && !dto.getName().trim().isEmpty()) {
-            Long countryId = state.getCountry().getId();
-            if (stateRep.existsByNameAndCountryIdAndIdNot(dto.getName(), countryId, id)) {
-                throw new RuntimeException("State with name '" + dto.getName() + "' already exists in this country");
+        if (state.getName() != null && !state.getName().trim().isEmpty()) {
+            Long countryId = existing.getCountry().getId();
+            if (stateRep.existsByNameAndCountryIdAndIdNot(state.getName(), countryId, id)) {
+                throw new RuntimeException("State with name '" + state.getName() + "' already exists in this country");
             }
-            state.setName(dto.getName());
+            existing.setName(state.getName());
         }
 
-        if (dto.getActive() != null) {
-            state.setActive(dto.getActive());
-        }
+        existing.setActive(state.isActive());
 
-        return stateRep.save(state);
+        return stateRep.save(existing);
     }
 
     public int changeStatus(Long id) {
@@ -109,33 +102,5 @@ public class Stateservice {
             throw new RuntimeException("State not found with id: " + id);
         }
         stateRep.deleteById(id);
-    }
-
-    public StateResponseDto mapToResponseDto(Stateentity entity, boolean includeCities) {
-        List<CityResponseDto> cityDtos = null;
-        if (includeCities && entity.getCities() != null) {
-            cityDtos = entity.getCities().stream()
-                    .map(c -> CityResponseDto.builder()
-                            .id(c.getId())
-                            .name(c.getName())
-                            .stateId(entity.getId())
-                            .stateName(entity.getName())
-                            .countryId(entity.getCountry() != null ? entity.getCountry().getId() : null)
-                            .countryName(entity.getCountry() != null ? entity.getCountry().getName() : null)
-                            .active(c.isActive())
-                            .created_at(c.getCreated_at())
-                            .build())
-                    .collect(Collectors.toList());
-        }
-
-        return StateResponseDto.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .countryId(entity.getCountry() != null ? entity.getCountry().getId() : null)
-                .countryName(entity.getCountry() != null ? entity.getCountry().getName() : null)
-                .active(entity.isActive())
-                .created_at(entity.getCreated_at())
-                .cities(cityDtos)
-                .build();
     }
 }

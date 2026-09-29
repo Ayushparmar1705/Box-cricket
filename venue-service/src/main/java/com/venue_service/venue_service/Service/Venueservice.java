@@ -4,7 +4,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.venue_service.venue_service.Entity.Venueentity;
 import com.venue_service.venue_service.Repositry.Venuerepositry;
-import com.venue_service.venue_service.dto.request.VenueRequestdto;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class Venueservice {
@@ -36,7 +34,7 @@ public class Venueservice {
 		}
 	}
 
-	public Venueentity addVenue(VenueRequestdto obj, MultipartFile imageFile) {
+	public Venueentity addVenue(Venueentity obj, MultipartFile imageFile) {
 		boolean isExists = rep.existsByVenueName(obj.getVenueName());
 		if (isExists) {
 			throw new RuntimeException("The venue already exists");
@@ -46,17 +44,14 @@ public class Venueservice {
 			String imageUrl = uploadImage(imageFile);
 			obj.setImageUrl(imageUrl);
 		}
-		Venueentity venue = new Venueentity(obj.getOwnerId(), obj.getCityId(), obj.getVenueName(), obj.getAddress(),
-				obj.getLongitude(), obj.getLatitude(), obj.getGoogleMapLink(), obj.getContactNumber(), obj.getEmail(),
-				obj.getOpeningTime(), obj.getClosingTime(), obj.getCancellationPolicy(), obj.getImageUrl());
-		return rep.save(venue);
+		return rep.save(obj);
 	}
 
 	public List<Venueentity> viewVenues(Boolean isActive, Pageable pageable) {
 		return rep.findByIsActive(isActive, pageable);
 	}
 
-	public Venueentity updateVenue(int id, VenueRequestdto obj, MultipartFile imageFile) {
+	public Venueentity updateVenue(int id, Venueentity obj, MultipartFile imageFile) {
 		Venueentity venue = rep.findById(id)
 				.orElseThrow(() -> new RuntimeException("Venue not found with id: " + id));
 
@@ -68,19 +63,19 @@ public class Venueservice {
 				venue.setVenueName(obj.getVenueName());
 			}
 
-			if (obj.getOwnerId() != null) {
+			if (obj.getOwnerId() != 0) {
 				venue.setOwnerId(obj.getOwnerId());
 			}
-			if (obj.getCityId() != null) {
+			if (obj.getCityId() != 0) {
 				venue.setCityId(obj.getCityId());
 			}
 			if (obj.getAddress() != null) {
 				venue.setAddress(obj.getAddress());
 			}
-			if (obj.getLongitude() != null) {
+			if (obj.getLongitude() != 0) {
 				venue.setLongitude(obj.getLongitude());
 			}
-			if (obj.getLatitude() != null) {
+			if (obj.getLatitude() != 0) {
 				venue.setLatitude(obj.getLatitude());
 			}
 			if (obj.getGoogleMapLink() != null) {
@@ -101,11 +96,12 @@ public class Venueservice {
 			if (obj.getCancellationPolicy() != null) {
 				venue.setCancellationPolicy(obj.getCancellationPolicy());
 			}
-			if (obj.getIsActive() != null) {
-				venue.setActive(obj.getIsActive());
-			}
+			venue.setActive(obj.isActive());
 			if (obj.getImageUrl() != null && !obj.getImageUrl().trim().isEmpty()) {
 				venue.setImageUrl(obj.getImageUrl());
+			}
+			if (obj.getAmenities() != null) {
+				venue.setAmenities(obj.getAmenities());
 			}
 		}
 

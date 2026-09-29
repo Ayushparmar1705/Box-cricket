@@ -1,8 +1,6 @@
 package com.location.location_service.Controller;
 
-import com.location.location_service.Dto.CityResponseDto;
-import com.location.location_service.Dto.StateRequestDto;
-import com.location.location_service.Dto.StateResponseDto;
+import com.location.location_service.Entity.Cityentity;
 import com.location.location_service.Entity.Stateentity;
 import com.location.location_service.Service.Cityservice;
 import com.location.location_service.Service.Stateservice;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/state")
@@ -34,7 +31,7 @@ public class Statecontroller {
 
     @PostMapping("/create")
     public ResponseEntity<?> createState(
-            @Valid @RequestBody(required = false) StateRequestDto dto,
+            @Valid @RequestBody(required = false) Stateentity state,
             BindingResult bindingResult) {
         if (bindingResult != null && bindingResult.hasErrors()) {
             Map<String, String> errors = new HashMap<>();
@@ -44,7 +41,7 @@ public class Statecontroller {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
         }
 
-        if (dto == null) {
+        if (state == null) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "400");
             response.put("message", "Request body is missing");
@@ -52,11 +49,11 @@ public class Statecontroller {
         }
 
         try {
-            Stateentity saved = service.addState(dto);
+            Stateentity saved = service.addState(state);
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "State added successfully");
-            response.put("data", service.mapToResponseDto(saved, false));
+            response.put("data", saved);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
@@ -71,16 +68,13 @@ public class Statecontroller {
     }
 
     @GetMapping({ "/", "/view" })
-    public ResponseEntity<List<StateResponseDto>> viewState(
+    public ResponseEntity<List<Stateentity>> viewState(
             @RequestParam(value = "isActive", required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         try {
             Pageable pageable = PageRequest.of(page, size);
             List<Stateentity> list = service.viewState(isActive, pageable);
-            List<StateResponseDto> result = list.stream()
-                    .map(s -> service.mapToResponseDto(s, false))
-                    .collect(Collectors.toList());
-            return ResponseEntity.status(HttpStatus.OK).body(result);
+            return ResponseEntity.status(HttpStatus.OK).body(list);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -92,7 +86,7 @@ public class Statecontroller {
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
             Stateentity result = service.getStateById(id);
-            return ResponseEntity.status(HttpStatus.OK).body(service.mapToResponseDto(result, true));
+            return ResponseEntity.status(HttpStatus.OK).body(result);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("State not found with id: " + id);
         } catch (Exception e) {
@@ -101,13 +95,11 @@ public class Statecontroller {
     }
 
     @GetMapping("/country/{countryId}")
-    public ResponseEntity<List<StateResponseDto>> getStatesByCountryId(
+    public ResponseEntity<List<Stateentity>> getStatesByCountryId(
             @PathVariable Long countryId,
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
-            List<StateResponseDto> list = service.getStatesByCountryId(countryId, isActive).stream()
-                    .map(s -> service.mapToResponseDto(s, false))
-                    .collect(Collectors.toList());
+            List<Stateentity> list = service.getStatesByCountryId(countryId, isActive);
             return ResponseEntity.ok(list);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -133,13 +125,13 @@ public class Statecontroller {
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateState(
             @PathVariable Long id,
-            @Valid @RequestBody StateRequestDto dto) {
+            @Valid @RequestBody Stateentity state) {
         try {
-            Stateentity updated = service.updateState(id, dto);
+            Stateentity updated = service.updateState(id, state);
             Map<String, Object> response = new HashMap<>();
             response.put("status", 200);
             response.put("message", "State updated successfully");
-            response.put("data", service.mapToResponseDto(updated, false));
+            response.put("data", updated);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             Map<String, String> response = new HashMap<>();
@@ -150,13 +142,11 @@ public class Statecontroller {
     }
 
     @GetMapping("/{id}/cities")
-    public ResponseEntity<List<CityResponseDto>> getCitiesByState(
+    public ResponseEntity<List<Cityentity>> getCitiesByState(
             @PathVariable Long id,
             @RequestParam(value = "isActive", required = false) Boolean isActive) {
         try {
-            List<CityResponseDto> cities = cityService.getCitiesByStateId(id, isActive).stream()
-                    .map(cityService::mapToResponseDto)
-                    .collect(Collectors.toList());
+            List<Cityentity> cities = cityService.getCitiesByStateId(id, isActive);
             return ResponseEntity.ok(cities);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);

@@ -5,8 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-import staff_service.staff_service.dto.request.StaffRequestDto;
-import staff_service.staff_service.dto.response.StaffResponseDto;
+import staff_service.staff_service.model.StaffEntity;
 import staff_service.staff_service.service.StaffService;
 
 import java.util.HashMap;
@@ -26,7 +25,7 @@ public class StaffController {
 
     @PostMapping({"", "/create"})
     public ResponseEntity<Map<String, Object>> createStaff(
-            @Valid @RequestBody StaffRequestDto request,
+            @Valid @RequestBody StaffEntity request,
             BindingResult bindingResult) {
         Map<String, Object> response = new HashMap<>();
 
@@ -40,10 +39,10 @@ public class StaffController {
         }
 
         try {
-            StaffResponseDto responseDto = staffService.createStaff(request);
+            StaffEntity savedStaff = staffService.createStaff(request);
             response.put("status", HttpStatus.CREATED.value());
             response.put("message", "Staff created successfully");
-            response.put("data", responseDto);
+            response.put("data", savedStaff);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.BAD_REQUEST.value());
@@ -56,10 +55,10 @@ public class StaffController {
     public ResponseEntity<Map<String, Object>> getStaffById(@PathVariable UUID id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            StaffResponseDto responseDto = staffService.getStaffById(id);
+            StaffEntity staff = staffService.getStaffById(id);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff fetched successfully");
-            response.put("data", responseDto);
+            response.put("data", staff);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (RuntimeException err) {
             response.put("status", HttpStatus.NOT_FOUND.value());
@@ -74,7 +73,7 @@ public class StaffController {
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<StaffResponseDto> staffList = staffService.getStaffByOwner(ownerId, isActive);
+            List<StaffEntity> staffList = staffService.getStaffByOwner(ownerId, isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff fetched successfully");
             response.put("data", staffList);
@@ -92,7 +91,7 @@ public class StaffController {
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<StaffResponseDto> staffList = staffService.getStaffByVenue(venueId, isActive);
+            List<StaffEntity> staffList = staffService.getStaffByVenue(venueId, isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff fetched successfully");
             response.put("data", staffList);
@@ -108,7 +107,7 @@ public class StaffController {
     public ResponseEntity<Map<String, Object>> getStaffByUser(@PathVariable Integer userId) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<StaffResponseDto> staffList = staffService.getStaffByUser(userId);
+            List<StaffEntity> staffList = staffService.getStaffByUser(userId);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff fetched successfully");
             response.put("data", staffList);
@@ -125,7 +124,7 @@ public class StaffController {
             @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<StaffResponseDto> staffList = staffService.getAllStaff(isActive);
+            List<StaffEntity> staffList = staffService.getAllStaff(isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff fetched successfully");
             response.put("data", staffList);
@@ -143,7 +142,7 @@ public class StaffController {
             @PathVariable boolean status) {
         Map<String, Object> response = new HashMap<>();
         try {
-            StaffResponseDto updated = staffService.changeStatus(id, status);
+            StaffEntity updated = staffService.changeStatus(id, status);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Staff status updated successfully");
             response.put("data", updated);

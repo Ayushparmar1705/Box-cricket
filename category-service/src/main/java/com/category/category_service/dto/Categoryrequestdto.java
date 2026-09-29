@@ -1,4 +1,4 @@
-package com.category.category_service.Entity;
+package com.category.category_service.dto;
 
 import java.util.Date;
 
@@ -18,30 +18,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-@Entity
-@Table(name = "categories")
-@Getter
-@Setter
 @Data
 @Builder
-public class Categoryentity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class Categoryrequestdto {
 
-    private int id;
 
     @NotBlank(message = "Category name is required")
     @Size(min = 2, max = 50, message = "Category name must be between 2 and 50 characters")
     private String category_name;
-
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private Date created_at;
-
-    @UpdateTimestamp
-    private Date updated_at;
-
-    @Column(name = "is_active")
-    private boolean active = true;
-
 }

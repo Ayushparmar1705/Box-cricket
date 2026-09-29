@@ -1,14 +1,10 @@
 package com.court_service.court_service.service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.court_service.court_service.dto.request.PricingRequestDto;
 import com.court_service.court_service.model.Pricingruleentity;
 import com.court_service.court_service.repository.PricingRuleRepositry;
 
@@ -22,48 +18,30 @@ public class PricingruleService {
     }
 
     @Transactional
-    public Pricingruleentity createPricing(PricingRequestDto pricingdto) {
-        if (pricingdto.getStartTime() == null || pricingdto.getEndTime() == null) {
+    public Pricingruleentity createPricing(Pricingruleentity pricing) {
+        if (pricing.getStart_time() == null || pricing.getEnd_time() == null) {
             throw new IllegalArgumentException("Start time and end time are required");
         }
 
-        if (!pricingdto.getStartTime().isBefore(pricingdto.getEndTime())) {
+        if (!pricing.getStart_time().isBefore(pricing.getEnd_time())) {
             throw new IllegalArgumentException("Start time must be before end time");
         }
 
-        if (pricingdto.getPrice() == null || pricingdto.getPrice() <= 0) {
+        if (pricing.getPrice() <= 0) {
             throw new IllegalArgumentException("Price must be greater than 0");
         }
 
-        if (pricingdto.getValidFrom() != null && pricingdto.getValidTo() != null) {
-            if (pricingdto.getValidFrom().isAfter(pricingdto.getValidTo())) {
+        if (pricing.getValid_from() != null && pricing.getValid_to() != null) {
+            if (pricing.getValid_from().isAfter(pricing.getValid_to())) {
                 throw new IllegalArgumentException("Valid from date must be before or equal to valid to date");
             }
         }
 
-        LocalDateTime validFromTime = pricingdto.getValidFrom() != null
-                ? LocalDateTime.of(pricingdto.getValidFrom(), LocalTime.MIN)
-                : null;
-
-        LocalDateTime validToTime = pricingdto.getValidTo() != null
-                ? LocalDateTime.of(pricingdto.getValidTo(), LocalTime.MAX)
-                : null;
-
-        if (rep.existsBycourtid(pricingdto.getCourtId()) == true) {
-            throw new IllegalArgumentException("Pricing rule already exists for court id: " + pricingdto.getCourtId());
+        if (rep.existsBycourtid(pricing.getCourtid())) {
+            throw new IllegalArgumentException("Pricing rule already exists for court id: " + pricing.getCourtid());
         }
 
-        Pricingruleentity entity = Pricingruleentity.builder()
-                .courtid(pricingdto.getCourtId())
-                .day_type(pricingdto.getDayType())
-                .start_time(pricingdto.getStartTime())
-                .end_time(pricingdto.getEndTime())
-                .price(pricingdto.getPrice())
-                .valid_from(pricingdto.getValidFrom())
-                .valid_to(pricingdto.getValidTo())
-                .build();
-
-        return rep.save(entity);
+        return rep.save(pricing);
     }
 
     public List<Pricingruleentity> getPricingByCourtId(int courtId) {

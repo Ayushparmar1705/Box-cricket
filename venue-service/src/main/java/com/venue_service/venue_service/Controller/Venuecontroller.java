@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.venue_service.venue_service.dto.request.VenueRequestdto;
-
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,11 +28,10 @@ public class Venuecontroller {
     @PostMapping("/create")
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> addVenue(
-            @RequestBody VenueRequestdto venue,
+            @RequestBody Venueentity venue,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         Map<String, Object> mapResult = new HashMap<>();
         try {
-
             Venueentity savedVenue = service.addVenue(venue, file);
             mapResult.put("status", 201);
             mapResult.put("message", "Venue created successfully");
@@ -52,7 +49,7 @@ public class Venuecontroller {
     @PreAuthorize("hasRole('OWNER')")
     public ResponseEntity<Map<String, Object>> updateVenue(
             @PathVariable int id,
-            @RequestBody VenueRequestdto venue,
+            @RequestBody Venueentity venue,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         Map<String, Object> mapResult = new HashMap<>();
         try {

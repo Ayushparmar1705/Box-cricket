@@ -37,8 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
 
                         // Allow public read for viewing countries/states/cities
-                        .requestMatchers(HttpMethod.GET, "/api/country/**", "/api/state/**", "/api/city/**",
-                                "/api/location/**")
+                        .requestMatchers(HttpMethod.GET, "/api/country/**", "/api/state/**", "/api/city/**")
                         .permitAll()
 
                         // Any other request must be authenticated

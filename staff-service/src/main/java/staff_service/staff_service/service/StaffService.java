@@ -2,14 +2,11 @@ package staff_service.staff_service.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import staff_service.staff_service.dto.request.StaffRequestDto;
-import staff_service.staff_service.dto.response.StaffResponseDto;
 import staff_service.staff_service.model.StaffEntity;
 import staff_service.staff_service.repository.StaffRepository;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class StaffService {
@@ -21,73 +18,45 @@ public class StaffService {
     }
 
     @Transactional
-    public StaffResponseDto createStaff(StaffRequestDto request) {
-        StaffEntity entity = StaffEntity.builder()
-                .userId(request.getUserId())
-                .ownerId(request.getOwnerId())
-                .venueId(request.getVenueId())
-                .designation(request.getDesignation())
-                .isActive(request.getIsActive() != null ? request.getIsActive() : true)
-                .build();
-
-        StaffEntity savedStaff = staffRepository.save(entity);
-        return StaffResponseDto.fromEntity(savedStaff);
+    public StaffEntity createStaff(StaffEntity request) {
+        return staffRepository.save(request);
     }
 
-    public StaffResponseDto getStaffById(UUID id) {
-        StaffEntity entity = staffRepository.findById(id)
+    public StaffEntity getStaffById(UUID id) {
+        return staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff record not found with id: " + id));
-        return StaffResponseDto.fromEntity(entity);
     }
 
-    public List<StaffResponseDto> getStaffByOwner(Integer ownerId, Boolean isActive) {
-        List<StaffEntity> list;
+    public List<StaffEntity> getStaffByOwner(Integer ownerId, Boolean isActive) {
         if (isActive != null) {
-            list = staffRepository.findByOwnerIdAndIsActive(ownerId, isActive);
-        } else {
-            list = staffRepository.findByOwnerId(ownerId);
+            return staffRepository.findByOwnerIdAndIsActive(ownerId, isActive);
         }
-        return list.stream()
-                .map(StaffResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return staffRepository.findByOwnerId(ownerId);
     }
 
-    public List<StaffResponseDto> getStaffByVenue(Integer venueId, Boolean isActive) {
-        List<StaffEntity> list;
+    public List<StaffEntity> getStaffByVenue(Integer venueId, Boolean isActive) {
         if (isActive != null) {
-            list = staffRepository.findByVenueIdAndIsActive(venueId, isActive);
-        } else {
-            list = staffRepository.findByVenueId(venueId);
+            return staffRepository.findByVenueIdAndIsActive(venueId, isActive);
         }
-        return list.stream()
-                .map(StaffResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return staffRepository.findByVenueId(venueId);
     }
 
-    public List<StaffResponseDto> getStaffByUser(Integer userId) {
-        return staffRepository.findByUserId(userId).stream()
-                .map(StaffResponseDto::fromEntity)
-                .collect(Collectors.toList());
+    public List<StaffEntity> getStaffByUser(Integer userId) {
+        return staffRepository.findByUserId(userId);
     }
 
-    public List<StaffResponseDto> getAllStaff(Boolean isActive) {
-        List<StaffEntity> list;
+    public List<StaffEntity> getAllStaff(Boolean isActive) {
         if (isActive != null) {
-            list = staffRepository.findByIsActive(isActive);
-        } else {
-            list = staffRepository.findAll();
+            return staffRepository.findByIsActive(isActive);
         }
-        return list.stream()
-                .map(StaffResponseDto::fromEntity)
-                .collect(Collectors.toList());
+        return staffRepository.findAll();
     }
 
     @Transactional
-    public StaffResponseDto changeStatus(UUID id, boolean status) {
+    public StaffEntity changeStatus(UUID id, boolean status) {
         StaffEntity entity = staffRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Staff record not found with id: " + id));
         entity.setActive(status);
-        StaffEntity updated = staffRepository.save(entity);
-        return StaffResponseDto.fromEntity(updated);
+        return staffRepository.save(entity);
     }
 }

@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.demo.owner_request_service.dto.UserDto;
 import com.example.demo.owner_request_service.client.UserClientService;
 import com.example.demo.owner_request_service.Status;
 import com.example.demo.owner_request_service.Model.Ownerrequestmodel;
