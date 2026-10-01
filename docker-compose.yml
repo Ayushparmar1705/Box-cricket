@@ -57,7 +57,7 @@ services:
   # ─────────────────────────────────────────────
   location-service:
     build:
-      context: ./location-service
+      context: ./Locationservice
       dockerfile: Dockerfile
     ports:
       - '3035:8085'
@@ -87,6 +87,7 @@ services:
   # VENUE SERVICE
   # localhost:3037  →  container:8087
   # ─────────────────────────────────────────────
+
   venue-service:
     build:
       context: ./venue-service
