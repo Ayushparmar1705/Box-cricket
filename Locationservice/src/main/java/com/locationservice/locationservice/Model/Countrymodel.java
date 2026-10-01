@@ -1,6 +1,8 @@
 package com.locationservice.locationservice.Model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,6 +23,7 @@ public class Countrymodel {
     private int id;
     private String country_name;
     private String country_code;
+    @JsonProperty("is_active")
     private boolean is_active = true;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime created_at;
@@ -36,5 +39,17 @@ public class Countrymodel {
     @PreUpdate
     protected void onUpdate() {
         updated_at = LocalDateTime.now();
+    }
+
+    @Override
+    public String toString() {
+        return "Countrymodel{" +
+                "id=" + id +
+                ", country_name='" + country_name + '\'' +
+                ", country_code='" + country_code + '\'' +
+                ", is_active=" + is_active +
+                ", created_at=" + created_at +
+                ", updated_at=" + updated_at +
+                '}';
     }
 }

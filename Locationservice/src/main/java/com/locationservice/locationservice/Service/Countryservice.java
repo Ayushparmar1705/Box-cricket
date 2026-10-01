@@ -34,11 +34,20 @@ public class Countryservice {
         return ApiResponse.success("Country created successfully");
     }
 
-    public ApiResponse<List<Countryresponsedto>> getAllCountries() {
-        List<Countrymodel> responseList = rep.findAll();
-
+    public ApiResponse<List<Countryresponsedto>> getAllCountries(boolean status) {
+        List<Countrymodel> responseList = rep.findByIsActive(status);
+        System.out.println("Inside response list = "+responseList);
         List<Countryresponsedto> dto = responseList.stream().map(mapper::toResponse).toList();
 
         return ApiResponse.success("Data Found successfully", dto);
+    }
+
+    public ApiResponse<String> changeStatus(int id) {
+        Countrymodel model = rep.findById(id).get();
+        model.set_active(!model.is_active());
+        rep.save(model);
+        return ApiResponse.success(
+                model.is_active() ? "Country activated successfully" : "Country deactivated successfully");
+
     }
 }

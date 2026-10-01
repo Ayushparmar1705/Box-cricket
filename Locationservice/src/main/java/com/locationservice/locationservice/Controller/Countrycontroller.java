@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,8 +34,17 @@ public class Countrycontroller {
 
     @GetMapping
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('OWNER') or hasRole('PLAYER')")
-    public ResponseEntity<ApiResponse<List<Countryresponsedto>>> getAllCountries() {
-        ApiResponse<List<Countryresponsedto>> res = service.getAllCountries();
+    public ResponseEntity<ApiResponse<List<Countryresponsedto>>> getAllCountries(
+            @RequestParam(defaultValue = "true") boolean status) {
+        ApiResponse<List<Countryresponsedto>> res = service.getAllCountries(status);
+        System.out.println("Response in controller = "+res.toString());
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+    @PutMapping
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<String>> changeStatus(@RequestParam int id) {
+        ApiResponse<String> res = service.changeStatus(id);
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 }
