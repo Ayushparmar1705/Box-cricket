@@ -1,34 +1,30 @@
 import React from 'react';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
+import CommonLoadingBar from './CommonLoadingBar';
 
-// 1. We define what a single input field should look like.
 export interface FormField {
-  name: string;         // e.g., 'email', 'role', 'agreeToTerms'
-  label: string;        // e.g., 'Email Address'
+  name: string;
+  label: string;
   type: 'text' | 'email' | 'password' | 'number' | 'select' | 'radio' | 'checkbox';
-  placeholder?: string; // Optional placeholder text
-  required?: boolean;   // Is this field mandatory?
-  icon?: React.ReactNode; // Optional Lucide icon for text inputs
-  options?: { value: string; label: string }[]; // Used for 'select' and 'radio' types
+  placeholder?: string;
+  required?: boolean;
+  icon?: React.ReactNode;
+  options?: { value: string; label: string }[];
 }
 
-// 2. We define all the properties (props) our CommonForm needs to receive.
 interface CommonFormProps {
   title?: string;
   subtitle?: string;
   fields: FormField[];
-  formData: Record<string, any>; // Holds the current values of all fields
-  onChange: (fieldName: string, value: any) => void; // Function to call when a user interacts
-  onSubmit: (e: React.FormEvent) => void;               // Function to call when user clicks Submit
-  submitText: string;                                   // Text for the submit button
-  isLoading?: boolean;                                  // Is it currently loading?
-  error?: string | null;                                // Error message to display (if any)
+  formData: Record<string, any>;
+  onChange: (fieldName: string, value: any) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  submitText: string;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
-/**
- * A highly reusable form component designed to handle text, selects, radios, and checkboxes.
- */
-const CommonForm: React.FC<CommonFormProps> = ({
+export const CommonForm: React.FC<CommonFormProps> = ({
   title,
   subtitle,
   fields,
@@ -36,13 +32,11 @@ const CommonForm: React.FC<CommonFormProps> = ({
   onChange,
   onSubmit,
   submitText,
-  isLoading = false,
-  error = null,
+  isLoading,
+  error = null
 }) => {
-
   const renderField = (field: FormField) => {
     switch (field.type) {
-
       case 'select':
         return (
           <div className="relative">
@@ -57,15 +51,20 @@ const CommonForm: React.FC<CommonFormProps> = ({
               value={formData[field.name] || ''}
               onChange={(e) => onChange(field.name, e.target.value)}
               required={field.required}
-              className={`w-full bg-white border border-gray-300 rounded-xl py-3 pr-10 text-gray-900 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none shadow-sm ${field.icon ? 'pl-10' : 'pl-4'}`}
+              className={`w-full bg-slate-900 hover:bg-slate-800 focus:bg-slate-900 border border-slate-700 rounded-xl py-2.5 pr-10 text-xs sm:text-sm text-white transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 appearance-none shadow-sm font-medium cursor-pointer ${field.icon ? 'pl-10' : 'pl-3.5'
+                }`}
             >
-              <option value="" disabled className="bg-white">{field.placeholder || 'Select an option'}</option>
+              <option value="" disabled className="bg-slate-900 text-slate-400">
+                {field.placeholder || 'Select an option'}
+              </option>
               {field.options?.map((opt) => (
-                <option key={opt.value} value={opt.value} className="bg-white">{opt.label}</option>
+                <option key={opt.value} value={opt.value} className="bg-slate-900 text-white">
+                  {opt.label}
+                </option>
               ))}
             </select>
-            <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-500">
-              <ChevronDown className="w-5 h-5" />
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+              <ChevronDown className="w-4 h-4" />
             </div>
           </div>
         );
@@ -82,9 +81,11 @@ const CommonForm: React.FC<CommonFormProps> = ({
                   checked={formData[field.name] === opt.value}
                   onChange={(e) => onChange(field.name, e.target.value)}
                   required={field.required}
-                  className="w-4 h-4 text-emerald-600 bg-white border-gray-300 focus:ring-emerald-500/20 focus:ring-offset-white cursor-pointer"
+                  className="w-4 h-4 text-emerald-500 bg-slate-900 border-slate-700 focus:ring-emerald-500/20 cursor-pointer"
                 />
-                <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{opt.label}</span>
+                <span className="ml-2 text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">
+                  {opt.label}
+                </span>
               </label>
             ))}
           </div>
@@ -99,13 +100,14 @@ const CommonForm: React.FC<CommonFormProps> = ({
               checked={!!formData[field.name]}
               onChange={(e) => onChange(field.name, e.target.checked)}
               required={field.required}
-              className="w-4 h-4 text-emerald-600 bg-white border-gray-300 rounded focus:ring-emerald-500/20 focus:ring-offset-white cursor-pointer"
+              className="w-4 h-4 text-emerald-500 bg-slate-900 border-slate-700 rounded focus:ring-emerald-500/20 cursor-pointer"
             />
-            <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-900 transition-colors">{field.label}</span>
+            <span className="ml-2 text-xs font-semibold text-slate-300 group-hover:text-white transition-colors">
+              {field.label}
+            </span>
           </label>
         );
 
-      // Default covers text, email, password, number
       default:
         return (
           <div className="relative">
@@ -122,7 +124,8 @@ const CommonForm: React.FC<CommonFormProps> = ({
               onChange={(e) => onChange(field.name, e.target.value)}
               required={field.required}
               placeholder={field.placeholder}
-              className={`w-full bg-white border border-gray-300 rounded-xl py-3 pr-4 text-gray-900 placeholder-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm ${field.icon ? 'pl-10' : 'pl-4'}`}
+              className={`w-full bg-slate-900 hover:bg-slate-800/80 focus:bg-slate-900 border border-slate-700 rounded-xl py-2.5 pr-4 text-xs sm:text-sm text-white placeholder-slate-500 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 shadow-sm font-medium ${field.icon ? 'pl-10' : 'pl-3.5'
+                }`}
             />
           </div>
         );
@@ -130,46 +133,46 @@ const CommonForm: React.FC<CommonFormProps> = ({
   };
 
   return (
-    <div className="w-full">
-      {/* Optional Header Section */}
+    <div className="w-full text-slate-100">
       {(title || subtitle) && (
-        <div className="mb-8">
-          {title && <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>}
-          {subtitle && <p className="text-gray-500">{subtitle}</p>}
+        <div className="mb-6">
+          {title && (
+            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight mb-1">
+              {title}
+            </h2>
+          )}
+          {subtitle && <p className="text-xs text-slate-400 leading-relaxed">{subtitle}</p>}
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="space-y-5">
-
-        {/* Error Alert Box */}
+      <form onSubmit={onSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium shadow-sm">
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-semibold shadow-sm">
             {error}
           </div>
         )}
 
-        {/* Dynamically Generate Input Fields */}
         {fields.map((field) => (
-          <div key={field.name} className={`group ${field.type !== 'checkbox' ? 'space-y-1.5' : ''}`}>
-            {/* We don't render a top label for checkboxes since it sits next to the box */}
+          <div key={field.name} className={`group ${field.type !== 'checkbox' ? 'space-y-1' : ''}`}>
             {field.type !== 'checkbox' && (
-              <label htmlFor={field.name} className="text-sm font-medium text-gray-700">
-                {field.label} {field.required && <span className="text-red-500">*</span>}
+              <label htmlFor={field.name} className="text-xs font-bold text-slate-300 block">
+                {field.label} {field.required && <span className="text-rose-400">*</span>}
               </label>
             )}
-
             {renderField(field)}
           </div>
         ))}
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-sm text-sm font-bold text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white focus:ring-gray-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-8"
+          className="w-full flex justify-center items-center py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/20 text-xs sm:text-sm font-bold text-slate-950 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-6 cursor-pointer"
         >
           {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <div className="flex items-center justify-center gap-2">
+              <CommonLoadingBar size="w-6 h-6" />
+              <span>Saving...</span>
+            </div>
           ) : (
             submitText
           )}

@@ -14,7 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/admin-login" replace />} />
         <Route path="/admin-login" element={<AdminLogin />} />
-        
+
         {/* All routes inside AdminLayout will share the Sidebar & Header */}
         <Route element={<AdminLayout />}>
           <Route path="/admindashboard" element={<SuperAdminDashboard />} />

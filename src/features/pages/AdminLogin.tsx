@@ -3,11 +3,11 @@ import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Loader2 } from 'lucid
 import { useLogin } from '../hooks/useLogin';
 
 const AdminLogin: React.FC = () => {
-  const { 
-    email, setEmail, 
-    password, setPassword, 
-    showPassword, setShowPassword, 
-    handleSubmit, isLoading, error 
+  const {
+    email, setEmail,
+    password, setPassword,
+    showPassword, setShowPassword,
+    handleSubmit, isLoading
   } = useLogin();
 
   return (
@@ -81,12 +81,8 @@ const AdminLogin: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium">
-                {error}
-              </div>
-            )}
-            
+
+
             <div className="space-y-1.5 group">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email address
@@ -102,7 +98,7 @@ const AdminLogin: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 placeholder-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm"
                   placeholder="admin@boxcricket.com"
-                  required
+
                 />
               </div>
             </div>
@@ -122,7 +118,7 @@ const AdminLogin: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-12 text-gray-900 placeholder-gray-400 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-sm"
                   placeholder="••••••••"
-                  required
+
                 />
                 <button
                   type="button"

@@ -1,41 +1,136 @@
-import React from 'react';
-import { Plus, X, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { MapPin, AlertTriangle, X, Building2, Globe2 } from 'lucide-react';
 import CommonForm from '../../Components/Common/CommonForm';
 import type { FormField } from '../../Components/Common/CommonForm';
 import { CommonTable } from '../../Components/Common/CommonTable';
 import type { TableColumn } from '../../Components/Common/CommonTable';
-import { useCityData } from '../hooks/useCityData';
-import type { CityData } from '../hooks/useCityData';
+import Navbar from '../../Components/Common/Navbar';
+import { fetchStatesApi } from '../services/stateService';
+import { addCityApi, changeStatusApi, fetchCitiesApi } from '../services/cityService';
+import toast from 'react-hot-toast';
+import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
+
+interface CityData {
+  id: number;
+  name: string;
+  countryName?: string;
+  is_active: boolean;
+  stateName?: string;
+}
 
 const CityManager: React.FC = () => {
-  const {
-    cities,
-    states,
-    loadingData,
-    apiError,
-    isModalOpen,
-    editingId,
-    cityToDelete,
-    formData,
-    handleFormChange,
-    handleSubmit,
-    handleEditClick,
-    handleDeleteClick,
-    confirmDelete,
-    cancelDelete,
-    openAddModal,
-    closeModal
-  } = useCityData();
+  const [cities, setCities] = useState<CityData[]>([]);
+  const [states, setStates] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [apiError, setApiError] = useState<string>('');
+  const [isModalOpen, setIsModelOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [cityToDelete, setcityToDelete] = useState<CityData | null>(null);
+  const [filterActive, setfilterActive] = useState(true);
+  const [formData, setFormData] = useState({
+    id: 0,
+    name: '',
+    stateId: 0,
+    is_active: true
+  });
+  const handleFormChange = (fieldName: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: value }));
+  };
+  const cancelDelete = () => {
+    setcityToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!cityToDelete) return;
+    const result = await changeStatusApi(cityToDelete.id);
+    if (result && (result.status === 200 || result.success)) {
+      toast.success(result.message || 'Status updated');
+      setcityToDelete(null);
+      fetchCities();
+    } else {
+      toast.error(result?.error || 'Failed to update status');
+    }
+  };
+
+  const fetchState = async () => {
+    const data = await fetchStatesApi();
+    setStates(data);
+    console.log(data);
+
+  }
+
+  useEffect(() => {
+    fetchState();
+  }, []);
+
+  const openAddModel = () => {
+    setEditingId(null);
+    setIsModelOpen(true);
+
+  }
+
+  const closeModal = () => {
+    setIsModelOpen(false);
+  }
+
+  const fetchCities = async () => {
+    setLoadingData(true);
+    try {
+      const data = await fetchCitiesApi();
+      setCities(data);
+    } catch (error) {
+      console.error("Error while fetching cities:", error);
+      setApiError("Failed to fetch cities");
+    } finally {
+      setLoadingData(false);
+    }
+
+  }
+
+  useEffect(() => {
+    fetchCities();
+  }, []);
+
+  const handleSubmit = async () => {
+    const result = await addCityApi(formData);
+    if (result) {
+      toast.success("City Added succesfully");
+      closeModal();
+      await fetchCities();
+    } else {
+      toast.error("Error while adding city");
+    }
+  }
+
+  const handleFilterDropdown = async (value: boolean) => {
+    setfilterActive(value);
+    if (value === true) {
+      await fetchCities();
+    } else {
+      await fetchCities();
+    }
+  }
 
   const formFields: FormField[] = [
-    { 
-      name: 'stateId', 
-      label: 'Select State', 
-      type: 'select', 
-      options: states, // Populated from API via hook
-      required: true 
+    {
+      name: 'stateId',
+      label: 'Select State',
+      type: 'select',
+      options: states.map((s: any) => ({
+        value: s.id,
+        label: s.name,
+      })),
+      required: true,
+      placeholder: 'Choose governing state'
     },
-    { name: 'name', label: 'City Name', type: 'text', placeholder: 'e.g. Mumbai', required: true },
+    {
+      name: 'name',
+      label: 'City Name',
+      type: 'text',
+      placeholder: 'e.g. Mumbai, Ahmedabad, Sydney, London',
+      required: true,
+      icon: <MapPin size={16} />
+    },
     {
       name: 'is_active',
       label: 'Status',
@@ -45,20 +140,68 @@ const CityManager: React.FC = () => {
         { value: 'Inactive', label: 'Inactive' }
       ],
       required: true
-    }
+    },
+
   ];
+  const handleEditClick = (city: CityData) => {
+    setEditingId(city.id);
+    setFormData({
+      id: city.id,
+      name: city.name,
+      stateId: states.find((s: any) => s.name === city.stateName)?.id || 0,
+      is_active: city.is_active
+    });
+    setIsModelOpen(true);
+  };
+
+  const handleDeleteClick = (item: CityData) => {
+    setcityToDelete(item);
+  };
 
   const tableColumns: TableColumn<CityData>[] = [
     { header: 'ID', accessor: 'id' },
-    { header: 'City Name', accessor: 'name' },
-    { header: 'State', accessor: 'stateName' },
-    { header: 'Country', accessor: 'countryName' },
+    {
+      header: 'City Name',
+      accessor: 'name',
+      render: (item: CityData) => (
+        <span className="font-bold text-white">{item.name}</span>
+      )
+    },
+    {
+      header: 'State',
+      accessor: 'stateName',
+      render: (item: CityData) => (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-xs font-semibold">
+          <Building2 size={12} className="text-slate-400" />
+          <span>{item.stateName || 'State Region'}</span>
+        </span>
+      )
+    },
+    {
+      header: 'Country',
+      accessor: 'countryName',
+      render: (item: CityData) => (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-400 text-xs font-medium">
+          <Globe2 size={12} className="text-slate-500" />
+          <span>{item.countryName || 'Global'}</span>
+        </span>
+      )
+    },
     {
       header: 'Status',
       accessor: 'is_active',
-      render: (item) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold shadow-sm ${item.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-          {item.is_active ? "Active" : "Inactive"}
+      render: (item: CityData) => (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${item.is_active
+            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+            : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+            }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${item.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+              }`}
+          />
+          {item.is_active ? 'Active' : 'Inactive'}
         </span>
       )
     },
@@ -66,76 +209,82 @@ const CityManager: React.FC = () => {
   ];
 
   return (
-    <div className="w-full text-gray-900">
-      {/* Header Area */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">City Manager</h1>
-          <p className="text-sm text-gray-500 mt-2">Manage cities, regions, and their statuses.</p>
-        </div>
+    <div className="w-full text-slate-100 space-y-6 pb-12">
+      {/* Top Navbar */}
+      <Navbar
+        pageName="Cities"
+        subtitle="Manage municipal areas, turf booking clusters, and metropolitan operations."
+        buttonText="Add New City"
+        onButtonClick={openAddModel}
+        dropdownValue={filterActive}
+        onDropdownChange={handleFilterDropdown}
+        icon={<MapPin size={20} className="text-emerald-400" />}
+      />
 
-        <button
-          onClick={openAddModal}
-          className="bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] flex items-center gap-2 transform hover:-translate-y-0.5"
-        >
-          <Plus size={18} strokeWidth={2.5} />
-          Add New City
-        </button>
-      </div>
-
+      {/* Error Banner */}
       {apiError && (
-        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 text-sm font-medium flex items-center gap-3 shadow-sm">
-          <AlertTriangle size={18} />
+        <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs sm:text-sm font-medium flex items-center gap-3 shadow-lg">
+          <AlertTriangle size={18} className="shrink-0" />
           <span>API Error: {apiError}</span>
         </div>
       )}
 
-      {/* Table Area */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden relative">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-transparent"></div>
-        
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-3">
-            All Cities
-            <span className="text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded-full font-semibold shadow-sm">
+      {/* Table Card */}
+      <div className="bg-[#0d1322] rounded-2xl border border-slate-800 shadow-xl overflow-hidden relative">
+        {/* Table Header Row */}
+        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-[#090e1a]">
+          <h2 className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2.5">
+            <span>All Cities</span>
+            <span className="text-xs bg-slate-900 border border-slate-700 text-slate-300 px-2.5 py-0.5 rounded-full font-bold shadow-sm">
               {cities.length} Total
             </span>
           </h2>
           {loadingData && (
-            <span className="text-sm font-semibold text-emerald-400 animate-pulse flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></div>
+            <span className="text-xs font-semibold text-emerald-400 animate-pulse flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
               Loading data...
             </span>
           )}
         </div>
 
-        <div className="p-2">
-          <CommonTable
-            columns={tableColumns}
-            data={cities}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-          />
+        {/* Data Table */}
+        <div className="p-3">
+          {loadingData ? (
+            <div className="py-12">
+              <CommonLoadingBar />
+            </div>
+          ) : (
+            <CommonTable
+              columns={tableColumns}
+              data={cities}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          )}
         </div>
       </div>
 
-      {/* Modal Overlay */}
+      {/* Add / Edit City Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-md shadow-xl relative animate-in zoom-in-95 duration-200 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-emerald-400"></div>
-            
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden text-white">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+
             <button
               onClick={closeModal}
-              className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors z-10"
+              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors z-10 cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
-            <div className="p-8">
+            <div className="p-7 sm:p-8">
               <CommonForm
-                title={editingId ? "Edit City" : "Add New City"}
-                subtitle={editingId ? "Update the city details below." : "Fill in the details below to add a new city."}
+                title={editingId ? 'Edit City' : 'Add New City'}
+                subtitle={
+                  editingId
+                    ? 'Update the city details below.'
+                    : 'Fill in the details below to add a new city.'
+                }
                 fields={formFields}
                 formData={{
                   ...formData,
@@ -143,7 +292,7 @@ const CityManager: React.FC = () => {
                 }}
                 onChange={handleFormChange}
                 onSubmit={handleSubmit}
-                submitText={editingId ? "Update City" : "Save City"}
+                submitText={editingId ? 'Update City' : 'Save City'}
               />
             </div>
           </div>
@@ -152,28 +301,30 @@ const CityManager: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {cityToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white border border-gray-200 rounded-2xl w-full max-w-sm shadow-xl relative animate-in zoom-in-95 duration-200 p-8 text-center">
-            
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="text-red-500" size={32} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200 p-7 text-center text-white">
+            <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+              <AlertTriangle className="text-rose-400" size={28} />
             </div>
-            
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Confirm Deletion</h3>
-            <p className="text-gray-500 text-sm mb-8">
-              Are you sure you want to delete <span className="text-gray-900 font-bold">{cityToDelete.name}</span>? This action cannot be undone.
+
+            <h3 className="text-lg font-bold text-white mb-1.5">Confirm Deletion</h3>
+            <p className="text-slate-400 text-xs mb-6 leading-relaxed">
+              Are you sure you want to delete{' '}
+              <span className="text-white font-bold">{cityToDelete.name}</span>? This action cannot be undone.
             </p>
-            
+
             <div className="flex items-center gap-3">
-              <button 
+              <button
+                type="button"
                 onClick={cancelDelete}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2.5 rounded-xl font-semibold transition-colors"
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
+                type="button"
                 onClick={confirmDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl font-semibold transition-all shadow-sm"
+                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer"
               >
                 Delete
               </button>
