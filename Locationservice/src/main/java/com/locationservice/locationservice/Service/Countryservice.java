@@ -9,6 +9,7 @@ import com.locationservice.locationservice.Model.Countrymodel;
 import com.locationservice.locationservice.Repositry.Countryrepositry;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -34,10 +35,27 @@ public class Countryservice {
         return ApiResponse.success("Country created successfully");
     }
 
-    public ApiResponse<List<Countryresponsedto>> getAllCountries(boolean status) {
-        List<Countrymodel> responseList = rep.findByIsActive(status);
-        System.out.println("Inside response list = "+responseList);
-        List<Countryresponsedto> dto = responseList.stream().map(mapper::toResponse).toList();
+    public ApiResponse<List<Countryresponsedto>> getAllCountries(boolean status, int id) {
+
+        List<Countryresponsedto> dto;
+
+        if (id == 0) {
+
+            List<Countrymodel> responseList = rep.findByIsActive(status);
+
+            dto = responseList.stream()
+                    .map(mapper::toResponse)
+                    .toList();
+
+        } else {
+
+            Optional<Countrymodel> response = rep.findById(id);
+
+            dto = response
+                    .map(mapper::toResponse)
+                    .map(List::of)
+                    .orElse(List.of());
+        }
 
         return ApiResponse.success("Data Found successfully", dto);
     }
@@ -49,5 +67,24 @@ public class Countryservice {
         return ApiResponse.success(
                 model.is_active() ? "Country activated successfully" : "Country deactivated successfully");
 
+    }
+
+    public ApiResponse<Void> updateCountry(Countryrequestdto dto, int id){
+
+        Optional<Countrymodel> model = rep.findById(id);
+        if(model.isEmpty()){
+            return ApiResponse.success("Country not exists");
+        }
+        dto.setCountry_name(dto.getCountry_name());
+        dto.setCountry_code(dto.getCountry_code());
+        Countrymodel country =  model.get();
+        country.setCountry_name(dto.getCountry_name());
+        country.setCountry_code(dto.getCountry_code());
+        rep.save(country);
+        return ApiResponse.success("Country updated successfully");
+    }
+    public Optional<List<Countrymodel>> filter(boolean status){
+        Optional<List<Countrymodel>> model = Optional.ofNullable(rep.findByIsActive(status));
+        return model;
     }
 }
