@@ -3,6 +3,7 @@ package com.locationservice.locationservice.Controller;
 import com.locationservice.locationservice.Dto.RequestDto.Countryrequestdto;
 import com.locationservice.locationservice.Dto.ResponseDto.ApiResponse;
 import com.locationservice.locationservice.Dto.ResponseDto.Countryresponsedto;
+import com.locationservice.locationservice.Dto.ResponseDto.Stateresponsedto;
 import com.locationservice.locationservice.Model.Countrymodel;
 import com.locationservice.locationservice.Service.Countryservice;
 import java.util.List;
@@ -24,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/country")
 public class Countrycontroller {
     private final Countryservice service;
-
     public Countrycontroller(Countryservice service) {
         this.service = service;
     }
