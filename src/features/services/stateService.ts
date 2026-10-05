@@ -1,5 +1,36 @@
-import baseUrl from '../../api/Api';
+// stateService.ts
+// Handles all API requests related to States
 
+import baseUrl from '../../api/Api';
+import type { CountryItem } from './countryService';
+
+export interface StateItem {
+  id: number | string;
+  state_name: string;
+  state_code: string;
+  country_name?: string;
+  country?: CountryItem | any;
+  countryId?: number | string;
+  is_active?: boolean;
+  [key: string]: any;
+}
+
+export interface StatePayload {
+  country: number | string;
+  state_name: string;
+  state_code: string;
+  is_active?: boolean;
+}
+
+export interface StateApiResponse<T = StateItem[]> {
+  status?: number;
+  success?: boolean;
+  message: string;
+  data: T;
+  timestamp?: string;
+}
+
+// Helper function to get authorization headers
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -8,85 +39,101 @@ const getHeaders = () => {
   };
 };
 
-export interface PaginatedStateResponse {
-  content: any[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  [key: string]: any;
-}
+/**
+ * Fetch states list
+ * Endpoint: GET http://localhost:3035/api/state?status=true&id=0
+ */
+export const fetchStatesApi = async (
+  status: boolean | string = true,
+  id: number = 0
+): Promise<StateApiResponse<StateItem[]>> => {
+  const response = await fetch(`${baseUrl.location}/api/state?status=${status}&id=${id}`, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
 
-export const fetchStatesApi = async (page: number = 0, size: number = 10, isActive: boolean = true) => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('No authentication token found. Please log in.');
-    }
-
-    const params = new URLSearchParams({
-      isActive: String(isActive),
-      page: String(page),
-      size: String(size),
-    });
-
-    const response = await fetch(`${baseUrl.location}/api/state/view?${params}`, {
-      method: 'GET',
-      headers: getHeaders(),
-    });
-
-    if (!response.ok) {
-      if (response.status === 403) {
-        throw new Error('403 Forbidden: You do not have permission to view states.');
-      }
-      throw new Error(`Failed to fetch states: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("fetchStatesApi Error:", error);
-    throw error;
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch states');
   }
+
+  return await response.json();
 };
 
-export const createStateApi = async (stateData: any) => {
-  try {
-    const response = await fetch(`${baseUrl.location}/api/state/create`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(stateData)
-    });
-    return await response.json();
-  } catch (err) {
-    console.error('createStateApi Error:', err);
-    throw err;
+/**
+ * Filter states by status
+ * Endpoint: GET http://localhost:3035/api/state/status?status={status}
+ */
+export const filterState = async (
+  status: boolean | string = true
+): Promise<StateItem[] | StateApiResponse<StateItem[]>> => {
+  const response = await fetch(`${baseUrl.location}/api/state/status?status=${status}`, {
+    method: 'GET',
+    headers: getHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch states by status');
   }
+
+  return await response.json();
 };
 
-export const updateStateApi = async (id: number | string, stateData: any) => {
-  try {
-    const response = await fetch(`${baseUrl.location}/api/state/update/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(stateData)
-    });
-    return await response.json();
-  } catch (err) {
-    console.error('updateStateApi Error:', err);
-    throw err;
+/**
+ * Create a new state
+ * Endpoint: POST http://localhost:3035/api/state
+ */
+export const createStateApi = async (stateData: StatePayload) => {
+  const response = await fetch(`${baseUrl.location}/api/state`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      country: Number(stateData.country),
+      state_name: stateData.state_name,
+      state_code: stateData.state_code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to create state');
   }
+
+  return await response.json();
 };
 
-export const deleteStateApi = async (id: number | string) => {
-  try {
-    const response = await fetch(`${baseUrl.location}/api/state/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-    });
-    return await response.json();
-  } catch (err) {
-    console.error('deleteStateApi Error:', err);
-    throw err;
+/**
+ * Update an existing state
+ * Endpoint: PUT http://localhost:3035/api/state/update?id={id}
+ */
+export const updateStateApi = async (id: number | string, stateData: StatePayload) => {
+  const response = await fetch(`${baseUrl.location}/api/state/update?id=${id}`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      country: Number(stateData.country),
+      state_name: stateData.state_name,
+      state_code: stateData.state_code,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update state');
   }
+
+  return await response.json();
+};
+
+export const deleteStateApi = async (id: number) => {
+  const response = await fetch(`${baseUrl.location}/api/state?id=${id}`, {
+    method: "PUT",
+    headers: getHeaders()
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to delete state');
+  }
+  return await response.json();
 };

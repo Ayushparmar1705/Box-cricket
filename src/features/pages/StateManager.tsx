@@ -7,73 +7,63 @@ import Navbar from '../../Components/Common/Navbar';
 import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
 import {
   fetchStatesApi,
+  filterState,
   createStateApi,
   updateStateApi,
+  type StateItem,
+  type StatePayload,
   deleteStateApi
 } from '../services/stateService';
-import { fetchCountriesApi } from '../services/countryService';
+import { fetchCountriesApi, type CountryItem } from '../services/countryService';
 import toast from 'react-hot-toast';
 
-export interface StateItem {
-  id: number | string;
-  name: string;
-  countryId?: number | string;
-  countryName?: string;
-  country?: { id: number | string; name: string; code?: string };
-  is_active: boolean;
-  [key: string]: any;
-}
-
-const initialFormState = {
-  name: '',
-  countryId: '',
+const initialFormState: StatePayload = {
+  country: '',
+  state_name: '',
+  state_code: '',
   is_active: true
 };
 
-export default function StateManager() {
+const StateManager: React.FC = () => {
   const [states, setStates] = useState<StateItem[]>([]);
-  const [countries, setCountries] = useState<{ id: number | string; name: string; code?: string }[]>([]);
+  const [countries, setCountries] = useState<CountryItem[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [filterActive, setFilterActive] = useState<boolean>(true);
 
+  // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingId, setEditingId] = useState<number | string | null>(null);
+  const [formData, setFormData] = useState<StatePayload>(initialFormState);
+  const [stateToDelete, setStateToDelete] = useState<StateItem>();
 
-  const [stateToDelete, setStateToDelete] = useState<StateItem | null>(null);
-  const [formData, setFormData] = useState<Record<string, any>>(initialFormState);
-
-  const loadData = async (activeFilter: boolean) => {
+  // Fetch States and Countries
+  const loadData = async (status: boolean = true) => {
     setLoadingData(true);
     setApiError(null);
 
     try {
       const [statesRes, countriesRes] = await Promise.all([
-        fetchStatesApi(0, 100, activeFilter).catch(() => []),
-        fetchCountriesApi(true).catch(() => [])
+        filterState(status), // Calls http://localhost:3035/api/state/status?status={true/false}
+        fetchCountriesApi(true)
       ]);
 
-      if (statesRes && statesRes.content && Array.isArray(statesRes.content)) {
-        setStates(statesRes.content);
-      } else if (Array.isArray(statesRes)) {
-        setStates(statesRes);
-      } else {
-        setStates([]);
-      }
+      // Extract states list from API response
+      const stateList = Array.isArray(statesRes)
+        ? statesRes
+        : (statesRes?.data || (statesRes as any)?.content || []);
+      setStates(stateList);
 
-      const rawCountries = Array.isArray(countriesRes)
+      // Extract countries list for the dropdown
+      const countryList = Array.isArray(countriesRes)
         ? countriesRes
-        : (countriesRes?.data || (countriesRes as any)?.content || []);
-      const countryList = rawCountries.map((c: any) => ({
-        id: c.id,
-        name: c.country_name || c.name || '',
-        code: c.country_code || c.code || ''
-      }));
+        : (countriesRes?.data || []);
       setCountries(countryList);
     } catch (err: any) {
-      console.error('Error fetching states:', err);
+      console.error('Error fetching data:', err);
       setApiError(err?.message || 'Failed to fetch states');
-      toast.error('Failed to load states');
+      toast.error(err?.message || 'Failed to load states');
     } finally {
       setLoadingData(false);
     }
@@ -90,8 +80,9 @@ export default function StateManager() {
   const openAddModal = () => {
     setEditingId(null);
     setFormData({
-      name: '',
-      countryId: countries.length > 0 ? String(countries[0].id) : '',
+      country: countries.length > 0 ? countries[0].id : '',
+      state_name: '',
+      state_code: '',
       is_active: true
     });
     setIsModalOpen(true);
@@ -105,22 +96,30 @@ export default function StateManager() {
 
   const handleEditClick = (item: StateItem) => {
     setEditingId(item.id);
-    const countryIdVal = item.countryId || item.country?.id || '';
+    const matchedCountry = countries.find(
+      (c) =>
+        (c.country_name && item.country_name && c.country_name.trim().toLowerCase() === item.country_name.trim().toLowerCase()) ||
+        (c.country_name && item.country?.country_name && c.country_name.trim().toLowerCase() === item.country?.country_name.trim().toLowerCase()) ||
+        String(c.id) === String(item.country?.id || item.country || item.countryId)
+    );
     setFormData({
-      name: item.name,
-      countryId: String(countryIdVal),
-      is_active: item.is_active
+      country: matchedCountry ? matchedCountry.id : (item.country?.id || item.country || (countries.length > 0 ? countries[0].id : '')),
+      state_name: item.state_name || item.name || '',
+      state_code: item.state_code || '',
+      is_active: item.is_active ?? true
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     try {
-      const payload = {
-        name: formData.name.trim(),
-        countryId: Number(formData.countryId) || formData.countryId,
+      const payload: StatePayload = {
+        country: Number(formData.country),
+        state_name: formData.state_name.trim(),
+        state_code: formData.state_code.trim().toUpperCase(),
         is_active: formData.is_active
       };
 
@@ -129,7 +128,7 @@ export default function StateManager() {
         toast.success('State updated successfully!');
       } else {
         await createStateApi(payload);
-        toast.success('State created successfully!');
+        toast.success('State added successfully!');
       }
 
       closeModal();
@@ -137,46 +136,37 @@ export default function StateManager() {
     } catch (err: any) {
       console.error('Save state failed:', err);
       toast.error(err?.message || 'Failed to save state');
-    }
-  };
-
-  const handleDeleteClick = (item: StateItem) => {
-    setStateToDelete(item);
-  };
-
-  const confirmDelete = async () => {
-    if (!stateToDelete) return;
-
-    try {
-      await deleteStateApi(stateToDelete.id);
-      toast.success('State deleted successfully!');
-      setStateToDelete(null);
-      await loadData(filterActive);
-    } catch (err: any) {
-      console.error('Delete state failed:', err);
-      toast.error(err?.message || 'Failed to delete state');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const formFields: FormField[] = [
     {
-      name: 'countryId',
+      name: 'country',
       label: 'Select Country',
       type: 'select',
       options: countries.map((c) => ({
         value: String(c.id),
-        label: `${c.code ? `[${c.code}] ` : ''}${c.name}`
+        label: `${c.country_code ? `[${c.country_code}] ` : ''}${c.country_name || c.name}`
       })),
       required: true,
       placeholder: 'Select target country'
     },
     {
-      name: 'name',
+      name: 'state_name',
       label: 'State Name',
       type: 'text',
-      placeholder: 'e.g. Maharashtra, Gujarat, Victoria',
+      placeholder: 'e.g. Gujarat, Maharashtra, California',
       required: true,
       icon: <Building2 size={16} />
+    },
+    {
+      name: 'state_code',
+      label: 'State Code',
+      type: 'text',
+      placeholder: 'e.g. GJ, MH, CA',
+      required: true
     },
     {
       name: 'is_active',
@@ -190,28 +180,68 @@ export default function StateManager() {
     }
   ];
 
+  const cancelDelete = () => {
+    setStateToDelete(undefined);
+  };
+
+  const confirmDelete = async () => {
+    if (!stateToDelete) return;
+    try {
+      const result = await deleteStateApi(Number(stateToDelete.id));
+      toast.success(result.message || 'Status updated successfully');
+      setStateToDelete(undefined);
+      await loadData(filterActive);
+    } catch (err: any) {
+      console.error('Delete state failed:', err);
+      toast.error(err?.message || 'Failed to delete state');
+    }
+  };
+
+  const handleDeleteClick = async (item: StateItem) => {
+    setStateToDelete(item);
+  };
+
   const tableColumns: Table<StateItem>[] = [
     { header: 'ID', accessor: 'id' },
     {
       header: 'State Name',
-      accessor: 'name',
+      accessor: 'state_name',
       render: (item) => (
-        <span className="font-bold text-white">{item.name}</span>
+        <span className="font-bold text-white">{item.state_name || item.name}</span>
+      )
+    },
+    {
+      header: 'Code',
+      accessor: 'state_code',
+      render: (item) => (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700 text-slate-300 font-mono text-xs font-bold">
+          {item.state_code || 'N/A'}
+        </span>
       )
     },
     {
       header: 'Country',
-      accessor: 'countryName',
+      accessor: 'country_name',
       render: (item) => {
-        const countryLabel =
-          item.countryName ||
-          item.country?.name ||
-          countries.find((c) => String(c.id) === String(item.countryId))?.name ||
-          'Linked Country';
+        const countryName =
+          item.country_name ||
+          item.country?.country_name ||
+          (typeof item.country === 'string' ? item.country : null) ||
+          countries.find((c) => String(c.id) === String(item.country?.id || item.countryId || item.country))?.country_name ||
+          'N/A';
+
+        const countryCode =
+          item.country?.country_code ||
+          countries.find(
+            (c) =>
+              (c.country_name && c.country_name.toLowerCase() === countryName.toLowerCase()) ||
+              String(c.id) === String(item.country?.id || item.countryId || item.country)
+          )?.country_code;
+
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-xs font-semibold">
             <Globe2 size={12} className="text-slate-400" />
-            <span>{countryLabel}</span>
+            <span>{countryCode ? `[${countryCode}] ` : ''}{countryName}</span>
           </span>
         );
       }
@@ -219,20 +249,23 @@ export default function StateManager() {
     {
       header: 'Status',
       accessor: 'is_active',
-      render: (item) => (
-        <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${item.is_active
-            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-            : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-            }`}
-        >
+      render: (item) => {
+        const isActive = item.is_active === false ? false : true;
+        return (
           <span
-            className={`w-1.5 h-1.5 rounded-full ${item.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isActive
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+              : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
               }`}
-          />
-          {item.is_active ? 'Active' : 'Inactive'}
-        </span>
-      )
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'
+                }`}
+            />
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        );
+      }
     },
     { header: 'Actions', accessor: 'actions' }
   ];
@@ -288,7 +321,7 @@ export default function StateManager() {
               data={states}
               onEdit={handleEditClick}
               onDelete={handleDeleteClick}
-
+              isActive={filterActive}
             />
           )}
         </div>
@@ -322,13 +355,14 @@ export default function StateManager() {
                 }}
                 onChange={handleFormChange}
                 onSubmit={handleSubmit}
-                isLoading={loadingData}
+                isLoading={isSubmitting}
                 submitText={editingId ? 'Update State' : 'Save State'}
               />
             </div>
           </div>
         </div>
       )}
+
 
       {/* Delete Confirmation Modal */}
       {stateToDelete && (
@@ -341,13 +375,13 @@ export default function StateManager() {
             <h3 className="text-lg font-bold text-white mb-1.5">Confirm Deletion</h3>
             <p className="text-slate-400 text-xs mb-6 leading-relaxed">
               Are you sure you want to delete{' '}
-              <span className="text-white font-bold">{stateToDelete.name}</span>? This action cannot be undone.
+              <span className="text-white font-bold"> This action cannot be undone.</span>
             </p>
 
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => setStateToDelete(null)}
+                onClick={cancelDelete}
                 className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 rounded-xl font-bold text-xs transition-colors cursor-pointer"
               >
                 Cancel
@@ -360,9 +394,12 @@ export default function StateManager() {
                 Delete
               </button>
             </div>
+
           </div>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default StateManager;

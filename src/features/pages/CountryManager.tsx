@@ -6,10 +6,10 @@ import { CommonTable, type Table } from '../../Components/Common/CommonTable';
 import Navbar from '../../Components/Common/Navbar';
 import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
 import {
-  filterCountryByStatusApi,
   createCountryApi,
   updateCountryApi,
-  changeCountryStatusApi
+  changeCountryStatusApi,
+  filterCountry
 } from '../services/countryService';
 import toast from 'react-hot-toast';
 
@@ -48,7 +48,7 @@ const CountryManager: React.FC = () => {
     setLoadingData(true);
     setApiError(null);
     try {
-      const result = await filterCountryByStatusApi(filter);
+      const result = await filterCountry(filter);
       const list = Array.isArray(result) ? result : (result?.data || (result as any)?.content || []);
       setCountries(list);
     } catch (err: any) {

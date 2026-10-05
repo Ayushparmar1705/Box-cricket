@@ -46,7 +46,7 @@ export const fetchCountriesApi = async (status: string | boolean = true): Promis
   return await response.json();
 };
 
-export const filterCountryByStatusApi = async (status: boolean | string = true): Promise<CountryItem[] | CountryApiResponse<CountryItem[]>> => {
+export const filterCountry = async (status: boolean | string = true): Promise<CountryItem[] | CountryApiResponse<CountryItem[]>> => {
   const response = await fetch(`${baseUrl.location}/api/country/status?status=${status}`, {
     method: 'GET',
     headers: getHeaders(),
