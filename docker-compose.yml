@@ -17,32 +17,17 @@ services:
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
 
   # ─────────────────────────────────────────────
-  # OWNER REQUEST SERVICE
+  # OWNER VERIFICATION SERVICE
   # localhost:3031  →  container:8081
   # ─────────────────────────────────────────────
-  owner-request-service:
+  owner-verification:
     build:
-      context: ./owner-request-service
+      context: ./owner-verification
       dockerfile: Dockerfile
     ports:
       - '3031:8081'
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
-      - SPRING_DATASOURCE_USERNAME=neondb_owner
-      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-
-  # ─────────────────────────────────────────────
-  # OWNER DOCUMENT SERVICE
-  # localhost:3032  →  container:8082
-  # ─────────────────────────────────────────────
-  owner-document-service:
-    build:
-      context: ./owner-document-service/owner-document-service
-      dockerfile: Dockerfile
-    ports:
-      - '3032:8082'
-    environment:
+      - SERVER_PORT=8081
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK

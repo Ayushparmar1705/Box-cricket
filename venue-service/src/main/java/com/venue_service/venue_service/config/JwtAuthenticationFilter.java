@@ -16,6 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -36,7 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("❌ [JwtFilter] No Bearer token found for URI: " + request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
@@ -51,14 +51,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .getPayload();
 
             String subject = claims.getSubject();
-            String role = claims.get("role", String.class);
-            if (role == null) {
-                role = subject;
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+            Object roleClaim = claims.get("role");
+            if (roleClaim == null) {
+                roleClaim = claims.get("roles");
             }
 
-            System.out.println("✅ [JwtFilter] Token valid! Subject: " + subject + ", Role in Token: '" + role + "'");
-
-            List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+            if (roleClaim instanceof List<?> roleList) {
+                for (Object roleObj : roleList) {
+                    String r = roleObj.toString().toUpperCase();
+                    if (!r.startsWith("ROLE_")) {
+                        r = "ROLE_" + r;
+                    }
+                    authorities.add(new SimpleGrantedAuthority(r));
+                }
+            } else if (roleClaim instanceof String roleStr) {
+                String r = roleStr.toUpperCase();
+                if (!r.startsWith("ROLE_")) {
+                    r = "ROLE_" + r;
+                }
+                authorities.add(new SimpleGrantedAuthority(r));
+            }
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     subject,
@@ -68,7 +82,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (Exception e) {
-            System.out.println("❌ [JwtFilter] JWT verification error: " + e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

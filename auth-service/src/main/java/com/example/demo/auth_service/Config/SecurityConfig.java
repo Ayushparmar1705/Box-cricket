@@ -49,6 +49,10 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET, "/api/users/**")
                                                 .permitAll()
 
+                                                // Role APIs
+                                                .requestMatchers("/api/roles/**")
+                                                .permitAll()
+
                                                 // Allow preflight requests
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                                                 .permitAll()

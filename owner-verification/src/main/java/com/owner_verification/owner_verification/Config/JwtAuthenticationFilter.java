@@ -1,4 +1,4 @@
-package com.locationservice.locationservice.Config;
+package com.owner_verification.owner_verification.Config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

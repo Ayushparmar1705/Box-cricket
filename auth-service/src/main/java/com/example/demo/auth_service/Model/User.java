@@ -3,12 +3,12 @@ package com.example.demo.auth_service.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -27,17 +27,22 @@ public class User {
     @NotBlank(message = "email is required")
     @Email(message = "Invalid email address")
     private String email;
+
     @NotBlank(message = "Phone number required")
     @Column(name = "phone", unique = true, length = 15)
     private String phone;
-    @NotBlank(message = "Password required")
 
+    @NotBlank(message = "Password required")
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private Role role;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Roles> roles = new HashSet<>();
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
@@ -53,6 +58,20 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Constructors
+    public User() {}
+
+    public User(Integer id, String fullName, String email, String phone, String passwordHash, Set<Roles> roles, boolean isActive) {
+        this.id = id;
+        this.fullName = fullName;
+        this.email = email;
+        this.phone = phone;
+        this.passwordHash = passwordHash;
+        this.roles = roles != null ? roles : new HashSet<>();
+        this.isActive = isActive;
+    }
+
+    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -93,12 +112,12 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
-    public Role getRole() {
-        return role;
+    public Set<Roles> getRoles() {
+        return roles;
     }
 
-    public void setRole(Role role) {
-        this.role = role;
+    public void setRoles(Set<Roles> roles) {
+        this.roles = roles;
     }
 
     public boolean isActive() {

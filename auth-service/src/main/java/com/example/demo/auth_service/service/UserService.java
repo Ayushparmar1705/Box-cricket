@@ -1,53 +1,116 @@
 package com.example.demo.auth_service.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.example.demo.auth_service.Mapper.UserMapper;
+import com.example.demo.auth_service.Model.Role;
+import com.example.demo.auth_service.Model.Roles;
+import com.example.demo.auth_service.Model.User;
+import com.example.demo.auth_service.Repositry.Rolerepositry;
+import com.example.demo.auth_service.Repositry.UserRepositry;
+import com.example.demo.auth_service.dto.Requestdto.Loginrequestdto;
+import com.example.demo.auth_service.dto.Requestdto.Userrequestdto;
+import com.example.demo.auth_service.dto.Responsedto.Loginresponsedto;
+import com.example.demo.auth_service.dto.Responsedto.Userresponsedto;
 import com.example.demo.auth_service.exception.DuplicateResourceException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.example.demo.auth_service.Model.User;
-import com.example.demo.auth_service.Repositry.UserRepositry;
-import com.example.demo.auth_service.Model.Role;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     @Autowired
     private UserRepositry userrepo;
+
+    @Autowired
+    private Rolerepositry rolerepo;
+
     @Autowired
     private JwtService jwtService;
 
-    public User createUser(User user) {
-        if (userrepo.existsByEmail(user.getEmail())) {
-            throw new DuplicateResourceException("Student with email "+user.getEmail()+" alredy exists");
+    @Autowired
+    private UserMapper userMapper;
+
+    @Transactional
+    public Userresponsedto createUser(Userrequestdto dto) {
+        if (dto.getEmail() != null && userrepo.existsByEmail(dto.getEmail().trim())) {
+            throw new DuplicateResourceException("User with email " + dto.getEmail() + " already exists");
         }
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        return userrepo.save(user);
+        if (dto.getPhone() != null && !dto.getPhone().trim().isEmpty() && userrepo.existsByPhone(dto.getPhone().trim())) {
+            throw new DuplicateResourceException("User with phone " + dto.getPhone() + " already exists");
+        }
+
+        User user = userMapper.toEntity(dto);
+        user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+
+        Set<Roles> assignedRoles = new HashSet<>();
+        if (dto.getRoles() != null && !dto.getRoles().isEmpty()) {
+            for (Role r : dto.getRoles()) {
+                Roles roleEntity = rolerepo.findByName(r).orElseGet(() -> rolerepo.save(new Roles(r)));
+                assignedRoles.add(roleEntity);
+            }
+        } else {
+            Roles defaultRole = rolerepo.findByName(Role.PLAYER)
+                    .orElseGet(() -> rolerepo.save(new Roles(Role.PLAYER)));
+            assignedRoles.add(defaultRole);
+        }
+        user.setRoles(assignedRoles);
+
+        User savedUser = userrepo.save(user);
+        return userMapper.toResponseDto(savedUser, "Account created successfully");
+    }
+
+    public Loginresponsedto authenticateUser(Loginrequestdto dto) {
+        User user = userrepo.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+        boolean passwordMatchers = passwordEncoder.matches(dto.getPassword(), user.getPasswordHash());
+        if (!passwordMatchers) {
+            throw new RuntimeException("Invalid email or password");
+        }
+
+        List<String> roleNames;
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            roleNames = user.getRoles().stream()
+                    .filter(r -> r != null && r.getName() != null)
+                    .map(r -> r.getName().name())
+                    .collect(Collectors.toList());
+        } else {
+            roleNames = new ArrayList<>();
+        }
+
+        String primaryRole = roleNames.isEmpty() ? "PLAYER" : roleNames.get(0);
+        String token = jwtService.generateToken(user.getEmail(), user.getId(), primaryRole);
+
+        Loginresponsedto response = new Loginresponsedto();
+        response.setStatus("200");
+        response.setToken(token);
+        response.setRole(primaryRole);
+        response.setRoles(roleNames);
+        response.setUserId(user.getId());
+        response.setFullName(user.getFullName());
+        response.setEmail(user.getEmail());
+        response.setMessage("Login successful");
+        return response;
     }
 
     public Map<String, String> loginUser(String email, String password) {
-        User user = userrepo.findByEmail(email).orElseThrow(() -> new RuntimeException("Invalid email and password"));
-
-        boolean passwordMatchers = passwordEncoder.matches(
-                password,
-                user.getPasswordHash());
-
-        if (!passwordMatchers) {
-            throw new RuntimeException("Password not match");
-        } else {
-            String token = jwtService.generateToken(user.getEmail(), user.getId(), user.getRole().name());
-            Map<String, String> response = new HashMap<>();
-            response.put("status", "200");
-            response.put("token", token);
-            response.put("role", user.getRole().toString());
-            return response;
-        }
+        Loginresponsedto response = authenticateUser(new Loginrequestdto(email, password));
+        Map<String, String> map = new HashMap<>();
+        map.put("status", response.getStatus());
+        map.put("token", response.getToken());
+        map.put("role", response.getRole());
+        map.put("roles", String.join(",", response.getRoles()));
+        map.put("userId", String.valueOf(response.getUserId()));
+        map.put("fullName", response.getFullName());
+        map.put("email", response.getEmail());
+        return map;
     }
 
     public User getUserById(Integer id) {
@@ -55,15 +118,28 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
+    public Userresponsedto getUserResponseById(Integer id) {
+        User user = getUserById(id);
+        return userMapper.toResponseDto(user, "User fetched successfully");
+    }
+
+    @Transactional
     public User changeRole(Integer id, String role) {
-        User user = userrepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invalid id"));
+        User user = getUserById(id);
         try {
             Role newRole = Role.valueOf(role.toUpperCase());
-            user.setRole(newRole);
+            Roles roleEntity = rolerepo.findByName(newRole)
+                    .orElseGet(() -> rolerepo.save(new Roles(newRole)));
+
+            Set<Roles> roles = user.getRoles();
+            if (roles == null) {
+                roles = new HashSet<>();
+            }
+            roles.add(roleEntity);
+            user.setRoles(roles);
+            return userrepo.save(user);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid role: " + role);
         }
-        return userrepo.save(user);
     }
 }

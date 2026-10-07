@@ -16,12 +16,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    // Must match the secret key used in other services
     private static final String SECRET_KEY =
             "my-super-secret-key-my-super-secret-key-123456";
 
@@ -38,7 +38,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // No token → continue (security rules will decide access)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -53,18 +52,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            String role = claims.get("role", String.class);
-            if (role == null) {
-                // fallback: subject was used to store role in some services
-                role = claims.getSubject();
+            String subject = claims.getSubject();
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+            Object roleClaim = claims.get("role");
+            if (roleClaim == null) {
+                roleClaim = claims.get("roles");
             }
 
-            List<SimpleGrantedAuthority> authorities =
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role));
+            if (roleClaim instanceof List<?> roleList) {
+                for (Object roleObj : roleList) {
+                    String r = roleObj.toString().toUpperCase();
+                    if (!r.startsWith("ROLE_")) {
+                        r = "ROLE_" + r;
+                    }
+                    authorities.add(new SimpleGrantedAuthority(r));
+                }
+            } else if (roleClaim instanceof String roleStr) {
+                String r = roleStr.toUpperCase();
+                if (!r.startsWith("ROLE_")) {
+                    r = "ROLE_" + r;
+                }
+                authorities.add(new SimpleGrantedAuthority(r));
+            }
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
-                            claims.getSubject(),
+                            subject,
                             null,
                             authorities
                     );
