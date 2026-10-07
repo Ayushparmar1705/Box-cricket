@@ -6,16 +6,17 @@ import { CommonTable } from '../../Components/Common/CommonTable';
 import type { TableColumn } from '../../Components/Common/CommonTable';
 import Navbar from '../../Components/Common/Navbar';
 import { fetchStatesApi } from '../services/stateService';
-import { addCityApi, changeStatusApi, fetchCitiesApi } from '../services/cityService';
+import { createCityApi, updateCityApi, changeCityStatusApi, fetchCitiesApi } from '../services/cityService';
 import toast from 'react-hot-toast';
 import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
 
 interface CityData {
-  id: number;
+  id: number | string;
   name: string;
   countryName?: string;
   is_active: boolean;
   stateName?: string;
+  [key: string]: any;
 }
 
 const CityManager: React.FC = () => {
@@ -24,40 +25,54 @@ const CityManager: React.FC = () => {
   const [loadingData, setLoadingData] = useState(false);
   const [apiError, setApiError] = useState<string>('');
   const [isModalOpen, setIsModelOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | string | null>(null);
   const [cityToDelete, setcityToDelete] = useState<CityData | null>(null);
   const [filterActive, setfilterActive] = useState(true);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    id: number;
+    name: string;
+    stateId: number;
+    is_active: boolean | string;
+  }>({
     id: 0,
     name: '',
     stateId: 0,
     is_active: true
   });
+
   const handleFormChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
+
   const cancelDelete = () => {
     setcityToDelete(null);
   };
 
   const confirmDelete = async () => {
     if (!cityToDelete) return;
-    const result = await changeStatusApi(cityToDelete.id);
-    if (result && (result.status === 200 || result.success)) {
-      toast.success(result.message || 'Status updated');
-      setcityToDelete(null);
-      fetchCities();
-    } else {
-      toast.error(result?.error || 'Failed to update status');
+    try {
+      const result = await changeCityStatusApi(cityToDelete.id);
+      if (result && (result.status === 200 || result.success)) {
+        toast.success(result.message || 'Status updated');
+        setcityToDelete(null);
+        fetchCities(filterActive);
+      } else {
+        toast.error(result?.error || 'Failed to update status');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update status');
     }
   };
 
   const fetchState = async () => {
-    const data = await fetchStatesApi();
-    setStates(data);
-    console.log(data);
-
-  }
+    try {
+      const res = await fetchStatesApi();
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      setStates(list);
+    } catch (err) {
+      console.error("Error fetching states:", err);
+    }
+  };
 
   useEffect(() => {
     fetchState();
@@ -65,51 +80,78 @@ const CityManager: React.FC = () => {
 
   const openAddModel = () => {
     setEditingId(null);
+    setFormData({
+      id: 0,
+      name: '',
+      stateId: states.length > 0 ? states[0].id : 0,
+      is_active: true
+    });
     setIsModelOpen(true);
-
-  }
+  };
 
   const closeModal = () => {
     setIsModelOpen(false);
-  }
+  };
 
-  const fetchCities = async () => {
+  const fetchCities = async (status: boolean = filterActive) => {
     setLoadingData(true);
+    setApiError('');
     try {
-      const data = await fetchCitiesApi();
-      setCities(data);
+      const res = await fetchCitiesApi(status);
+      const rawList = Array.isArray(res) ? res : (res?.data || []);
+      const mappedList: CityData[] = rawList.map((item: any) => ({
+        id: item.id,
+        name: item.city_name || item.name || '',
+        countryName: item.countryName || item.country_name || '',
+        stateName: item.stateName || item.state_name || (item.state?.state_name) || '',
+        is_active: item.is_active !== undefined ? item.is_active : true,
+      }));
+      setCities(mappedList);
     } catch (error) {
       console.error("Error while fetching cities:", error);
       setApiError("Failed to fetch cities");
     } finally {
       setLoadingData(false);
     }
-
-  }
+  };
 
   useEffect(() => {
-    fetchCities();
+    fetchCities(filterActive);
   }, []);
 
   const handleSubmit = async () => {
-    const result = await addCityApi(formData);
-    if (result) {
-      toast.success("City Added succesfully");
-      closeModal();
-      await fetchCities();
-    } else {
-      toast.error("Error while adding city");
+    const isActiveBool = typeof formData.is_active === 'string'
+      ? formData.is_active === 'Active'
+      : Boolean(formData.is_active);
+
+    const payload = {
+      state: Number(formData.stateId),
+      city_name: formData.name,
+      city_code: formData.name ? formData.name.substring(0, 3).toUpperCase() : 'CTY',
+      is_active: isActiveBool
+    };
+
+    try {
+      const result = editingId
+        ? await updateCityApi(editingId, payload)
+        : await createCityApi(payload);
+
+      if (result) {
+        toast.success(editingId ? "City updated successfully" : "City added successfully");
+        closeModal();
+        await fetchCities(filterActive);
+      } else {
+        toast.error(editingId ? "Error updating city" : "Error while adding city");
+      }
+    } catch (err: any) {
+      toast.error(err.message || (editingId ? "Error updating city" : "Error while adding city"));
     }
-  }
+  };
 
   const handleFilterDropdown = async (value: boolean) => {
     setfilterActive(value);
-    if (value === true) {
-      await fetchCities();
-    } else {
-      await fetchCities();
-    }
-  }
+    await fetchCities(value);
+  };
 
   const formFields: FormField[] = [
     {
@@ -118,7 +160,7 @@ const CityManager: React.FC = () => {
       type: 'select',
       options: states.map((s: any) => ({
         value: s.id,
-        label: s.name,
+        label: s.state_name || s.name,
       })),
       required: true,
       placeholder: 'Choose governing state'
@@ -141,14 +183,19 @@ const CityManager: React.FC = () => {
       ],
       required: true
     },
-
   ];
+
   const handleEditClick = (city: CityData) => {
     setEditingId(city.id);
+    const foundState = states.find((s: any) =>
+      s.id === city.stateId ||
+      s.id === city.state?.id ||
+      (s.state_name || s.name)?.toLowerCase() === (city.stateName || city.state_name)?.toLowerCase()
+    );
     setFormData({
-      id: city.id,
-      name: city.name,
-      stateId: states.find((s: any) => s.name === city.stateName)?.id || 0,
+      id: typeof city.id === 'number' ? city.id : parseInt(String(city.id), 10) || 0,
+      name: city.name || '',
+      stateId: foundState ? foundState.id : (states.length > 0 ? states[0].id : 0),
       is_active: city.is_active
     });
     setIsModelOpen(true);
@@ -257,8 +304,9 @@ const CityManager: React.FC = () => {
             <CommonTable
               columns={tableColumns}
               data={cities}
-              onEdit={handleEditClick}
               onDelete={handleDeleteClick}
+              onEdit={handleEditClick}
+              isActive={filterActive}
             />
           )}
         </div>
@@ -299,18 +347,20 @@ const CityManager: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete / Restore Confirmation Modal */}
       {cityToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200 p-7 text-center text-white">
-            <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
-              <AlertTriangle className="text-rose-400" size={28} />
+            <div className={`w-14 h-14 ${cityToDelete.is_active ? 'bg-rose-500/10 border-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} rounded-2xl flex items-center justify-center mx-auto mb-4 border`}>
+              <AlertTriangle className={cityToDelete.is_active ? 'text-rose-400' : 'text-emerald-400'} size={28} />
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-1.5">Confirm Deletion</h3>
+            <h3 className="text-lg font-bold text-white mb-1.5">
+              {cityToDelete.is_active ? 'Confirm Deletion' : 'Confirm Restoration'}
+            </h3>
             <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-              Are you sure you want to delete{' '}
-              <span className="text-white font-bold">{cityToDelete.name}</span>? This action cannot be undone.
+              Are you sure you want to {cityToDelete.is_active ? 'deactivate' : 'restore'}{' '}
+              <span className="text-white font-bold">{cityToDelete.name}</span>?
             </p>
 
             <div className="flex items-center gap-3">
@@ -324,9 +374,9 @@ const CityManager: React.FC = () => {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer"
+                className={`flex-1 ${cityToDelete.is_active ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer`}
               >
-                Delete
+                {cityToDelete.is_active ? 'Delete' : 'Restore'}
               </button>
             </div>
           </div>

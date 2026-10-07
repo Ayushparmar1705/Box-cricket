@@ -6,14 +6,25 @@ import CountryManager from './features/pages/CountryManager';
 import StateManager from './features/pages/StateManager';
 import CityManager from './features/pages/CityManager';
 import AdminLayout from './Components/Layout/AdminLayout';
+import PlayerLogin from './features/pages/PlayerLogin';
+import PlayerRegister from './features/pages/PlayerRegister';
+import PlayerDashboard from './features/pages/PlayerDashboard';
+import PlayerProfile from './features/pages/PlayerProfile';
 
 function App() {
   return (
     <div className="app-container">
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/" element={<Navigate to="/admin-login" replace />} />
+        <Route path="/" element={<Navigate to="/player-login" replace />} />
         <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/player-login" element={<PlayerLogin />} />
+        <Route path="/player-register" element={<PlayerRegister />} />
+        <Route path="/player-dashboard" element={<PlayerDashboard />} />
+        <Route path="/player-profile" element={<PlayerProfile />} />
+        <Route path="/profile" element={<PlayerProfile />} />
+        <Route path="/login" element={<Navigate to="/player-login" replace />} />
+        <Route path="/register" element={<Navigate to="/player-register" replace />} />
 
         {/* All routes inside AdminLayout will share the Sidebar & Header */}
         <Route element={<AdminLayout />}>
