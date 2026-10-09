@@ -1,7 +1,6 @@
 package com.court_service.court_service.model;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import com.court_service.court_service.Enums.Dayenum;

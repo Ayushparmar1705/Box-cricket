@@ -3,7 +3,6 @@ package com.locationservice.locationservice.Controller;
 import com.locationservice.locationservice.Dto.RequestDto.Countryrequestdto;
 import com.locationservice.locationservice.Dto.ResponseDto.ApiResponse;
 import com.locationservice.locationservice.Dto.ResponseDto.Countryresponsedto;
-import com.locationservice.locationservice.Dto.ResponseDto.Stateresponsedto;
 import com.locationservice.locationservice.Model.Countrymodel;
 import com.locationservice.locationservice.Service.Countryservice;
 import java.util.List;

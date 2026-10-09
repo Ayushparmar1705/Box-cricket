@@ -2,7 +2,6 @@ package com.court_service.court_service.dto.request;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.UUID;
 
 import com.court_service.court_service.Enums.Dayenum;
 import com.fasterxml.jackson.annotation.JsonFormat;

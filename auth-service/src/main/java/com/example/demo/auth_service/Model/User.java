@@ -3,6 +3,7 @@ package com.example.demo.auth_service.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -36,12 +37,7 @@ public class User {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @OneToMany(fetch = FetchType.EAGER)
     private Set<Roles> roles = new HashSet<>();
 
     @Column(name = "is_active", nullable = false)
@@ -59,9 +55,11 @@ public class User {
     private LocalDateTime updatedAt;
 
     // Constructors
-    public User() {}
+    public User() {
+    }
 
-    public User(Integer id, String fullName, String email, String phone, String passwordHash, Set<Roles> roles, boolean isActive) {
+    public User(Integer id, String fullName, String email, String phone, String passwordHash, Set<Roles> roles,
+            boolean isActive) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;

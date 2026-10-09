@@ -1,6 +1,5 @@
 package com.locationservice.locationservice.Service;
 
-import com.locationservice.locationservice.Dto.RequestDto.Countryrequestdto;
 import com.locationservice.locationservice.Dto.RequestDto.Staterequestdto;
 import com.locationservice.locationservice.Dto.ResponseDto.ApiResponse;
 import com.locationservice.locationservice.Dto.ResponseDto.Stateresponsedto;

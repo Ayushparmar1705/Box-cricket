@@ -1,42 +1,19 @@
-package com.example.demo.auth_service.Model;
+package com.example.demo.auth_service.dto.Responsedto;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
+import com.example.demo.auth_service.Model.Role;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "roles")
-public class Roles {
+public class Roleresponsedto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", updatable = false, nullable = false)
     private Integer id;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "name", unique = true, nullable = false, length = 50)
     private Role name;
-
-    @Column(name = "description")
     private String description;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public Roles() {}
+    public Roleresponsedto() {}
 
-    public Roles(Role name) {
-        this.name = name;
-    }
-
-    public Roles(Role name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-
-    public Roles(Integer id, Role name, String description, LocalDateTime createdAt) {
+    public Roleresponsedto(Integer id, Role name, String description, LocalDateTime createdAt) {
         this.id = id;
         this.name = name;
         this.description = description;

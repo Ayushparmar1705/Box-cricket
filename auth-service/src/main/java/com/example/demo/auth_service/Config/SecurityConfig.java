@@ -42,7 +42,8 @@ public class SecurityConfig {
                                                                 "/api/users/login",
                                                                 "/api/users/login/**",
                                                                 "/api/users/create",
-                                                                "/api/users/create/**")
+                                                                "/api/users/create/**",
+                                                                "/api/users/*/roles/**")
                                                 .permitAll()
 
                                                 // Allow GET user by ID without a token
@@ -56,8 +57,6 @@ public class SecurityConfig {
                                                 // Allow preflight requests
                                                 .requestMatchers(HttpMethod.OPTIONS, "/**")
                                                 .permitAll()
-
-
 
                                                 // Any other API requires a valid JWT
                                                 .anyRequest()

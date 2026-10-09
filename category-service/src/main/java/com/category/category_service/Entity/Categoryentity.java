@@ -42,6 +42,6 @@ public class Categoryentity {
     private Date updated_at;
 
     @Column(name = "is_active")
-    private boolean active = true;
+    private boolean active;
 
 }

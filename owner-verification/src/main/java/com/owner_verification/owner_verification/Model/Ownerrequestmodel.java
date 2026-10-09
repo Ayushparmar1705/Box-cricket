@@ -32,15 +32,6 @@ public class Ownerrequestmodel {
     @Column(name = "gstn_number", nullable = false)
     private String gstn_number;
 
-    @Column(name = "city", nullable = false)
-    private int city;
-
-    @Column(name = "country", nullable = false)
-    private int country;
-
-    @Column(name = "state", nullable = false)
-    private int state;
-
     @Column(name = "contact_number", nullable = false)
     private String contact_number;
 

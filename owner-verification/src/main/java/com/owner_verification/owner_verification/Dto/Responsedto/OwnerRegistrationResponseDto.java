@@ -18,9 +18,6 @@ public class OwnerRegistrationResponseDto {
     private int user_id;
     private String business_name;
     private String gstn_number;
-    private String city;
-    private String country;
-    private String state;
     private String contact_number;
     private String contact_email;
     private BusinessType business_type;
