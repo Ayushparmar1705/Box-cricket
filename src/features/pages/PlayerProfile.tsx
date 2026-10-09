@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User,
@@ -9,8 +9,6 @@ import {
   ShieldCheck,
   ArrowLeft,
   ArrowRight,
-  MapPin,
-  Globe,
   Building,
   Save,
   FileCheck,
@@ -21,9 +19,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { OwnerrequestApi, type Ownerrequest } from '../services/ProfileService';
-import { fetchCountriesApi, type CountryItem } from '../services/countryService';
-import { fetchStatesApi, type StateItem } from '../services/stateService';
-import { fetchCitiesApi, type CityItem } from '../services/cityService';
 
 interface OwnerDocumentState {
   file: File | null;
@@ -40,9 +35,6 @@ const PlayerProfile: React.FC = () => {
     business_name: "",
     business_type: "Turf Owner",
     gstn_number: "",
-    state: "",
-    city: "",
-    country: "",
     contact_email: "",
     contact_number: "",
   });
@@ -66,71 +58,12 @@ const PlayerProfile: React.FC = () => {
     fileSize: "",
   });
 
-  const [gstDoc, setGstDoc] = useState<OwnerDocumentState>({
-    file: null,
-    fileName: "",
-    fileSize: "",
-  });
+
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmittingOwner, setIsSubmittingOwner] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [ownerApplicationSubmitted, setOwnerApplicationSubmitted] = useState(false);
-
-  // Dynamic Location State from APIs
-  const [countriesList, setCountriesList] = useState<CountryItem[]>([]);
-  const [statesList, setStatesList] = useState<StateItem[]>([]);
-  const [citiesList, setCitiesList] = useState<CityItem[]>([]);
-  const [isLoadingLocations, setIsLoadingLocations] = useState<boolean>(false);
-
-  useEffect(() => {
-    const loadLocations = async () => {
-      try {
-        setIsLoadingLocations(true);
-        const [countriesRes, statesRes, citiesRes] = await Promise.all([
-          fetchCountriesApi(true).catch(() => ({ data: [] })),
-          fetchStatesApi(true).catch(() => ({ data: [] })),
-          fetchCitiesApi(true).catch(() => ({ data: [] })),
-        ]);
-
-        const cList = Array.isArray(countriesRes) ? countriesRes : (countriesRes?.data || []);
-        const sList = Array.isArray(statesRes) ? statesRes : (statesRes?.data || []);
-        const ctList = Array.isArray(citiesRes) ? citiesRes : (citiesRes?.data || []);
-
-        setCountriesList(cList);
-        setStatesList(sList);
-        setCitiesList(ctList);
-      } catch (error) {
-        console.error("Error loading location dropdown data:", error);
-      } finally {
-        setIsLoadingLocations(false);
-      }
-    };
-
-    loadLocations();
-  }, []);
-
-  const filteredStates = useMemo(() => {
-    if (!ownerForm.country) return statesList;
-    const selectedCountryId = String(ownerForm.country);
-    const filtered = statesList.filter(s =>
-      String(s.countryId) === selectedCountryId ||
-      String(s.country?.id) === selectedCountryId ||
-      s.country_name?.toLowerCase() === ownerForm.country.toLowerCase()
-    );
-    return filtered.length > 0 ? filtered : statesList;
-  }, [statesList, ownerForm.country]);
-
-  const filteredCities = useMemo(() => {
-    if (!ownerForm.state) return citiesList;
-    const selectedStateId = String(ownerForm.state);
-    const filtered = citiesList.filter(c =>
-      String(c.stateId) === selectedStateId ||
-      String(c.state?.id) === selectedStateId ||
-      c.state_name?.toLowerCase() === ownerForm.state.toLowerCase()
-    );
-    return filtered.length > 0 ? filtered : citiesList;
-  }, [citiesList, ownerForm.state]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -175,8 +108,6 @@ const PlayerProfile: React.FC = () => {
       setAdharDoc(documentData);
     } else if (documentType === "pan") {
       setPanDoc(documentData);
-    } else if (documentType === "gst") {
-      setGstDoc(documentData);
     }
 
     // Reset input value so re-uploading the same file triggers onChange
@@ -189,8 +120,6 @@ const PlayerProfile: React.FC = () => {
       setAdharDoc(emptyDoc);
     } else if (documentType === "pan") {
       setPanDoc(emptyDoc);
-    } else if (documentType === "gst") {
-      setGstDoc(emptyDoc);
     }
   };
 
@@ -212,29 +141,30 @@ const PlayerProfile: React.FC = () => {
       return;
     }
 
-    if (!gstDoc.file) {
-      toast.error("Please upload your GST Certificate document");
-      return;
-    }
 
     try {
-      setIsSubmittingOwner(true);
-      let currentUserId: string | number | undefined;
-      currentUserId = localStorage.getItem("userId") || "";
+      let currentUserId: number | undefined;
+      const storedUser = localStorage.getItem("boxcricket_user");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          currentUserId = parsed.id || parsed.userId || parsed.user_id;
+        } catch (e) {}
+      }
+      if (!currentUserId) {
+        const rawId = localStorage.getItem("userId") || localStorage.getItem("user_id") || localStorage.getItem("id");
+        if (rawId) currentUserId = parseInt(rawId);
+      }
 
       const payload: Ownerrequest = {
         business_name: ownerForm.business_name,
         business_type: ownerForm.business_type || "SOLO",
         gstn_number: ownerForm.gstn_number,
-        state: ownerForm.state,
-        city: ownerForm.city,
-        country: ownerForm.country,
         contact_email: ownerForm.contact_email,
         contact_number: ownerForm.contact_number,
         pan_card: panDoc.file,
         adhar_card: adharDoc.file,
-        userId: parseInt(currentUserId),
-
+        userId: currentUserId,
       };
 
       const result = await OwnerrequestApi(payload);
@@ -458,7 +388,7 @@ const PlayerProfile: React.FC = () => {
             {/* Registration Form */}
             <form onSubmit={handleSubmitOwnerRequest} className="space-y-8">
 
-              {/* SECTION 1: BUSINESS & LOCATION DETAILS */}
+              {/* SECTION 1: BUSINESS DETAILS */}
               <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/80 border border-slate-800/90 shadow-xl space-y-6">
                 <div className="border-b border-slate-800/80 pb-4">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -466,7 +396,7 @@ const PlayerProfile: React.FC = () => {
                     <span>1. Business & Turf Information</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Enter the business name and location details of your turf.
+                    Enter the business name and details of your turf.
                   </p>
                 </div>
 
@@ -533,90 +463,6 @@ const PlayerProfile: React.FC = () => {
                         placeholder="e.g. 24ABCDE1234F1Z5"
                         className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 uppercase"
                       />
-                    </div>
-                  </div>
-
-                  {/* Country */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300">
-                      Country <span className="text-rose-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 z-10">
-                        <Globe className="w-4 h-4" />
-                      </div>
-                      <select
-                        name="country"
-                        required
-                        value={ownerForm.country}
-                        onChange={(e) => {
-                          handleInputChange(e);
-                          setOwnerForm(prev => ({ ...prev, country: e.target.value, state: "", city: "" }));
-                        }}
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer appearance-none"
-                      >
-                        <option value="">{isLoadingLocations ? "Loading countries..." : "Select Country"}</option>
-                        {countriesList.map((c) => (
-                          <option key={c.id || c.country_name} value={c.id}>
-                            {c.country_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* State */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-300">
-                      State <span className="text-rose-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 z-10">
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <select
-                        name="state"
-                        required
-                        value={ownerForm.state}
-                        onChange={(e) => {
-                          handleInputChange(e);
-                          setOwnerForm(prev => ({ ...prev, state: e.target.value, city: "" }));
-                        }}
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer appearance-none"
-                      >
-                        <option value="">{isLoadingLocations ? "Loading states..." : "Select State"}</option>
-                        {filteredStates.map((s) => (
-                          <option key={s.id || s.state_name} value={s.id}>
-                            {s.state_name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* City */}
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="block text-xs font-bold text-slate-300">
-                      City / Area <span className="text-rose-400">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 z-10">
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <select
-                        name="city"
-                        required
-                        value={ownerForm.city}
-                        onChange={handleInputChange}
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer appearance-none"
-                      >
-                        <option value="">{isLoadingLocations ? "Loading cities..." : "Select City / Area"}</option>
-                        {filteredCities.map((ct) => (
-                          <option key={ct.id || ct.city_name} value={ct.id}>
-                            {ct.city_name}
-                          </option>
-                        ))}
-                      </select>
                     </div>
                   </div>
                 </div>

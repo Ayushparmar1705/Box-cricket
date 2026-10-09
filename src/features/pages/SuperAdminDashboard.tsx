@@ -13,7 +13,8 @@ import {
   Globe2,
   Building2,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
 import {
   AreaChart,
@@ -162,6 +163,7 @@ const SuperAdminDashboard: React.FC = () => {
   ];
 
   const quickLinks = [
+    { name: 'Owner Requests', path: '/owner-requests', icon: FileText, count: 'New' },
     { name: 'Countries', path: '/countries', icon: Globe2, count: '10+' },
     { name: 'States', path: '/states', icon: Building2, count: '28+' },
     { name: 'Cities', path: '/cities', icon: MapPin, count: '64+' }

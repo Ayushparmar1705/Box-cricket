@@ -8,16 +8,12 @@ export interface Ownerrequest {
     business_name: string;
     business_type: string;
     gstn_number: string;
-    state: number | string;
-    city: number | string;
-    country: number | string;
     contact_email: string;
     contact_number: string;
     pan_card: File;
     adhar_card: File;
     userId?: number;
 }
-
 // ─────────────────────────────────────────────────────────────
 // 🚀 API Call Function
 // ─────────────────────────────────────────────────────────────
@@ -32,15 +28,16 @@ export const OwnerrequestApi = async (data: Ownerrequest) => {
         formData.append("business_name", data.business_name);
         formData.append("business_type", data.business_type);
         formData.append("gstn_number", data.gstn_number);
-        formData.append("city", String(data.city));
-        formData.append("state", String(data.state));
-        formData.append("country", String(data.country));
         formData.append("contact_number", data.contact_number);
         formData.append("contact_email", data.contact_email);
         formData.append("pan_file", data.pan_card);
         formData.append("adhar_file", data.adhar_card);
-        formData.append("userId", String(data.userId));
 
+        if (data.userId !== undefined && data.userId !== null && !isNaN(Number(data.userId))) {
+            formData.append("user_id", String(data.userId));
+            formData.append("userId", String(data.userId));
+            formData.append("id", String(data.userId));
+        }
 
         const token = localStorage.getItem("token");
         const headers: Record<string, string> = {};
@@ -59,6 +56,76 @@ export const OwnerrequestApi = async (data: Ownerrequest) => {
         return response;
     } catch (error) {
         console.error("Error submitting turf owner request:", error);
+        throw error;
+    }
+};
+
+/**
+ * getOwnerRequestsApi: Fetches all turf owner application requests for Super Admin.
+ */
+export const getOwnerRequestsApi = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const result = await fetch(baseUrl.profile + "/api/owner-request", {
+            method: "GET",
+            headers: headers,
+        });
+
+        const response = await result.json();
+        return response;
+    } catch (error) {
+        console.error("Error fetching owner requests:", error);
+        throw error;
+    }
+};
+
+/**
+ * approveOwnerRequestApi: Approves owner request and grants OWNER role to the user.
+ */
+export const approveOwnerRequestApi = async (id: number | string, remark: string = "") => {
+    try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const result = await fetch(`${baseUrl.profile}/api/owner-request/approve/${id}?remark=${encodeURIComponent(remark)}`, {
+            method: "PUT",
+            headers: headers,
+        });
+
+        return await result.json();
+    } catch (error) {
+        console.error("Error approving owner request:", error);
+        throw error;
+    }
+};
+
+/**
+ * rejectOwnerRequestApi: Rejects owner request.
+ */
+export const rejectOwnerRequestApi = async (id: number | string, remark: string = "") => {
+    try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const result = await fetch(`${baseUrl.profile}/api/owner-request/reject/${id}?remark=${encodeURIComponent(remark)}`, {
+            method: "PUT",
+            headers: headers,
+        });
+
+        return await result.json();
+    } catch (error) {
+        console.error("Error rejecting owner request:", error);
         throw error;
     }
 };

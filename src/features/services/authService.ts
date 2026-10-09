@@ -83,6 +83,8 @@ export const logoutUser = () => {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
   localStorage.removeItem(ROLES_STORAGE_KEY);
   localStorage.removeItem('role');
+  localStorage.clear();
+  sessionStorage.clear();
 };
 
 

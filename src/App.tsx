@@ -5,6 +5,7 @@ import SuperAdminDashboard from './features/pages/SuperAdminDashboard'
 import CountryManager from './features/pages/CountryManager';
 import StateManager from './features/pages/StateManager';
 import CityManager from './features/pages/CityManager';
+import OwnerRequestManager from './features/pages/OwnerRequestManager';
 import AdminLayout from './Components/Layout/AdminLayout';
 import PlayerLogin from './features/pages/PlayerLogin';
 import PlayerRegister from './features/pages/PlayerRegister';
@@ -29,6 +30,7 @@ function App() {
         {/* All routes inside AdminLayout will share the Sidebar & Header */}
         <Route element={<AdminLayout />}>
           <Route path="/admindashboard" element={<SuperAdminDashboard />} />
+          <Route path="/owner-requests" element={<OwnerRequestManager />} />
           <Route path="/countries" element={<CountryManager />} />
           <Route path="/states" element={<StateManager />} />
           <Route path="/cities" element={<CityManager />} />

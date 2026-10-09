@@ -10,13 +10,26 @@ import {
   Bell,
   Search,
   Menu,
-  Activity
+  Activity,
+  FileText,
+  LogOut,
+  X
 } from 'lucide-react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import { logoutUser } from '../../features/services/authService';
 
 const AdminLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logoutUser();
+    toast.success('Logged out successfully');
+    navigate('/admin-login');
+  };
 
   const navSections = [
     {
@@ -36,6 +49,7 @@ const AdminLayout: React.FC = () => {
     {
       title: 'Turf Operations',
       items: [
+        { name: 'Owner Requests', icon: FileText, path: '/owner-requests' },
         { name: 'Venues', icon: MapPin, path: '#' },
         { name: 'Bookings', icon: CalendarDays, path: '#' },
         { name: 'Users', icon: Users, path: '#' },
@@ -46,6 +60,7 @@ const AdminLayout: React.FC = () => {
 
   const getPageTitle = () => {
     if (location.pathname === '/admindashboard') return 'Dashboard';
+    if (location.pathname === '/owner-requests') return 'Owner Requests';
     if (location.pathname === '/countries') return 'Countries';
     if (location.pathname === '/states') return 'States';
     if (location.pathname === '/cities') return 'Cities';
@@ -139,23 +154,33 @@ const AdminLayout: React.FC = () => {
           ))}
         </nav>
 
-        {/* Sidebar Footer User Card */}
+        {/* Sidebar Footer User Card & Logout */}
         <div className="p-3 border-t border-slate-800/80 m-3 rounded-2xl bg-slate-900/60 hover:bg-slate-900 transition-colors cursor-pointer border border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <img
-                src="https://ui-avatars.com/api/?name=Super+Admin&background=10b981&color=090d16&bold=true"
-                alt="Admin"
-                className="w-9 h-9 rounded-xl"
-              />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-slate-900 animate-pulse" />
-            </div>
-            {sidebarOpen && (
-              <div className="overflow-hidden">
-                <p className="text-xs font-bold text-white truncate">Super Admin</p>
-                <p className="text-[11px] text-slate-400 truncate">admin@boxcricket.com</p>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="relative shrink-0">
+                <img
+                  src="https://ui-avatars.com/api/?name=Super+Admin&background=10b981&color=090d16&bold=true"
+                  alt="Admin"
+                  className="w-9 h-9 rounded-xl"
+                />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-slate-900 animate-pulse" />
               </div>
-            )}
+              {sidebarOpen && (
+                <div className="overflow-hidden">
+                  <p className="text-xs font-bold text-white truncate">Super Admin</p>
+                  <p className="text-[11px] text-slate-400 truncate">admin@boxcricket.com</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer shrink-0"
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </aside>
@@ -190,7 +215,7 @@ const AdminLayout: React.FC = () => {
           </div>
 
           {/* Right Topbar Actions */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
               className="relative p-2.5 text-slate-400 hover:text-white transition-colors bg-slate-900 hover:bg-slate-800 rounded-xl border border-slate-800 cursor-pointer"
@@ -200,7 +225,16 @@ const AdminLayout: React.FC = () => {
               <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-400 rounded-full ring-2 ring-slate-900" />
             </button>
 
-            <div className="w-px h-6 bg-slate-800" />
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              title="Logout"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+
+            <div className="w-px h-6 bg-slate-800 hidden sm:block" />
 
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
@@ -225,6 +259,52 @@ const AdminLayout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* ── LOGOUT CONFIRMATION MODAL ── */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+            <button
+              onClick={() => setShowLogoutModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0">
+                <LogOut size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-extrabold text-white">Confirm Logout</h3>
+                <p className="text-xs text-slate-400">BoxCricket Admin Platform</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Are you sure want to logout? All active tokens and session data will be removed.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white text-xs font-bold transition-all shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-2"
+              >
+                <LogOut size={14} />
+                <span>Yes, Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
