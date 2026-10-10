@@ -24,6 +24,18 @@ public class Ownerrequestcontroller {
     }
 
     /**
+     * Check if current user has OWNER role (for venue creation pre-check).
+     * Only validates token role and logs details, no DB operations.
+     */
+    @PreAuthorize("hasRole('OWNER')")
+    @GetMapping("/check-owner")
+    public ResponseEntity<ApiResponse> checkOwnerRole(Authentication authentication) {
+        String principal = authentication != null ? authentication.getName() : "Unknown";
+        System.out.println("Check OWNER role request received for User ID / Principal: " + principal);
+        return ResponseEntity.ok(new ApiResponse(true, "User has OWNER role", principal));
+    }
+
+    /**
      * Submit Owner Request with direct File Uploads (multipart/form-data)
      * Uploads Adhar, PAN, and GST files to Cloudinary and saves to DB in one
      * request!

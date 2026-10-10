@@ -42,7 +42,8 @@ public class UserService {
         if (dto.getEmail() != null && userrepo.existsByEmail(dto.getEmail().trim())) {
             throw new DuplicateResourceException("User with email " + dto.getEmail() + " already exists");
         }
-        if (dto.getPhone() != null && !dto.getPhone().trim().isEmpty() && userrepo.existsByPhone(dto.getPhone().trim())) {
+        if (dto.getPhone() != null && !dto.getPhone().trim().isEmpty()
+                && userrepo.existsByPhone(dto.getPhone().trim())) {
             throw new DuplicateResourceException("User with phone " + dto.getPhone() + " already exists");
         }
 
@@ -75,18 +76,16 @@ public class UserService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        List<String> roleNames;
-        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-            roleNames = user.getRoles().stream()
-                    .filter(r -> r != null && r.getName() != null)
-                    .map(r -> r.getName().name())
-                    .collect(Collectors.toList());
-        } else {
-            roleNames = new ArrayList<>();
+        List<String> roleNames = new ArrayList<>();
+        for (Roles role : user.getRoles()) {
+            roleNames.add(role.getName().name());
         }
-
-        String primaryRole = roleNames.isEmpty() ? "PLAYER" : roleNames.get(0);
-        String token = jwtService.generateToken(user.getEmail(), user.getId(), primaryRole);
+        if (roleNames.isEmpty()) {
+            roleNames.add("PLAYER");
+        }
+        String primarRole = roleNames.get(0);
+        Set<String> roleSet = new HashSet<>(roleNames);
+        String token = jwtService.generateToken(user.getEmail(), user.getId(), roleSet);
 
         Loginresponsedto response = new Loginresponsedto();
         response.setStatus("200");
@@ -120,7 +119,27 @@ public class UserService {
 
     public Userresponsedto getUserResponseById(Integer id) {
         User user = getUserById(id);
-        return userMapper.toResponseDto(user, "User fetched successfully");
+        return userMapper.toResponseDto(user, "User profile fetched successfully");
+    }
+
+    public Userresponsedto getUserProfileByPrincipal(String principal) {
+        if (principal == null || principal.trim().isEmpty()) {
+            throw new RuntimeException("Principal cannot be empty");
+        }
+        User user;
+        if (principal.contains("@")) {
+            user = userrepo.findByEmail(principal.trim())
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + principal));
+        } else {
+            try {
+                int id = Integer.parseInt(principal.trim());
+                user = getUserById(id);
+            } catch (NumberFormatException e) {
+                user = userrepo.findByEmail(principal.trim())
+                        .orElseThrow(() -> new RuntimeException("User not found with email: " + principal));
+            }
+        }
+        return userMapper.toResponseDto(user, "User profile fetched successfully");
     }
 
     @Transactional

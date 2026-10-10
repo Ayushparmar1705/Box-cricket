@@ -123,3 +123,19 @@ services:
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+
+  # ─────────────────────────────────────────────
+  # FACILITY SERVICE
+  # localhost:3040  →  container:8090
+  # ─────────────────────────────────────────────
+  facility-service:
+    build:
+      context: ./facility-service
+      dockerfile: Dockerfile
+    ports:
+      - '3040:8090'
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver

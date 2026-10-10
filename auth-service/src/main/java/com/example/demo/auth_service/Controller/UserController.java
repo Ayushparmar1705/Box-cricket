@@ -9,6 +9,7 @@ import com.example.demo.auth_service.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -42,7 +43,42 @@ public class UserController {
         }
     }
 
-    // ─── 3. Get User By ID ────────────────────────────────────────────────────
+    // ─── 3. Get Logged-in User Profile ─────────────────────────────────────────
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserProfile(Authentication authentication) {
+        try {
+            if (authentication != null && authentication.getName() != null) {
+                String principal = authentication.getName();
+                Userresponsedto user = userservice.getUserProfileByPrincipal(principal);
+                return ResponseEntity.ok(user);
+            }
+            Map<String, String> err = new HashMap<>();
+            err.put("status", "401");
+            err.put("message", "User is not authenticated");
+            return ResponseEntity.status(401).body(err);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("status", "404");
+            err.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(err);
+        }
+    }
+
+    // ─── 4. Get User Profile By Path ID ───────────────────────────────────────
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<?> getUserProfileById(@PathVariable int id) {
+        try {
+            Userresponsedto user = userservice.getUserResponseById(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            Map<String, String> err = new HashMap<>();
+            err.put("status", "404");
+            err.put("message", e.getMessage());
+            return ResponseEntity.status(404).body(err);
+        }
+    }
+
+    // ─── 5. Get User By ID ────────────────────────────────────────────────────
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable int id) {
         try {

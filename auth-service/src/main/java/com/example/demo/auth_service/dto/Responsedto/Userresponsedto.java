@@ -1,5 +1,6 @@
 package com.example.demo.auth_service.dto.Responsedto;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 public class Userresponsedto {
@@ -9,6 +10,9 @@ public class Userresponsedto {
     private String email;
     private String phone;
     private Set<String> roles;
+    private String primaryRole;
+    private boolean active = true;
+    private LocalDateTime createdAt;
     private String message;
 
     public Userresponsedto() {}
@@ -23,6 +27,9 @@ public class Userresponsedto {
         this.email = email;
         this.phone = phone;
         this.roles = roles;
+        if (roles != null && !roles.isEmpty()) {
+            this.primaryRole = roles.iterator().next();
+        }
         this.message = message;
     }
 
@@ -64,6 +71,30 @@ public class Userresponsedto {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public String getPrimaryRole() {
+        return primaryRole;
+    }
+
+    public void setPrimaryRole(String primaryRole) {
+        this.primaryRole = primaryRole;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getMessage() {

@@ -1,11 +1,7 @@
 package com.locationservice.locationservice.Controller;
-
-import com.locationservice.locationservice.Dto.RequestDto.Countryrequestdto;
 import com.locationservice.locationservice.Dto.RequestDto.Staterequestdto;
 import com.locationservice.locationservice.Dto.ResponseDto.ApiResponse;
-import com.locationservice.locationservice.Dto.ResponseDto.Countryresponsedto;
 import com.locationservice.locationservice.Dto.ResponseDto.Stateresponsedto;
-import com.locationservice.locationservice.Model.Countrymodel;
 import com.locationservice.locationservice.Model.Statemodel;
 import com.locationservice.locationservice.Service.Stateservice;
 import jakarta.validation.Valid;

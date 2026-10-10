@@ -50,6 +50,11 @@ public class UserMapper {
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         response.setRoles(roleNames);
+        if (!roleNames.isEmpty()) {
+            response.setPrimaryRole(roleNames.iterator().next());
+        }
+        response.setActive(user.isActive());
+        response.setCreatedAt(user.getCreatedAt());
         response.setMessage(message != null ? message : "Success");
         return response;
     }

@@ -1,0 +1,29 @@
+# -------------------------------------------------
+# 1️⃣ Stage 1 – compile the Spring Boot app
+# -------------------------------------------------
+FROM maven:3.9-eclipse-temurin-25 AS build
+
+WORKDIR /app
+
+# Copy pom and source code
+COPY pom.xml .
+COPY src ./src
+
+# Package the application (skip tests for speed)
+RUN mvn clean package -DskipTests -B
+
+# -------------------------------------------------
+# 2️⃣ Stage 2 – runtime (eclipse-temurin JRE)
+# -------------------------------------------------
+FROM eclipse-temurin:25-jre AS runtime
+
+WORKDIR /app
+
+# Copy the built JAR from the first stage
+COPY --from=build /app/target/*.jar app.jar
+
+# Facility service listens on port 8090
+EXPOSE 8090
+
+# Run the Spring Boot app
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
