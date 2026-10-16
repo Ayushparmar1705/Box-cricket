@@ -23,7 +23,7 @@ import {
   Activity
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getStoredUser, getStoredRoles, logoutUser, type UserProfile } from '../services/authService';
+import { logoutUser, type UserProfile } from '../services/authService';
 import { fetchCitiesApi } from '../services/cityService';
 
 const PlayerDashboard: React.FC = () => {
@@ -57,10 +57,18 @@ const PlayerDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const storedUser = getStoredUser();
-    setUser(storedUser);
-    const storedRoles = getStoredRoles();
-    setRoles(storedRoles);
+    try {
+      const userStr = localStorage.getItem('boxcricket_user');
+      const storedUser = userStr ? JSON.parse(userStr) : null;
+      setUser(storedUser);
+
+      const rolesStr = localStorage.getItem('roles');
+      const storedRoles = rolesStr ? JSON.parse(rolesStr) : (storedUser?.roles || ['PLAYER']);
+      const rolesList = Array.isArray(storedRoles) ? storedRoles : [storedRoles];
+      setRoles(rolesList);
+    } catch {
+      // ignore
+    }
   }, []);
 
   const handleLogout = () => {
@@ -148,6 +156,23 @@ const PlayerDashboard: React.FC = () => {
               <User className="w-3.5 h-3.5" />
               My Profile
             </Link>
+            {roles.some((r: any) => String(r).toUpperCase().includes('OWNER')) ? (
+              <Link
+                to="/owner-dashboard"
+                className="px-3.5 py-1.5 rounded-lg text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/30 transition-all flex items-center gap-1.5 font-bold"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                Owner Dashboard 🏟️
+              </Link>
+            ) : (
+              <Link
+                to="/player-profile"
+                className="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-all flex items-center gap-1.5"
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                Become Owner
+              </Link>
+            )}
             <span className="px-3.5 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 cursor-not-allowed flex items-center gap-1 opacity-70">
               <Calendar className="w-3.5 h-3.5" />
               Bookings (Soon)

@@ -50,7 +50,7 @@ const AdminLayout: React.FC = () => {
       title: 'Turf Operations',
       items: [
         { name: 'Owner Requests', icon: FileText, path: '/owner-requests' },
-        { name: 'Venues', icon: MapPin, path: '#' },
+        { name: 'Venues', icon: MapPin, path: '/venues' },
         { name: 'Bookings', icon: CalendarDays, path: '#' },
         { name: 'Users', icon: Users, path: '#' },
         { name: 'Financials', icon: IndianRupee, path: '#' }
@@ -64,6 +64,7 @@ const AdminLayout: React.FC = () => {
     if (location.pathname === '/countries') return 'Countries';
     if (location.pathname === '/states') return 'States';
     if (location.pathname === '/cities') return 'Cities';
+    if (location.pathname === '/venues') return 'Venues';
     return 'Box Cricket Operations';
   };
 

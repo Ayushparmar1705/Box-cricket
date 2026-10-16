@@ -1,120 +1,156 @@
 import Api from '../../api/Api';
 
-export interface UserProfile {
-  id?: string | number;
+// ============================================================================
+// 1. DATA TYPES (Simple interfaces for students)
+// ============================================================================
+
+export interface User {
+  id?: number | string;
   username: string;
+  fullName?: string;
   email: string;
-  phone: string;
-  role?: string;
+  phone?: string;
   roles?: string[];
-  createdAt?: string;
 }
 
-const USER_STORAGE_KEY = 'boxcricket_user';
-const TOKEN_STORAGE_KEY = 'token';
-const ROLES_STORAGE_KEY = 'roles';
+export type UserProfile = User;
 
-export const getStoredRoles = (): string[] => {
-  try {
-    const raw = localStorage.getItem(ROLES_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-    const single = localStorage.getItem('role');
-    if (single) return [single];
-  } catch (e) {
-    console.error('Error reading stored roles', e);
+export interface RegisterData {
+  username?: string;
+  name?: string;
+  fullName?: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export type PlayerRegisterData = RegisterData;
+
+// ============================================================================
+// 2. AUTHENTICATION APIS (Login & Create Account)
+// ============================================================================
+
+/**
+ * 1. Login Function
+ * Sends email and password to the backend server.
+ */
+export const loginUser = async (email: string, password: string) => {
+  const response = await fetch(`${Api.auth}/api/users/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Login failed');
   }
-  return [];
+
+  return data;
 };
 
-export const setStoredRoles = (roles: string[]) => {
-  localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
-  if (roles.length > 0) {
-    localStorage.setItem('role', roles[0]);
+// Aliases for compatibility with other files
+export const loginAdmin = loginUser;
+export const loginPlayer = loginUser;
+
+/**
+ * 2. Create Account (Sign Up) Function
+ * Sends user registration details to the backend server.
+ */
+export const createAccount = async (form: RegisterData) => {
+  const userName = form.username || form.name || '';
+  const response = await fetch(`${Api.auth}/api/users/create`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: userName,
+      fullName: form.fullName || userName,
+      email: form.email,
+      phone: form.phone,
+      password: form.password,
+      roles: ['PLAYER'],
+    }),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Registration failed');
   }
+
+  return data;
 };
 
-export const extractRoles = (data: any): string[] => {
-  if (!data) return [];
-  const raw =
-    data.roles ||
-    (data.role ? [data.role] : null) ||
-    data.user?.roles ||
-    (data.user?.role ? [data.user.role] : null) ||
-    [];
+// Aliases for compatibility
+export const registerPlayer = createAccount;
+export const createProfile = createAccount;
 
-  if (Array.isArray(raw)) {
-    return raw.map((r: any) => {
-      if (typeof r === 'string') return r.replace(/^ROLE_/i, '').toUpperCase();
-      if (typeof r === 'object' && r?.name) return String(r.name).replace(/^ROLE_/i, '').toUpperCase();
-      return String(r).toUpperCase();
-    });
-  }
-  if (typeof raw === 'string') {
-    return [raw.replace(/^ROLE_/i, '').toUpperCase()];
-  }
-  return [];
-};
+// ============================================================================
+// 3. ROLE REDIRECTION FUNCTION
+// Only one single function for redirecting based on roles!
+// ============================================================================
 
-export const getRedirectPathByRole = (roles: string[]): string => {
-  const normalized = roles.map((r) => r.toUpperCase());
-  if (normalized.includes('SUPERADMIN') || normalized.includes('SUPER_ADMIN')) return '/admindashboard';
-  if (normalized.includes('ADMIN')) return '/admindashboard';
-  if (normalized.includes('TURF_OWNER') || normalized.includes('OWNER')) return '/admindashboard';
-  if (normalized.includes('PLAYER')) return '/player-dashboard';
+/**
+ * Checks the roles array from DB/login response and returns the dashboard URL.
+ * - If contains OWNER -> '/owner-dashboard'
+ * - If contains ADMIN -> '/admindashboard'
+ * - Default -> '/player-dashboard'
+ */
+export const redirectByRole = (roles: string[] | string): string => {
+  const roleArray = Array.isArray(roles) ? roles : [roles];
+  const cleanRoles = roleArray.map((r) => {
+    const roleStr = typeof r === 'string' ? r : (r as any)?.name || '';
+    return roleStr.toUpperCase().replace(/^ROLE_/, '');
+  });
+
+  if (cleanRoles.includes('OWNER') || cleanRoles.includes('TURF_OWNER')) {
+    return '/owner-dashboard';
+  }
+
+  if (cleanRoles.includes('ADMIN') || cleanRoles.includes('SUPERADMIN') || cleanRoles.includes('SUPER_ADMIN')) {
+    return '/admindashboard';
+  }
+
   return '/player-dashboard';
 };
 
-export const getStoredUser = (): UserProfile | null => {
-  try {
-    const raw = localStorage.getItem(USER_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {
-    console.error('Error reading stored user', e);
+// ============================================================================
+// 4. PROFILE & LOGOUT HELPERS
+// ============================================================================
+
+/**
+ * Fetch profile of currently logged-in user using the token header.
+ */
+export const viewProfile = async () => {
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    throw new Error('Please login first');
   }
-  return null;
+
+  const response = await fetch(`${Api.auth}/api/users/profile`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Could not load profile');
+  }
+
+  return data;
 };
 
-export const setStoredUser = (user: UserProfile) => {
-  localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-};
-
-export const logoutUser = () => {
-  localStorage.removeItem(USER_STORAGE_KEY);
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(ROLES_STORAGE_KEY);
-  localStorage.removeItem('role');
+/**
+ * Logout: Simply clear all stored session data from localStorage.
+ */
+export const logoutUser = (): void => {
   localStorage.clear();
-  sessionStorage.clear();
 };
-
-
-
-export const loginAdmin = async (email: string, password: string) => {
-  try {
-    const res = await fetch(Api.auth + '/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    return res.json();
-  } catch (error) {
-    console.error('Error during admin login', error);
-    throw error;
-  }
-};
-
-export const createProfile = async (body: any) => {
-  try {
-    const data = await fetch(Api.auth + "/api/users/create", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body)
-    });
-    return data.json()
-  }
-  catch (error) {
-    console.error("Error while creating profile", error);
-  }
-}

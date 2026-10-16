@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { createProfile, loginAdmin } from '../services/authService';
+import { createAccount, loginUser, redirectByRole } from '../services/authService';
 
 export const usePlayerAuth = () => {
 
@@ -28,8 +28,6 @@ export const usePlayerAuth = () => {
   })
   const navigate = useNavigate();
 
-
-
   const handleAuthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log(e.target.value);
     setSignupFormData((prev) => ({
@@ -38,19 +36,18 @@ export const usePlayerAuth = () => {
     }))
   }
 
-
-
-
-
-
   const handleSignup = async () => {
-    const result = await createProfile(signupFormData);
+    try {
+      const result = await createAccount(signupFormData);
 
-    if (result.success) {
-      toast.success(result.message);
-      navigate('/player-login');
-    } else {
-      toast.error(result.message);
+      if (result.success || result.status === 200) {
+        toast.success(result.message || 'Account created successfully!');
+        navigate('/player-login');
+      } else {
+        toast.error(result.message || 'Registration failed');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Registration failed');
     }
   }
 
@@ -79,7 +76,7 @@ export const usePlayerAuth = () => {
 
     setIsLoading(true);
     try {
-      const result = await loginAdmin(loginFormData.email, loginFormData.password);
+      const result = await loginUser(loginFormData.email, loginFormData.password);
       console.log('Login result:', result);
 
       const isSuccess = Boolean(
@@ -94,14 +91,26 @@ export const usePlayerAuth = () => {
         if (result?.token) {
           localStorage.setItem('token', result.token);
         }
+
+        const roles = result?.roles || result?.user?.roles || ['PLAYER'];
+        localStorage.setItem('roles', JSON.stringify(roles));
+
         if (result?.user) {
           localStorage.setItem('boxcricket_user', JSON.stringify(result.user));
         } else {
-          localStorage.setItem('boxcricket_user', JSON.stringify({ email: loginFormData.email, username: loginFormData.email.split('@')[0] }));
+          localStorage.setItem(
+            'boxcricket_user',
+            JSON.stringify({
+              email: loginFormData.email,
+              username: loginFormData.email.split('@')[0],
+              roles
+            })
+          );
         }
 
         toast.success(result?.message || 'Login successful!');
-        navigate('/player-dashboard');
+        const targetPath = redirectByRole(roles);
+        navigate(targetPath);
       } else {
         toast.error(result?.message || 'Invalid credentials');
       }

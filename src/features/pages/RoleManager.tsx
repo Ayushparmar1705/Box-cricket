@@ -8,8 +8,8 @@ import {
   assignRoleToUserApi,
   removeRoleFromUserApi,
   fetchUserRolesApi,
-  RoleModel,
-  UserRoleMapping,
+  type RoleModel,
+  type UserRoleMapping,
 } from '../services/roleService';
 
 const RoleManager: React.FC = () => {
@@ -215,12 +215,12 @@ const RoleManager: React.FC = () => {
                         <h3 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">
                           {r.name}
                         </h3>
-                        <span className="text-[10px] font-mono text-slate-500">ID: {r.id.substring(0, 8)}...</span>
+                        <span className="text-[10px] font-mono text-slate-500">ID: {String(r.id || '').substring(0, 8)}...</span>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => handleDeleteRole(r.id, r.name)}
+                      onClick={() => handleDeleteRole(String(r.id), r.name)}
                       className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                       title="Delete Role"
                     >
@@ -302,7 +302,7 @@ const RoleManager: React.FC = () => {
                           </p>
                         </div>
                         <button
-                          onClick={() => handleRemoveRole(ur.id.userId, ur.id.roleId, ur.role?.name)}
+                          onClick={() => handleRemoveRole(ur.id.userId, String(ur.id.roleId), ur.role?.name || '')}
                           className="p-1 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                           title="Revoke Role"
                         >

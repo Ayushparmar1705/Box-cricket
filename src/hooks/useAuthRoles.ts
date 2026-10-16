@@ -1,28 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getStoredRoles, getStoredUser, logoutUser, type UserProfile } from '../features/services/authService';
+import { logoutUser, type UserProfile } from '../features/services/authService';
 
 export const useAuthRoles = () => {
   const [roles, setRoles] = useState<string[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
 
   const refreshAuth = useCallback(() => {
-    // Check both standard admin roles and player roles storage
-    let currentRoles = getStoredRoles();
-    if (currentRoles.length === 0) {
-      try {
-        const playerRoles = localStorage.getItem('player_roles');
-        if (playerRoles) {
-          currentRoles = JSON.parse(playerRoles);
-        } else {
-          const singlePlayerRole = localStorage.getItem('player_role');
-          if (singlePlayerRole) currentRoles = [singlePlayerRole];
+    let currentRoles: string[] = [];
+    let currentUser: UserProfile | null = null;
+
+    try {
+      const userStr = localStorage.getItem('boxcricket_user');
+      if (userStr) {
+        currentUser = JSON.parse(userStr);
+        if (Array.isArray(currentUser?.roles)) {
+          currentRoles = currentUser.roles.map((r: any) =>
+            typeof r === 'string' ? r : r?.name || ''
+          );
         }
-      } catch {
-        // ignore
       }
+
+      if (currentRoles.length === 0) {
+        const rolesStr = localStorage.getItem('roles');
+        if (rolesStr) {
+          const parsed = JSON.parse(rolesStr);
+          if (Array.isArray(parsed)) currentRoles = parsed;
+        }
+      }
+    } catch {
+      // ignore JSON errors
     }
+
     setRoles(currentRoles);
-    setUser(getStoredUser());
+    setUser(currentUser);
   }, []);
 
   useEffect(() => {

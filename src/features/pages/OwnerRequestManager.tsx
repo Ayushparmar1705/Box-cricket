@@ -4,7 +4,6 @@ import {
   Building2,
   Mail,
   Phone,
-  Eye,
   CheckCircle2,
   XCircle,
   Clock,
@@ -17,7 +16,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getOwnerRequestsApi, approveOwnerRequestApi, rejectOwnerRequestApi } from '../services/ProfileService';
+import { getOwnerRequestsApi, approveOwnerRequestApi } from '../services/ProfileService';
 
 export interface OwnerDocument {
   id?: number;
@@ -150,8 +149,8 @@ const OwnerRequestManager: React.FC = () => {
     );
   };
 
-  const getFileUrl = (filePath?: string) => {
-    return filePath;
+  const getFileUrl = (filePath?: string): string => {
+    return filePath || '';
   };
 
   const getDocUrl = (req: OwnerRequestItem, docType: 'PAN_CARD' | 'ADHAR_CARD'): string | null => {

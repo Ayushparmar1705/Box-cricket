@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { loginAdmin } from '../services/authService';
+import { loginUser, redirectByRole } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -32,14 +32,16 @@ export const useLogin = () => {
         return;
       }
 
-      const data = await loginAdmin(email, password);
+      const data = await loginUser(email, password);
       if (data && data.token) {
         // Save the token for authenticated API requests
         localStorage.setItem('token', data.token);
-        if (data.role) localStorage.setItem('role', data.role);
+        const roles = data.roles || (data.role ? [data.role] : ['ADMIN']);
+        localStorage.setItem('roles', JSON.stringify(roles));
 
         toast.success('Logged in successfully');
-        navigate('/admindashboard');
+        const targetPath = redirectByRole(roles);
+        navigate(targetPath);
       } else {
         toast.error('Invalid credentials');
         navigate('/admin-login');

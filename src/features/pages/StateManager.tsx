@@ -6,7 +6,6 @@ import { CommonTable, type Table } from '../../Components/Common/CommonTable';
 import Navbar from '../../Components/Common/Navbar';
 import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
 import {
-  fetchStatesApi,
   filterState,
   createStateApi,
   updateStateApi,

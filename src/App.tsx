@@ -11,6 +11,8 @@ import PlayerLogin from './features/pages/PlayerLogin';
 import PlayerRegister from './features/pages/PlayerRegister';
 import PlayerDashboard from './features/pages/PlayerDashboard';
 import PlayerProfile from './features/pages/PlayerProfile';
+import OwnerDashboard from './features/pages/OwnerDashboard';
+import VenueManager from './features/pages/VenueManager';
 
 function App() {
   return (
@@ -22,6 +24,17 @@ function App() {
         <Route path="/player-login" element={<PlayerLogin />} />
         <Route path="/player-register" element={<PlayerRegister />} />
         <Route path="/player-dashboard" element={<PlayerDashboard />} />
+        <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+        <Route path="/ownerdashboard" element={<OwnerDashboard />} />
+        <Route path="/owner-venues" element={<OwnerDashboard />} />
+        <Route path="/owner/venues" element={<OwnerDashboard />} />
+        <Route path="/owner-slots" element={<OwnerDashboard />} />
+        <Route path="/owner/slots" element={<OwnerDashboard />} />
+        <Route path="/owner-courts" element={<OwnerDashboard />} />
+        <Route path="/owner/courts" element={<OwnerDashboard />} />
+        <Route path="/owner-pricing" element={<OwnerDashboard />} />
+        <Route path="/owner/pricing" element={<OwnerDashboard />} />
+        <Route path="/owner-settings" element={<OwnerDashboard />} />
         <Route path="/player-profile" element={<PlayerProfile />} />
         <Route path="/profile" element={<PlayerProfile />} />
         <Route path="/login" element={<Navigate to="/player-login" replace />} />
@@ -34,6 +47,7 @@ function App() {
           <Route path="/countries" element={<CountryManager />} />
           <Route path="/states" element={<StateManager />} />
           <Route path="/cities" element={<CityManager />} />
+          <Route path="/venues" element={<VenueManager />} />
         </Route>
       </Routes>
     </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
   Mail,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { OwnerrequestApi, type Ownerrequest } from '../services/ProfileService';
+import { viewProfile } from '../services/authService';
 
 interface OwnerDocumentState {
   file: File | null;
@@ -27,6 +28,7 @@ interface OwnerDocumentState {
 }
 
 const PlayerProfile: React.FC = () => {
+  const navigate = useNavigate();
 
   // Active tab selection: 'owner' (Become Turf Owner) or 'profile' (Edit Player Details)
   const [activeTab, setActiveTab] = useState<'profile' | 'owner'>('owner');
@@ -40,10 +42,10 @@ const PlayerProfile: React.FC = () => {
   });
 
   const [profileForm, setProfileForm] = useState({
-    username: "Rohit Sharma",
-    email: "rohit@boxcricket.com",
-    phone: "+91 98765 43210",
-    city: "Mumbai",
+    username: "",
+    email: "",
+    phone: "",
+    city: "",
   });
 
   const [adharDoc, setAdharDoc] = useState<OwnerDocumentState>({
@@ -52,13 +54,74 @@ const PlayerProfile: React.FC = () => {
     fileSize: "",
   });
 
+  const [isOwner, setIsOwner] = useState(false);
+
   const [panDoc, setPanDoc] = useState<OwnerDocumentState>({
     file: null,
     fileName: "",
     fileSize: "",
   });
 
+  const fetchProfile = async () => {
+    const result = await viewProfile();
+    console.log("Profile API result:", result);
+    if (result) {
+      setProfileForm({
+        username: result.name || result.username || "",
+        email: result.email || "",
+        phone: result.phone || "",
+        city: result.city || "",
+      });
 
+      // Check roles in API response
+      const rawRoles = result.roles || result.role || [];
+      const rolesArray = Array.isArray(rawRoles) ? rawRoles : [rawRoles];
+      const hasOwnerRole = rolesArray.some((r: any) => {
+        const str = typeof r === "object" ? r?.name || r?.role || "" : String(r);
+        return str.toUpperCase().includes("OWNER");
+      });
+
+      if (hasOwnerRole) {
+        setIsOwner(true);
+      }
+    }
+    else {
+      console.log("error fetching profile");
+    }
+  }
+
+  const handleRoleSwitchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+
+    if (val === "owner" || val === "owner_dashboard") {
+      if (isOwner) {
+        toast.success("Redirecting to Owner Dashboard...");
+        navigate("/owner-dashboard");
+      } else {
+        setActiveTab("owner");
+        toast("Complete application below to activate Turf Owner role", { icon: "📝" });
+      }
+    } else if (val === "profile") {
+      setActiveTab("profile");
+    } else if (val === "player-dashboard") {
+      navigate("/player-dashboard");
+    }
+  }
+
+  useEffect(() => {
+    fetchProfile();
+    try {
+      const stored = localStorage.getItem('roles');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.some((r: any) => String(r).toUpperCase().includes('OWNER'))) {
+          setIsOwner(true);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmittingOwner, setIsSubmittingOwner] = useState(false);
@@ -149,7 +212,7 @@ const PlayerProfile: React.FC = () => {
         try {
           const parsed = JSON.parse(storedUser);
           currentUserId = parsed.id || parsed.userId || parsed.user_id;
-        } catch (e) {}
+        } catch (e) { }
       }
       if (!currentUserId) {
         const rawId = localStorage.getItem("userId") || localStorage.getItem("user_id") || localStorage.getItem("id");
@@ -248,9 +311,20 @@ const PlayerProfile: React.FC = () => {
             <span className="font-extrabold text-sm sm:text-base tracking-tight text-white flex items-center gap-2">
               <User className="w-4 h-4 text-emerald-400" />
               <span>Player Profile & Settings</span>
+
             </span>
           </div>
-
+          <select
+            className='bg-slate-900 text-amber-400 border border-amber-500/40 hover:border-amber-400 rounded-xl px-4 py-2 text-xs font-bold cursor-pointer outline-none focus:ring-2 focus:ring-amber-500/20'
+            value={isOwner ? "owner_dashboard" : activeTab}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+              handleRoleSwitchChange(e);
+            }}
+          >
+            <option value="profile">Role: Player Profile</option>
+            <option value="owner">Role: Turf Owner Application</option>
+            <option value="owner_dashboard">Owner Dashboard 🏟️</option>
+          </select>
           <Link
             to="/player-dashboard"
             className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 text-xs font-bold transition-all flex items-center gap-1.5"
@@ -258,6 +332,7 @@ const PlayerProfile: React.FC = () => {
             <Trophy className="w-3.5 h-3.5" />
             <span>Arena Center</span>
           </Link>
+
         </div>
       </header>
 
@@ -342,8 +417,35 @@ const PlayerProfile: React.FC = () => {
         {activeTab === 'owner' && (
           <div className="space-y-6">
 
-            {/* Banner Notification if already submitted */}
-            {ownerApplicationSubmitted ? (
+            {/* Banner Notification if already owner or submitted */}
+            {isOwner ? (
+              <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-500/15 via-slate-900 to-slate-900 border border-emerald-500/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                    <BadgeCheck className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>Owner Status Active</span>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider">
+                        Role Assigned
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
+                      You already have the Turf Owner role assigned to your account profile. The Become Owner application form has been disabled.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/owner-dashboard')}
+                  className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition-all shadow-md shadow-emerald-500/20 flex items-center gap-1.5 shrink-0"
+                >
+                  <span>Go to Owner Dashboard</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : ownerApplicationSubmitted ? (
               <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-slate-900 to-slate-900 border border-amber-500/40 shadow-xl space-y-3">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
@@ -414,10 +516,11 @@ const PlayerProfile: React.FC = () => {
                         type="text"
                         name="business_name"
                         required
+                        disabled={isOwner}
                         value={ownerForm.business_name}
                         onChange={handleInputChange}
                         placeholder="e.g. Apex Box Cricket & Sports Turf"
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -433,9 +536,10 @@ const PlayerProfile: React.FC = () => {
                       </div>
                       <select
                         name="business_type"
+                        disabled={isOwner}
                         value={ownerForm.business_type}
                         onChange={handleInputChange}
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="">Select Business Type</option>
 
@@ -458,10 +562,11 @@ const PlayerProfile: React.FC = () => {
                         type="text"
                         name="gstn_number"
                         required
+                        disabled={isOwner}
                         value={ownerForm.gstn_number}
                         onChange={handleInputChange}
                         placeholder="e.g. 24ABCDE1234F1Z5"
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 uppercase"
+                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -494,10 +599,11 @@ const PlayerProfile: React.FC = () => {
                         type="tel"
                         name="contact_number"
                         required
+                        disabled={isOwner}
                         value={ownerForm.contact_number}
                         onChange={handleInputChange}
                         placeholder="e.g. +91 98765 43210"
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -515,10 +621,11 @@ const PlayerProfile: React.FC = () => {
                         type="email"
                         name="contact_email"
                         required
+                        disabled={isOwner}
                         value={ownerForm.contact_email}
                         onChange={handleInputChange}
                         placeholder="e.g. billing@apexarena.com"
-                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -565,22 +672,25 @@ const PlayerProfile: React.FC = () => {
                           <div className="text-xs font-bold text-emerald-300 truncate">{adharDoc.fileName}</div>
                           <div className="text-[10px] text-slate-400">{adharDoc.fileSize}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDoc('adhar')}
-                          className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isOwner && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDoc('adhar')}
+                            className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     ) : (
-                      <label className="border-2 border-dashed border-slate-800 hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors block">
+                      <label className={`border-2 border-dashed border-slate-800 rounded-xl p-4 text-center transition-colors block ${isOwner ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:border-emerald-500/50 cursor-pointer'}`}>
                         <UploadCloud className="w-6 h-6 text-slate-500 mx-auto mb-1" />
                         <span className="text-xs font-semibold text-slate-300 block">Upload Adhar Card</span>
                         <span className="text-[10px] text-slate-500 block">PDF, PNG, JPG (Max 5MB)</span>
                         <input
                           type="file"
                           accept="image/*,.pdf"
+                          disabled={isOwner}
                           className="hidden"
                           onChange={(e) => handleFileChange(e, 'adhar')}
                         />
@@ -609,22 +719,25 @@ const PlayerProfile: React.FC = () => {
                           <div className="text-xs font-bold text-cyan-300 truncate">{panDoc.fileName}</div>
                           <div className="text-[10px] text-slate-400">{panDoc.fileSize}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveDoc('pan')}
-                          className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {!isOwner && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDoc('pan')}
+                            className="text-slate-400 hover:text-rose-400 p-1 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     ) : (
-                      <label className="border-2 border-dashed border-slate-800 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors block">
+                      <label className={`border-2 border-dashed border-slate-800 rounded-xl p-4 text-center transition-colors block ${isOwner ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:border-cyan-500/50 cursor-pointer'}`}>
                         <UploadCloud className="w-6 h-6 text-slate-500 mx-auto mb-1" />
                         <span className="text-xs font-semibold text-slate-300 block">Upload Pan Card</span>
                         <span className="text-[10px] text-slate-500 block">PDF, PNG, JPG (Max 5MB)</span>
                         <input
                           type="file"
                           accept="image/*,.pdf"
+                          disabled={isOwner}
                           className="hidden"
                           onChange={(e) => handleFileChange(e, 'pan')}
                         />
@@ -636,12 +749,13 @@ const PlayerProfile: React.FC = () => {
 
               {/* Agreement & Submit Button */}
               <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
-                <label className="flex items-start gap-3 cursor-pointer select-none">
+                <label className={`flex items-start gap-3 select-none ${isOwner ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
                     checked={termsAccepted}
+                    disabled={isOwner}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500/20 accent-amber-500 cursor-pointer"
+                    className="w-4 h-4 mt-0.5 rounded border-slate-700 bg-slate-950 text-amber-500 focus:ring-amber-500/20 accent-amber-500 cursor-pointer disabled:cursor-not-allowed"
                   />
                   <span className="text-xs text-slate-400 leading-relaxed">
                     I solemnly declare that I am the legal owner or authorized manager of the specified turf business,
@@ -658,10 +772,15 @@ const PlayerProfile: React.FC = () => {
 
                   <button
                     type="submit"
-                    disabled={isSubmittingOwner}
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-xs text-slate-950 bg-gradient-to-r from-amber-400 via-emerald-300 to-cyan-400 hover:from-amber-300 hover:to-cyan-300 active:scale-[0.99] transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    disabled={isSubmittingOwner || isOwner}
+                    className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-xs text-slate-950 bg-gradient-to-r from-amber-400 via-emerald-300 to-cyan-400 hover:from-amber-300 hover:to-cyan-300 active:scale-[0.99] transition-all shadow-xl shadow-amber-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isSubmittingOwner ? (
+                    {isOwner ? (
+                      <>
+                        <BadgeCheck className="w-4 h-4 text-slate-950" />
+                        <span>Owner Role Already Active</span>
+                      </>
+                    ) : isSubmittingOwner ? (
                       <span>Submitting Application...</span>
                     ) : (
                       <>
