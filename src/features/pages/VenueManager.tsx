@@ -18,8 +18,7 @@ import toast from 'react-hot-toast';
 import {
   createVenueApi,
   fetchMyVenuesApi,
-  activateVenueApi,
-  deactivateVenueApi,
+  updateVenueStatusApi,
   type VenueItem
 } from '../services/venueService';
 import { fetchCitiesApi, type CityItem } from '../services/cityService';
@@ -128,11 +127,88 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
   const handleCreateVenue = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Step 1: Simple validation
-    if (!venueForm.venue_name.trim()) return toast.error('Please enter a Venue Name');
-    if (!venueForm.contact_number.trim()) return toast.error('Please enter contact phone number');
-    if (!venueForm.email.trim()) return toast.error('Please enter contact email');
-    if (!venueForm.address.trim()) return toast.error('Please enter street address');
+    // Step 1: Toast Validation (Clear, low-toughness checks with helpful error messages)
+    // 1. Venue Name
+    const venueName = venueForm.venue_name.trim();
+    if (!venueName) {
+      toast.error('Please enter a Venue Name');
+      return;
+    }
+    if (venueName.length < 3) {
+      toast.error('Venue Name must be at least 3 characters');
+      return;
+    }
+    if (venueName.length > 150) {
+      toast.error('Venue Name cannot exceed 150 characters');
+      return;
+    }
+
+    // 2. City
+    if (!venueForm.city_id || Number(venueForm.city_id) <= 0) {
+      toast.error('Please select a City from the dropdown');
+      return;
+    }
+
+    // 3. Street Address
+    const address = venueForm.address.trim();
+    if (!address) {
+      toast.error('Please enter the street address');
+      return;
+    }
+    if (address.length < 5) {
+      toast.error('Please enter a complete address (at least 5 characters)');
+      return;
+    }
+
+    // 4. Coordinates (Latitude & Longitude)
+    const lat = Number(venueForm.latitude);
+    const lng = Number(venueForm.longitude);
+    if (isNaN(lat) || lat < -90 || lat > 90) {
+      toast.error('Please enter a valid Latitude between -90 and 90');
+      return;
+    }
+    if (isNaN(lng) || lng < -180 || lng > 180) {
+      toast.error('Please enter a valid Longitude between -180 and 180');
+      return;
+    }
+
+    // 5. Contact Phone Number
+    const contactNumber = venueForm.contact_number.trim();
+    if (!contactNumber) {
+      toast.error('Please enter a contact phone number');
+      return;
+    }
+    const cleanPhone = contactNumber.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      toast.error('Phone number must have at least 10 digits');
+      return;
+    }
+
+    // 6. Contact Email
+    const email = venueForm.email.trim();
+    if (!email) {
+      toast.error('Please enter a contact email address');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address (e.g. owner@example.com)');
+      return;
+    }
+
+    // 7. Operating Timings
+    if (!venueForm.opening_time) {
+      toast.error('Please set an opening time');
+      return;
+    }
+    if (!venueForm.closing_time) {
+      toast.error('Please set a closing time');
+      return;
+    }
+    if (venueForm.opening_time === venueForm.closing_time) {
+      toast.error('Opening time and closing time cannot be the same');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -182,12 +258,12 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
     setIsDeleting(true);
     try {
       if (venueToDelete.is_active === false) {
-        // Activate (Restore)
-        await activateVenueApi(venueToDelete.id);
+        // Activate (Restore): Pass true
+        await updateVenueStatusApi(venueToDelete.id, true);
         toast.success(`🎉 Venue "${venueToDelete.name}" activated!`);
       } else {
-        // Deactivate (Delete)
-        await deactivateVenueApi(venueToDelete.id);
+        // Deactivate (Delete): Pass false
+        await updateVenueStatusApi(venueToDelete.id, false);
         toast.success(`⚠️ Venue "${venueToDelete.name}" deactivated.`);
       }
       setVenueToDelete(null);
@@ -452,7 +528,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
         maxWidth="2xl"
         theme="light"
       >
-        <form onSubmit={handleCreateVenue} className="space-y-4 text-xs">
+        <form onSubmit={handleCreateVenue} noValidate className="space-y-4 text-xs">
           {/* Row 1: Venue Name & City Dropdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">

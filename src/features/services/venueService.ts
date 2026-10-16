@@ -218,23 +218,16 @@ export const fetchAllVenuesApi = async (status: boolean = true): Promise<VenueIt
   return result.data || [];
 };
 
-/**
- * API #4: UPDATE VENUE ACTIVE STATUS (ACTIVATE / DEACTIVATE)
- * -------------------------------------------------------------
- * Beginner Guide:
- * - When an owner clicks "Delete / Deactivate", we call deactivateVenueApi (status = false).
- * - When an owner clicks "Restore / Activate", we call activateVenueApi (status = true).
- * - Backend sets: venue.set_active(status) in the database.
- */
+
 export const updateVenueStatusApi = async (
   venueId: number,
   status: boolean
-): Promise<VenueApiResponse<VenueItem>> => {
+) => {
   // Build API endpoint URL with query parameters
   const url = `${baseUrl.venue}/api/venues?venueid=${venueId}&status=${status}`;
 
   // Get authentication headers containing owner's Bearer token
-  const headers = getVenueAuthHeaders(false);
+  const headers = getVenueAuthHeaders();
 
   // Send PUT request to facility-service (port 3040)
   const response = await fetch(url, {
@@ -252,23 +245,3 @@ export const updateVenueStatusApi = async (
 
   return result;
 };
-
-/**
- * Activate Venue (Restore): Sets is_active = true
- */
-export const activateVenueApi = async (venueId: number): Promise<VenueApiResponse<VenueItem>> => {
-  return updateVenueStatusApi(venueId, true);
-};
-
-/**
- * Deactivate Venue (Soft Delete): Sets is_active = false
- */
-export const deactivateVenueApi = async (venueId: number): Promise<VenueApiResponse<VenueItem>> => {
-  return updateVenueStatusApi(venueId, false);
-};
-
-/**
- * Alias for deleteVenueApi
- */
-export const deleteVenueApi = deactivateVenueApi;
-
