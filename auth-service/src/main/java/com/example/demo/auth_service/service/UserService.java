@@ -83,7 +83,7 @@ public class UserService {
         if (roleNames.isEmpty()) {
             roleNames.add("PLAYER");
         }
-        String primarRole = roleNames.get(0);
+        String primaryRole = roleNames.get(0);
         Set<String> roleSet = new HashSet<>(roleNames);
         String token = jwtService.generateToken(user.getEmail(), user.getId(), roleSet);
 

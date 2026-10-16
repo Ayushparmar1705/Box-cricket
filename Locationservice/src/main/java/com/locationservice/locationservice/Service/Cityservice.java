@@ -60,7 +60,7 @@ public class Cityservice {
     }
 
     public ApiResponse<String> changeStatus(int id) {
-        Statemodel model = null;
+        // Statemodel model = null;
         Optional<Citymodel> cityOpt = rep.findById(id);
         if (cityOpt.isEmpty()) {
             return ApiResponse.success("City does not exist");

@@ -1,9 +1,5 @@
 package com.locationservice.locationservice.Dto.RequestDto;
 
-import com.locationservice.locationservice.Model.Countrymodel;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

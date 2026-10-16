@@ -1,9 +1,6 @@
 package com.locationservice.locationservice.Dto.ResponseDto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.locationservice.locationservice.Model.Countrymodel;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.*;
 
 @Getter
@@ -19,7 +16,6 @@ public class Stateresponsedto {
     private String country_name;
     @JsonProperty("is_active")
     private boolean is_active;
-
 
     @Override
     public String toString() {

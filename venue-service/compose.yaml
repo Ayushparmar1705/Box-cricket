@@ -1,9 +1,0 @@
-services:
-  postgres:
-    image: 'postgres:latest'
-    environment:
-      - 'POSTGRES_DB=neondb'
-      - 'POSTGRES_PASSWORD=npg_XD7MNR4ClvjK'
-      - 'POSTGRES_USER=neondb_owner'
-    ports:
-      - '5432'

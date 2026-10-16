@@ -1,0 +1,84 @@
+package com.facility_service.facility_service.Config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // 1. Disable CSRF (stateless REST APIs)
+                .csrf(csrf -> csrf.disable())
+
+                // 2. Enable CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 3. Stateless sessions
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 4. Request Authorization
+                .authorizeHttpRequests(auth -> auth
+                        // Allow CORS preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Allow error dispatch
+                        .requestMatchers("/error").permitAll()
+
+                        // Public endpoints to browse venues
+                        .requestMatchers(HttpMethod.GET, "/api/venues", "/api/venues/{id}").permitAll()
+
+                        // Owner and Super Admin specific endpoints
+                        .requestMatchers("/api/venues/owner", "/api/venues/owner/**", "/api/venues/my-venues").authenticated()
+
+                        // Creating, updating, and deleting venues require OWNER or SUPER_ADMIN role (or authenticated owner)
+                        .requestMatchers(HttpMethod.POST, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
+                        .requestMatchers(HttpMethod.PUT, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN")
+
+                        // All other endpoints require authentication
+                        .anyRequest().authenticated())
+
+                // 5. Add JWT Filter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}

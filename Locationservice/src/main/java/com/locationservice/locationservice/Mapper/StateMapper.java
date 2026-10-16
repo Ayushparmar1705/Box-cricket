@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class StateMapper {
 
-    private final CountryMapper countryMapper;
+    // private final CountryMapper countryMapper;
 
     public Statemodel toEntity(Staterequestdto dto, Countrymodel country) {
 
