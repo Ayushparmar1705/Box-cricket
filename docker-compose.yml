@@ -15,6 +15,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # OWNER VERIFICATION SERVICE
@@ -36,6 +37,7 @@ services:
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # LOCATION SERVICE (Countries, States, Cities)
@@ -52,6 +54,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # CATEGORY SERVICE
@@ -68,6 +71,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # VENUE SERVICE
@@ -88,6 +92,7 @@ services:
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # COURT SERVICE
@@ -107,6 +112,7 @@ services:
       - CLOUDINARY_CLOUD_NAME=dblawr8bm
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # STAFF SERVICE
@@ -123,6 +129,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
 
   # ─────────────────────────────────────────────
   # FACILITY SERVICE

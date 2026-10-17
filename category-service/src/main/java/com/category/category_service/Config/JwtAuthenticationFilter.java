@@ -22,11 +22,15 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String SECRET_KEY =
-            "my-super-secret-key-my-super-secret-key-123456";
+    private final SecretKey key;
+
+    public JwtAuthenticationFilter(
+            @org.springframework.beans.factory.annotation.Value("${jwt.secret:my-super-secret-key-my-super-secret-key-123456}") String secret) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        return key;
     }
 
     @Override

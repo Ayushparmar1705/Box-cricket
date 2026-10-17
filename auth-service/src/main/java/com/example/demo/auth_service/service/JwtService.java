@@ -14,11 +14,12 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
 
-        private static final String SECRET_KEY = "my-super-secret-key-my-super-secret-key-123456";
+        @org.springframework.beans.factory.annotation.Value("${jwt.secret:my-super-secret-key-my-super-secret-key-123456}")
+        private String secretKey;
 
         private SecretKey getSigningKey() {
                 return Keys.hmacShaKeyFor(
-                                SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+                                secretKey.getBytes(StandardCharsets.UTF_8));
         }
 
         // Generate JWT Token with Set of roles
