@@ -11,6 +11,7 @@ services:
     ports:
       - '3030:8080'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -29,6 +30,7 @@ services:
       - '3031:8081'
     environment:
       - SERVER_PORT=8081
+      - SPRING_PROFILES_ACTIVE=prod
       - AUTH_SERVICE_URL=http://auth-service:8080
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
@@ -50,6 +52,7 @@ services:
     ports:
       - '3035:8085'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -67,6 +70,7 @@ services:
     ports:
       - '3036:8086'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -85,6 +89,7 @@ services:
     ports:
       - '3037:8087'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -105,6 +110,7 @@ services:
     ports:
       - '3038:8088'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -125,6 +131,7 @@ services:
     ports:
       - '3039:8089'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -142,6 +149,7 @@ services:
     ports:
       - '3040:8090'
     environment:
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
