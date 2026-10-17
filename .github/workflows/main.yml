@@ -20,10 +20,6 @@ jobs:
       matrix:
         service:
           - auth-service
-          - location-service
-          - facility-service
-          - owner-verification
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
