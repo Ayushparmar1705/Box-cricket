@@ -3,6 +3,7 @@ package com.facility_service.facility_service.Controller;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -69,5 +70,20 @@ public class Venuecontroller {
         responseMap.put("status", "success");
         responseMap.put("message", "Venue status updated succesfully");
         return ResponseEntity.ok(responseMap);
+    }
+    @PreAuthorize("hasAnyRole('OWNER')")
+    @PutMapping(path = "/update",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Object>> update(
+            @Valid @ModelAttribute Updatevenuerequestdto dto) {
+
+
+
+        // call create function from service
+        var updatedVenue = service.update(dto);
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("status", 200);
+        resultMap.put("message", "Venue updated successfully");
+        resultMap.put("data", updatedVenue);
+        return ResponseEntity.ok(resultMap);
     }
 }

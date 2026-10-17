@@ -1,8 +1,10 @@
 package com.facility_service.facility_service.Services;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.facility_service.facility_service.Exception.ResourceNotFoundException;
+import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -85,5 +87,9 @@ public class Venueservice {
         venue.set_active(status);
         venue.setUpdated_at(java.time.LocalDateTime.now());
         return venueRepository.save(venue);
+    }
+    public Venuemodel update(Updatevenuerequestdto dto){
+        Optional<Venuemodel> model = venueRepository.findById(dto.getVenue_id());
+
     }
 }
