@@ -245,3 +245,23 @@ export const updateVenueStatusApi = async (
 
   return result;
 };
+
+export const searchVenueApi = async (search: string) => {
+  const url = `${baseUrl.venue}/api/venues/search?search=${encodeURIComponent(search.trim())}`;
+  const headers = getVenueAuthHeaders();
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: headers,
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const errorMsg = result.message || 'Failed to search venues';
+    throw new Error(errorMsg);
+  }
+
+  if (Array.isArray(result)) {
+    return result;
+  }
+  return result.data || [];
+};

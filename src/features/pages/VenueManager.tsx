@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   Plus,
@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import {
   createVenueApi,
   fetchMyVenuesApi,
+  searchVenueApi,
   updateVenueStatusApi,
   type VenueItem
 } from '../services/venueService';
@@ -115,7 +116,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
           setVenueForm((prev) => ({ ...prev, city_id: Number(cityList[0].id) }));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     loadVenues(filterActive);
   }, []);
@@ -274,18 +275,20 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       setIsDeleting(false);
     }
   };
-
-  // Filter venues based on user search box
-  const filteredVenues = useMemo(() => {
-    if (!searchQuery.trim()) return venues;
-    const q = searchQuery.toLowerCase();
-    return venues.filter(
-      (v) =>
-        (v.venue_name || v.name).toLowerCase().includes(q) ||
-        (v.contact_number || v.phone_number || '').includes(q) ||
-        (v.email || '').toLowerCase().includes(q)
-    );
-  }, [venues, searchQuery]);
+  const searchVenue = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (!value.trim()) {
+      await loadVenues(filterActive);
+      return;
+    }
+    try {
+      const response = await searchVenueApi(value);
+      setVenues(Array.isArray(response) ? response : (response?.data || []));
+    } catch (err: any) {
+      console.warn('Search failed:', err);
+    }
+  };
 
   // ============================================================================
   // SECTION 3: TABLE COLUMNS CONFIGURATION
@@ -386,16 +389,14 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       accessor: 'is_active',
       render: (item: VenueItem) => (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
-            item.is_active !== false
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-              : 'bg-rose-50 border border-rose-200 text-rose-700'
-          }`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${item.is_active !== false
+            ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+            : 'bg-rose-50 border border-rose-200 text-rose-700'
+            }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              item.is_active !== false ? 'bg-emerald-500' : 'bg-rose-500'
-            }`}
+            className={`w-1.5 h-1.5 rounded-full ${item.is_active !== false ? 'bg-emerald-500' : 'bg-rose-500'
+              }`}
           />
           <span>{item.is_active !== false ? 'Active' : 'Inactive'}</span>
         </span>
@@ -419,11 +420,11 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Building2 className="w-5 h-5 text-emerald-600" />
               <span>
-                {filterActive ? 'My Active Venues' : 'Deactivated Venues'} ({filteredVenues.length})
+                {filterActive ? 'My Active Venues' : 'Deactivated Venues'} ({venues.length})
               </span>
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Live box cricket grounds connected to facility service (http://localhost:3040/api/venues)
+              Manage your box cricket grounds
             </p>
           </div>
         )}
@@ -474,7 +475,9 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
           type="text"
           placeholder="Search venue by name, phone, or email..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            searchVenue(e);
+          }}
           className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
         />
       </div>
@@ -485,7 +488,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
           <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
           <h3 className="text-sm font-bold text-slate-800">Loading Venues from Facility Service...</h3>
         </div>
-      ) : filteredVenues.length === 0 ? (
+      ) : venues.length === 0 ? (
         <div className="p-12 text-center space-y-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
           <Building2 className="w-10 h-10 text-emerald-600 mx-auto" />
           <h3 className="text-sm font-bold text-slate-800">
@@ -501,7 +504,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
         <div className="space-y-3">
           <CommonTable<VenueItem>
             columns={venueColumns}
-            data={filteredVenues}
+            data={venues}
             onView={(item) => setSelectedVenue(item)}
             onEdit={(item) => setSelectedVenue(item)}
             onDelete={(item) => setVenueToDelete(item)}
@@ -510,7 +513,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
             theme="light"
           />
           <div className="flex items-center justify-between text-xs text-slate-500 px-2">
-            <span>Showing {filteredVenues.length} grounds ({filterActive ? 'Active' : 'Deactivated'})</span>
+            <span>Showing {venues.length} grounds ({filterActive ? 'Active' : 'Deactivated'})</span>
             <span>API: http://localhost:3040/api/venues</span>
           </div>
         </div>
