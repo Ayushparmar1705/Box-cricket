@@ -40,18 +40,18 @@ public class Venuemodel {
     private String phone_number;
     private String email;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "venue")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "venue", orphanRemoval = true)
     private List<Venueamenitiesmodel> venue_amenities;
 
     private String imageUrl;
     private LocalTime opening_time;
     private LocalTime closing_time;
     private String cancellation_policy;
-    
+
     @jakarta.persistence.Column(name = "is_active", nullable = false)
     @com.fasterxml.jackson.annotation.JsonProperty("is_active")
     private boolean is_active = true;
-    
+
     private LocalDateTime created_at;
     private LocalDateTime updated_at;
 
