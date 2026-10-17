@@ -33,7 +33,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody Loginrequestdto data) {
         try {
-            System.out.println("User controller login function called");
+            System.out.println("Login function called in User controller file");
             Loginresponsedto loginResponse = userservice.authenticateUser(data);
             return ResponseEntity.ok(loginResponse);
         } catch (RuntimeException e) {
