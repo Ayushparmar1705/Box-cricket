@@ -11,6 +11,8 @@ import java.util.List;
 public interface Venuerepositry extends JpaRepository<Venuemodel, Integer> {
     boolean existsByName(String name);
 
-    @Query("SELECT v FROM Venuemodel v WHERE v.owner_id = :ownerId AND is_active = :status")
+    @Query("SELECT DISTINCT v FROM Venuemodel v LEFT JOIN FETCH v.venue_amenities WHERE v.owner_id=:ownerId AND v.active=:status")
     List<Venuemodel> findByOwnerId(@Param("ownerId") int ownerId, @Param("status") boolean status);
+
+    List<Venuemodel> findByNameContainingIgnoreCase(String search);
 }

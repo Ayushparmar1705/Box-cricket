@@ -49,7 +49,8 @@ public class Venuecontroller {
 
     @PreAuthorize("hasRole('OWNER')")
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getVenuesByOwnerId(Authentication authentication, @RequestParam("status") boolean status) {
+    public ResponseEntity<Map<String, Object>> getVenuesByOwnerId(Authentication authentication,
+            @RequestParam("status") boolean status) {
         String userId = authentication.getName();
         System.out.println(authentication);
         var venues = service.getVenuesByOwnerId(Integer.parseInt(userId), status);
@@ -71,12 +72,11 @@ public class Venuecontroller {
         responseMap.put("message", "Venue status updated succesfully");
         return ResponseEntity.ok(responseMap);
     }
+
     @PreAuthorize("hasAnyRole('OWNER')")
-    @PutMapping(path = "/update",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(path = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> update(
             @Valid @ModelAttribute Updatevenuerequestdto dto) {
-
-
 
         // call create function from service
         var updatedVenue = service.update(dto);
@@ -84,6 +84,23 @@ public class Venuecontroller {
         resultMap.put("status", 200);
         resultMap.put("message", "Venue updated successfully");
         resultMap.put("data", updatedVenue);
+        return ResponseEntity.ok(resultMap);
+    }
+
+    /**
+     * Search venues by name
+     * Accessible via GET /api/venues/search?search=... or ?query=...
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchVenues(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "query", required = false) String query) {
+        String searchTerm = (search != null) ? search : (query != null ? query : "");
+        var venues = service.getVenuesByCity(searchTerm);
+        Map<String, Object> resultMap = new HashMap<>();
+        resultMap.put("status", 200);
+        resultMap.put("message", "Venues fetched successfully");
+        resultMap.put("data", venues);
         return ResponseEntity.ok(resultMap);
     }
 }

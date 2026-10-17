@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
 
                         // Public endpoints to browse venues
-                        .requestMatchers(HttpMethod.GET, "/api/venues", "/api/venues/{id}").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/venues", "/api/venues/{id}", "/api/venues/search").permitAll()
 
                         // Owner and Super Admin specific endpoints
                         .requestMatchers("/api/venues/owner", "/api/venues/owner/**", "/api/venues/my-venues").authenticated()

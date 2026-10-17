@@ -16,7 +16,9 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class Venueresponsedto {
+public class Venueresponsedto implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private int id;
     private int owner_id;

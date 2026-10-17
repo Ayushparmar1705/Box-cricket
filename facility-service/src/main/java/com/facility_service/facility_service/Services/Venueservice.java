@@ -8,6 +8,8 @@ import com.facility_service.facility_service.Model.Venueamenitiesmodel;
 import com.facility_service.facility_service.Exception.ResourceNotFoundException;
 import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.facility_service.facility_service.Exception.ResourceAlreadyExistsException;
@@ -132,6 +134,7 @@ public class Venueservice {
     }
 
     @Transactional
+    @CacheEvict(value = "venueSearch", allEntries = true)
     public Venuemodel update(Updatevenuerequestdto dto) {
         Venuemodel model = venueRepository.findById(dto.getVenue_id())
                 .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + dto.getVenue_id()));
@@ -201,5 +204,15 @@ public class Venueservice {
         model.setUpdated_at(java.time.LocalDateTime.now());
 
         return venueRepository.save(model);
+    }
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "venueSearch", key = "'venue_search' + #search")
+    public List<Venueresponsedto> getVenuesByCity(String search) {
+        List<Venuemodel> venues = venueRepository.findByNameContainingIgnoreCase(search);
+        System.out.println("Postgre SQL Database Hit");
+        return venues.stream()
+                .map(mapper::toResponseDto)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

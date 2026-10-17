@@ -25,8 +25,8 @@ public class CourtService {
     private final Cloudinary cloudinary;
 
     public CourtService(CourtRepository courtRepository,
-                        CourtImageRepository courtImageRepository,
-                        Cloudinary cloudinary) {
+            CourtImageRepository courtImageRepository,
+            Cloudinary cloudinary) {
         this.courtRepository = courtRepository;
         this.courtImageRepository = courtImageRepository;
         this.cloudinary = cloudinary;
@@ -63,7 +63,8 @@ public class CourtService {
     @Transactional
     public CourtEntity createCourt(CourtEntity request, List<MultipartFile> files) {
         if (courtRepository.existsByCourtNameAndVenueId(request.getCourtName().trim(), request.getVenueId())) {
-            throw new RuntimeException("Court with name '" + request.getCourtName() + "' already exists for venue id: " + request.getVenueId());
+            throw new RuntimeException("Court with name '" + request.getCourtName() + "' already exists for venue id: "
+                    + request.getVenueId());
         }
 
         CourtEntity savedCourt = courtRepository.save(request);
@@ -106,16 +107,22 @@ public class CourtService {
                 String newName = request.getCourtName().trim();
                 Integer targetVenueId = request.getVenueId() != null ? request.getVenueId() : court.getVenueId();
                 if (courtRepository.existsByCourtNameAndVenueIdAndIdNot(newName, targetVenueId, id)) {
-                    throw new RuntimeException("Court with name '" + newName + "' already exists for venue id: " + targetVenueId);
+                    throw new RuntimeException(
+                            "Court with name '" + newName + "' already exists for venue id: " + targetVenueId);
                 }
                 court.setCourtName(newName);
             }
 
-            if (request.getVenueId() != null) court.setVenueId(request.getVenueId());
-            if (request.getCategoryId() != null) court.setCategoryId(request.getCategoryId());
-            if (request.getSurfaceType() != null) court.setSurfaceType(request.getSurfaceType());
-            if (request.getMaxPlayers() != null) court.setMaxPlayers(request.getMaxPlayers());
-            if (request.getDescription() != null) court.setDescription(request.getDescription());
+            if (request.getVenueId() != null)
+                court.setVenueId(request.getVenueId());
+            if (request.getCategoryId() != null)
+                court.setCategoryId(request.getCategoryId());
+            if (request.getSurfaceType() != null)
+                court.setSurfaceType(request.getSurfaceType());
+            if (request.getMaxPlayers() != null)
+                court.setMaxPlayers(request.getMaxPlayers());
+            if (request.getDescription() != null)
+                court.setDescription(request.getDescription());
             court.setActive(request.isActive());
         }
 
@@ -127,14 +134,6 @@ public class CourtService {
     }
 
     @Transactional
-    public List<CourtImageEntity> addImagesToCourt(UUID courtId, List<MultipartFile> files) {
-        if (!courtRepository.existsById(courtId)) {
-            throw new RuntimeException("Court not found with id: " + courtId);
-        }
-        return uploadAndSaveImages(courtId, files);
-    }
-
-    @Transactional
     public CourtEntity changeStatus(UUID id, boolean status) {
         CourtEntity court = courtRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
@@ -142,20 +141,4 @@ public class CourtService {
         return courtRepository.save(court);
     }
 
-    @Transactional
-    public void deleteCourt(UUID id) {
-        if (!courtRepository.existsById(id)) {
-            throw new RuntimeException("Court not found with id: " + id);
-        }
-        courtImageRepository.deleteByCourtId(id);
-        courtRepository.deleteById(id);
-    }
-
-    @Transactional
-    public void deleteCourtImage(Long imageId) {
-        if (!courtImageRepository.existsById(imageId)) {
-            throw new RuntimeException("Court image not found with id: " + imageId);
-        }
-        courtImageRepository.deleteById(imageId);
-    }
 }
