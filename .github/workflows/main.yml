@@ -21,6 +21,9 @@ jobs:
         service:
           - auth-service
           - category-service
+          - location-service
+          - owner-verification
+          - facility-service
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
