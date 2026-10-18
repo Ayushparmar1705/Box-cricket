@@ -3,5 +3,6 @@ const baseUrl = {
     location: "http://localhost:3035",
     profile: "http://localhost:3031",
     venue: "http://localhost:3040",
+    category: "http://localhost:3036"
 }
 export default baseUrl;

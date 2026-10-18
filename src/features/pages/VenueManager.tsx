@@ -28,6 +28,7 @@ import { fetchCitiesApi, type CityItem } from '../services/cityService';
 import CommonTable, { type TableColumn } from '../../Components/Common/CommonTable';
 import CommonModal from '../../Components/Common/CommonModal';
 import CommonConfirmModal from '../../Components/Common/CommonConfirmModal';
+import CommonForm, { type FormField } from '../../Components/Common/CommonForm';
 import VenueLocationPicker from '../../Components/Common/VenueLocationPicker';
 
 // ── Default Initial Form State (12 Venue Fields) ───────────────────────────
@@ -408,6 +409,127 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
     },
   ];
 
+  const handleVenueFormChange = (fieldName: string, value: any) => {
+    setVenueForm((prev) => ({ ...prev, [fieldName]: value }));
+  };
+
+  const venueFormFields: FormField[] = [
+    {
+      name: 'venue_name',
+      label: 'Venue Name (venue_name)',
+      type: 'text',
+      placeholder: 'e.g. Apex Box Cricket Arena',
+      required: true,
+      icon: <Building2 size={15} />,
+      colSpan: 1,
+    },
+    {
+      name: 'city_id',
+      label: 'City (city_id)',
+      type: 'select',
+      required: true,
+      colSpan: 1,
+      options:
+        availableCities.length > 0
+          ? availableCities.map((c) => ({
+              value: String(c.id),
+              label: `${c.city_name} (ID: ${c.id})`,
+            }))
+          : [{ value: '1', label: 'Mumbai (Default ID: 1)' }],
+      placeholder: 'Select city',
+    },
+    {
+      name: 'address',
+      label: 'Street Address (address)',
+      type: 'text',
+      placeholder: 'e.g. Plot 12, Link Road, Near Sports Complex, Andheri West',
+      required: true,
+      icon: <MapPin size={15} />,
+      colSpan: 2,
+    },
+    {
+      name: 'locationPicker',
+      label: 'Venue Location Map & Coordinates Picker',
+      type: 'custom',
+      colSpan: 2,
+      renderCustom: (formData, onChange) => (
+        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
+          <VenueLocationPicker
+            value={{
+              address: formData.address || '',
+              latitude: Number(formData.latitude) || 23.04009,
+              longitude: Number(formData.longitude) || 72.52904,
+            }}
+            onChange={(loc) => {
+              onChange('address', loc.address);
+              onChange('latitude', loc.latitude);
+              onChange('longitude', loc.longitude);
+              onChange(
+                'google_map_link',
+                `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`
+              );
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      name: 'contact_number',
+      label: 'Contact Phone (contact_number)',
+      type: 'tel',
+      placeholder: '+91 98765 43210',
+      required: true,
+      icon: <Phone size={15} />,
+      colSpan: 1,
+    },
+    {
+      name: 'email',
+      label: 'Contact Email (email)',
+      type: 'email',
+      placeholder: 'owner@apexarena.com',
+      required: true,
+      icon: <Mail size={15} />,
+      colSpan: 1,
+    },
+    {
+      name: 'opening_time',
+      label: 'Opening Time (opening_time)',
+      type: 'time',
+      icon: <Clock size={15} />,
+      colSpan: 1,
+    },
+    {
+      name: 'closing_time',
+      label: 'Closing Time (closing_time)',
+      type: 'time',
+      icon: <Clock size={15} />,
+      colSpan: 1,
+    },
+    {
+      name: 'cancellation_policy',
+      label: 'Cancellation Policy (cancellation_policy)',
+      type: 'textarea',
+      placeholder: 'e.g. Free cancellation up to 4 hours before slot time. No refund for no-shows.',
+      rows: 2,
+      colSpan: 2,
+    },
+    {
+      name: 'description',
+      label: 'Description (description)',
+      type: 'textarea',
+      placeholder: 'Ground dimensions (e.g. 100ft x 60ft), high-density turf, LED floodlights...',
+      rows: 2,
+      colSpan: 2,
+    },
+    {
+      name: 'image',
+      label: 'Venue Photo (Optional)',
+      type: 'file',
+      accept: 'image/*',
+      colSpan: 2,
+    },
+  ];
+
   // ============================================================================
   // SECTION 4: USER INTERFACE (UI) RENDER
   // ============================================================================
@@ -531,208 +653,17 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
         maxWidth="2xl"
         theme="light"
       >
-        <form onSubmit={handleCreateVenue} noValidate className="space-y-4 text-xs">
-          {/* Row 1: Venue Name & City Dropdown */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Venue Name (venue_name) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={150}
-                placeholder="e.g. Apex Box Cricket Arena"
-                value={venueForm.venue_name}
-                onChange={(e) => setVenueForm({ ...venueForm, venue_name: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                City (city_id - Dropdown) <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={venueForm.city_id}
-                onChange={(e) => setVenueForm({ ...venueForm, city_id: Number(e.target.value) })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white font-medium cursor-pointer"
-              >
-                {availableCities.length > 0 ? (
-                  availableCities.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.city_name} (ID: {c.id})
-                    </option>
-                  ))
-                ) : (
-                  <option value={1}>Mumbai (Default ID: 1)</option>
-                )}
-              </select>
-            </div>
-          </div>
-
-          {/* Row 2: Street Address */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700">
-              Street Address (address) <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Plot 12, Link Road, Near Sports Complex, Andheri West"
-              value={venueForm.address}
-              onChange={(e) => setVenueForm({ ...venueForm, address: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-            />
-          </div>
-
-          {/* Row 3: Venue Location Map & Coordinates Picker */}
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">
-            <VenueLocationPicker
-              value={{
-                address: venueForm.address,
-                latitude: venueForm.latitude,
-                longitude: venueForm.longitude,
-              }}
-              onChange={(loc) => {
-                setVenueForm((prev) => ({
-                  ...prev,
-                  address: loc.address,
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                  google_map_link: `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`,
-                }));
-              }}
-            />
-          </div>
-
-          {/* Row 4: Contact Phone & Email */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Contact Phone (contact_number) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="tel"
-                required
-                placeholder="+91 98765 43210"
-                value={venueForm.contact_number}
-                onChange={(e) => setVenueForm({ ...venueForm, contact_number: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Contact Email (email) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="email"
-                required
-                placeholder="owner@apexarena.com"
-                value={venueForm.email}
-                onChange={(e) => setVenueForm({ ...venueForm, email: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Row 5: Timings */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Opening Time (opening_time)
-              </label>
-              <input
-                type="time"
-                step="1"
-                value={venueForm.opening_time}
-                onChange={(e) => setVenueForm({ ...venueForm, opening_time: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Closing Time (closing_time)
-              </label>
-              <input
-                type="time"
-                step="1"
-                value={venueForm.closing_time}
-                onChange={(e) => setVenueForm({ ...venueForm, closing_time: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Row 6: Cancellation Policy */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700">
-              Cancellation Policy (cancellation_policy)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="e.g. Free cancellation up to 4 hours before slot time. No refund for no-shows."
-              value={venueForm.cancellation_policy}
-              onChange={(e) => setVenueForm({ ...venueForm, cancellation_policy: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white resize-none"
-            />
-          </div>
-
-          {/* Row 7: Description */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700">
-              Description (description)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="Ground dimensions (e.g. 100ft x 60ft), high-density turf, LED floodlights..."
-              value={venueForm.description}
-              onChange={(e) => setVenueForm({ ...venueForm, description: e.target.value })}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 focus:outline-none focus:border-emerald-500 focus:bg-white resize-none"
-            />
-          </div>
-
-          {/* Row 8: Venue Photo */}
-          <div className="space-y-1.5">
-            <label className="block font-bold text-slate-700">Venue Photo (Optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0] || null;
-                setVenueForm({ ...venueForm, image: file });
-              }}
-              className="w-full text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
-            />
-          </div>
-
-          {/* Form Submit & Cancel Buttons */}
-          <div className="pt-3 border-t border-slate-100 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setShowAddModal(false)}
-              className="px-5 py-2.5 rounded-xl font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-60 flex items-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Submitting to API...</span>
-                </>
-              ) : (
-                <span>Submit Venue</span>
-              )}
-            </button>
-          </div>
-        </form>
+        <CommonForm
+          fields={venueFormFields}
+          formData={venueForm}
+          onChange={handleVenueFormChange}
+          onSubmit={handleCreateVenue}
+          submitText={isSubmitting ? 'Submitting to API...' : 'Create Box Cricket Venue'}
+          isLoading={isSubmitting}
+          theme="light"
+          gridCols={2}
+          onCancel={() => setShowAddModal(false)}
+        />
       </CommonModal>
 
       {/* ======================================================================== */}
