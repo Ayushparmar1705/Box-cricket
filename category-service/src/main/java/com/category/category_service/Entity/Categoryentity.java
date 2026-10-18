@@ -2,6 +2,7 @@ package com.category.category_service.Entity;
 
 import java.util.Date;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,6 +17,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
@@ -24,6 +26,8 @@ import lombok.Setter;
 @Setter
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Categoryentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

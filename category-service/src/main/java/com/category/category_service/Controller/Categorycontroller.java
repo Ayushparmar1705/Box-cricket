@@ -7,8 +7,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.category.category_service.Entity.Categoryentity;
+import com.category.category_service.Response.ApiResponse;
 import com.category.category_service.Service.Categoryservice;
+import com.category.category_service.dto.Categoryrequestdto;
 
 @RestController
 @RequestMapping("/api/category")
@@ -38,35 +38,15 @@ public class Categorycontroller {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<?> createCategory(
-            @Validated @RequestBody Categoryentity category,
-            BindingResult bindingResult) {
-        if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> {
-                errors.put(error.getField(), error.getDefaultMessage());
-            });
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
-        }
-        try {
-            Categoryentity result = service.createCategory(category);
-            if (result == null) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(createResponseMap("409",
-                                "Category already exists with name " + category.getCategory_name()));
-            } else {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(createResponseMap("201", "Category created successfully"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error creating category");
-        }
+    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
+    public ResponseEntity<ApiResponse> create(@RequestBody Categoryrequestdto dto) {
+        service.createCategory(dto);
+        ApiResponse response = new ApiResponse("200", "Category created succesfully", null);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
+    @PreAuthorize("permitAll() or hasRole('SUPER_ADMIN') or hasRole('PLAYER') or hasRole('OWNER')")
     public ResponseEntity<?> viewCategory() {
         List<Categoryentity> result = service.viewCategory();
         if (result != null) {

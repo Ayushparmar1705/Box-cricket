@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.category.category_service.Entity.Categoryentity;
 import com.category.category_service.Repositry.Categoryrepositry;
+import com.category.category_service.dto.Categoryrequestdto;
+import com.category.category_service.exception.DuplicateResourceException;
 
 @Service
 public class Categoryservice {
@@ -15,13 +17,14 @@ public class Categoryservice {
         this.rep = rep;
     }
 
-    public Categoryentity createCategory(Categoryentity cat) {
-        boolean isExists = rep.existsByName(cat.getCategory_name());
+    public Categoryentity createCategory(Categoryrequestdto dto) {
+        Categoryentity entity = new Categoryentity();
+        entity.setCategory_name(dto.getCategory_name());
+        boolean isExists = rep.existsByName(dto.getCategory_name());
         if (isExists) {
-            return null;
+            throw new DuplicateResourceException("Category already exists");
         }
-
-        return rep.save(cat);
+        return rep.save(entity);
     }
 
     public List<Categoryentity> viewCategory() {
