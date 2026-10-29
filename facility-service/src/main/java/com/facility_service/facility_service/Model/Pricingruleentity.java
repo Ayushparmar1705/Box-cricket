@@ -1,27 +1,12 @@
-package com.court_service.court_service.model;
+package com.facility_service.facility_service.Model;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import com.court_service.court_service.Enums.Dayenum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-/**
- * Pricingruleentity
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -29,7 +14,9 @@ import lombok.Setter;
 @Builder
 @Entity
 @Table(name = "pricing_rules")
-public class Pricingruleentity {
+public class Pricingruleentity implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,6 +24,11 @@ public class Pricingruleentity {
 
     @Column(name = "court_id", nullable = false)
     private int courtid;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "court_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private CourtEntity court;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "day_type", nullable = false)
@@ -57,3 +49,4 @@ public class Pricingruleentity {
     @Column(name = "valid_to")
     private LocalDate valid_to;
 }
+

@@ -47,6 +47,10 @@ public class Venuemodel implements java.io.Serializable {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "venue")
     private List<Venueamenitiesmodel> venue_amenities;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "venue", fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<CourtEntity> courts;
+
     private String imageUrl;
     private LocalTime opening_time;
     private LocalTime closing_time;

@@ -47,8 +47,9 @@ public class SecurityConfig {
                         // Allow error dispatch
                         .requestMatchers("/error").permitAll()
 
-                        // Public endpoints to browse venues
+                        // Public endpoints to browse venues and courts
                         .requestMatchers(HttpMethod.GET, "/api/venues", "/api/venues/{id}", "/api/venues/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/court/**", "/api/courts/**", "/api/court", "/api/courts").permitAll()
 
                         // Owner and Super Admin specific endpoints
                         .requestMatchers("/api/venues/owner", "/api/venues/owner/**", "/api/venues/my-venues").authenticated()
@@ -57,6 +58,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
                         .requestMatchers(HttpMethod.PUT, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
                         .requestMatchers(HttpMethod.DELETE, "/api/venues", "/api/venues/**").hasAnyRole("OWNER", "SUPER_ADMIN")
+
+                        // Court & pricing endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/court/**", "/api/courts/**", "/api/court", "/api/courts").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
+                        .requestMatchers(HttpMethod.PUT, "/api/court/**", "/api/courts/**", "/api/court", "/api/courts").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/court/**", "/api/courts/**", "/api/court", "/api/courts").hasAnyRole("OWNER", "SUPER_ADMIN")
+                        .requestMatchers("/api/pricing/**").hasAnyRole("OWNER", "SUPER_ADMIN", "PLAYER")
 
                         // All other endpoints require authentication
                         .anyRequest().authenticated())

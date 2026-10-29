@@ -1,4 +1,4 @@
-package com.court_service.court_service.controller;
+package com.facility_service.facility_service.Controller;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.court_service.court_service.model.Pricingruleentity;
-import com.court_service.court_service.service.PricingruleService;
+import com.facility_service.facility_service.Model.Pricingruleentity;
+import com.facility_service.facility_service.Services.PricingruleService;
 
 import jakarta.validation.Valid;
 
@@ -109,3 +109,4 @@ public class PricingRuleController {
         }
     }
 }
+

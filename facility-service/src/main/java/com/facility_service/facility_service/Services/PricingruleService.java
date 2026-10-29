@@ -1,12 +1,12 @@
-package com.court_service.court_service.service;
+package com.facility_service.facility_service.Services;
 
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.court_service.court_service.model.Pricingruleentity;
-import com.court_service.court_service.repository.PricingRuleRepositry;
+import com.facility_service.facility_service.Model.Pricingruleentity;
+import com.facility_service.facility_service.Repositry.PricingRuleRepositry;
 
 @Service
 public class PricingruleService {
@@ -61,3 +61,4 @@ public class PricingruleService {
         rep.deleteById(id);
     }
 }
+

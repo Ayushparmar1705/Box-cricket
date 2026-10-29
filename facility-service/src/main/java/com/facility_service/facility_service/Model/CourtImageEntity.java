@@ -1,11 +1,11 @@
-package com.court_service.court_service.model;
+package com.facility_service.facility_service.Model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.util.Date;
-import java.util.UUID;
 
 @Entity
 @Table(name = "court_images")
@@ -14,14 +14,21 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CourtImageEntity {
+public class CourtImageEntity implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
     @Column(name = "court_id", nullable = false)
-    private UUID courtId;
+    private int courtId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "court_id", insertable = false, updatable = false)
+    @JsonIgnore
+    private CourtEntity court;
 
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
@@ -30,3 +37,4 @@ public class CourtImageEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Date createdAt;
 }
+

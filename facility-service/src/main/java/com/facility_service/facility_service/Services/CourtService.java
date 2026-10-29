@@ -1,11 +1,17 @@
-package com.court_service.court_service.service;
+package com.facility_service.facility_service.Services;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.court_service.court_service.model.CourtEntity;
-import com.court_service.court_service.model.CourtImageEntity;
-import com.court_service.court_service.repository.CourtImageRepository;
-import com.court_service.court_service.repository.CourtRepository;
+import com.facility_service.facility_service.Exception.ResourceNotFoundException;
+import com.facility_service.facility_service.Model.CourtEntity;
+import com.facility_service.facility_service.Model.CourtImageEntity;
+import com.facility_service.facility_service.Repositry.CourtImageRepository;
+import com.facility_service.facility_service.Repositry.CourtRepository;
+import com.facility_service.facility_service.Repositry.Venuerepositry;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,26 +21,29 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class CourtService {
 
     private final CourtRepository courtRepository;
     private final CourtImageRepository courtImageRepository;
+    private final Venuerepositry venuerepositry;
     private final Cloudinary cloudinary;
 
     public CourtService(CourtRepository courtRepository,
             CourtImageRepository courtImageRepository,
+            Venuerepositry venuerepositry,
             Cloudinary cloudinary) {
         this.courtRepository = courtRepository;
         this.courtImageRepository = courtImageRepository;
+        this.venuerepositry = venuerepositry;
         this.cloudinary = cloudinary;
     }
 
     public String uploadToCloudinary(MultipartFile file) {
         try {
             Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "folder", "box-cricket/courts",
                     "resource_type", "auto"));
             return (String) uploadResult.get("secure_url");
         } catch (IOException e) {
@@ -42,7 +51,7 @@ public class CourtService {
         }
     }
 
-    private List<CourtImageEntity> uploadAndSaveImages(UUID courtId, List<MultipartFile> files) {
+    private List<CourtImageEntity> uploadAndSaveImages(int courtId, List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             return Collections.emptyList();
         }
@@ -62,6 +71,10 @@ public class CourtService {
 
     @Transactional
     public CourtEntity createCourt(CourtEntity request, List<MultipartFile> files) {
+        if (request.getVenueId() != null && !venuerepositry.existsById(request.getVenueId())) {
+            throw new ResourceNotFoundException("Venue not found with id: " + request.getVenueId());
+        }
+
         if (courtRepository.existsByCourtNameAndVenueId(request.getCourtName().trim(), request.getVenueId())) {
             throw new RuntimeException("Court with name '" + request.getCourtName() + "' already exists for venue id: "
                     + request.getVenueId());
@@ -74,9 +87,9 @@ public class CourtService {
         return savedCourt;
     }
 
-    public CourtEntity getCourtById(UUID id) {
+    public CourtEntity getCourtById(int id) {
         return courtRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Court not found with id: " + id));
     }
 
     public List<CourtEntity> getCourtsByVenueId(Integer venueId, Boolean isActive) {
@@ -86,21 +99,16 @@ public class CourtService {
         return courtRepository.findByVenueId(venueId);
     }
 
-    public List<CourtEntity> getCourtsByCategoryId(Integer categoryId) {
-        return courtRepository.findByCategoryId(categoryId);
-    }
-
-    public List<CourtEntity> getAllCourts(Boolean isActive) {
-        if (isActive != null) {
-            return courtRepository.findByIsActive(isActive);
-        }
-        return courtRepository.findAll();
+    public Page<CourtEntity> getAllCourts(Boolean isActive, String search, String court_name, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Specification<CourtEntity> specification = Courtspecification.filter(isActive, search, court_name);
+        return courtRepository.findAll(specification, pageable);
     }
 
     @Transactional
-    public CourtEntity updateCourt(UUID id, CourtEntity request, List<MultipartFile> files) {
+    public CourtEntity updateCourt(int id, CourtEntity request, List<MultipartFile> files) {
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Court not found with id: " + id));
 
         if (request != null) {
             if (request.getCourtName() != null && !request.getCourtName().trim().isEmpty()) {
@@ -113,8 +121,12 @@ public class CourtService {
                 court.setCourtName(newName);
             }
 
-            if (request.getVenueId() != null)
+            if (request.getVenueId() != null) {
+                if (!venuerepositry.existsById(request.getVenueId())) {
+                    throw new ResourceNotFoundException("Venue not found with id: " + request.getVenueId());
+                }
                 court.setVenueId(request.getVenueId());
+            }
             if (request.getCategoryId() != null)
                 court.setCategoryId(request.getCategoryId());
             if (request.getSurfaceType() != null)
@@ -134,11 +146,19 @@ public class CourtService {
     }
 
     @Transactional
-    public CourtEntity changeStatus(UUID id, boolean status) {
+    public CourtEntity changeStatus(int id, boolean status) {
         CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Court not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Court not found with id: " + id));
         court.setActive(status);
         return courtRepository.save(court);
     }
 
+    @Transactional
+    public void deleteCourt(int id) {
+        CourtEntity court = courtRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Court not found with id: " + id));
+        courtImageRepository.deleteByCourtId(id);
+        courtRepository.delete(court);
+    }
 }
+
