@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, AlertTriangle, X, Building2, Globe2 } from 'lucide-react';
+import { MapPin, AlertTriangle, Building2, Globe2 } from 'lucide-react';
+import CommonModal from '../../Components/Common/CommonModal';
 import CommonForm from '../../Components/Common/CommonForm';
 import type { FormField } from '../../Components/Common/CommonForm';
 import { CommonTable } from '../../Components/Common/CommonTable';
@@ -313,57 +314,57 @@ const CityManager: React.FC = () => {
       </div>
 
       {/* Add / Edit City Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden text-white">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
-
-            <button
-              onClick={closeModal}
-              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors z-10 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="p-7 sm:p-8">
-              <CommonForm
-                title={editingId ? 'Edit City' : 'Add New City'}
-                subtitle={
-                  editingId
-                    ? 'Update the city details below.'
-                    : 'Fill in the details below to add a new city.'
-                }
-                fields={formFields}
-                formData={{
-                  ...formData,
-                  is_active: formData.is_active ? 'Active' : 'Inactive'
-                }}
-                onChange={handleFormChange}
-                onSubmit={handleSubmit}
-                submitText={editingId ? 'Update City' : 'Save City'}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      <CommonModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={editingId ? 'Edit City' : 'Add New City'}
+        subtitle={
+          editingId
+            ? 'Update the city details below.'
+            : 'Fill in the details below to add a new city.'
+        }
+        theme="dark"
+        maxWidth="md"
+      >
+        <CommonForm
+          fields={formFields}
+          formData={{
+            ...formData,
+            is_active: formData.is_active ? 'Active' : 'Inactive',
+          }}
+          onChange={handleFormChange}
+          onSubmit={handleSubmit}
+          submitText={editingId ? 'Update City' : 'Save City'}
+          onCancel={closeModal}
+        />
+      </CommonModal>
 
       {/* Delete / Restore Confirmation Modal */}
-      {cityToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200 p-7 text-center text-white">
-            <div className={`w-14 h-14 ${cityToDelete.is_active ? 'bg-rose-500/10 border-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/20'} rounded-2xl flex items-center justify-center mx-auto mb-4 border`}>
-              <AlertTriangle className={cityToDelete.is_active ? 'text-rose-400' : 'text-emerald-400'} size={28} />
+      <CommonModal
+        isOpen={Boolean(cityToDelete)}
+        onClose={cancelDelete}
+        title={cityToDelete?.is_active ? 'Confirm Deletion' : 'Confirm Restoration'}
+        theme="dark"
+        maxWidth="sm"
+      >
+        {cityToDelete && (
+          <div className="text-center space-y-4">
+            <div
+              className={`w-14 h-14 ${
+                cityToDelete.is_active
+                  ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                  : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              } rounded-2xl flex items-center justify-center mx-auto border`}
+            >
+              <AlertTriangle size={28} />
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-1.5">
-              {cityToDelete.is_active ? 'Confirm Deletion' : 'Confirm Restoration'}
-            </h3>
-            <p className="text-slate-400 text-xs mb-6 leading-relaxed">
+            <p className="text-slate-400 text-xs leading-relaxed">
               Are you sure you want to {cityToDelete.is_active ? 'deactivate' : 'restore'}{' '}
               <span className="text-white font-bold">{cityToDelete.name}</span>?
             </p>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={cancelDelete}
@@ -374,14 +375,18 @@ const CityManager: React.FC = () => {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className={`flex-1 ${cityToDelete.is_active ? 'bg-rose-600 hover:bg-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer`}
+                className={`flex-1 ${
+                  cityToDelete.is_active
+                    ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
+                    : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/20'
+                } text-white py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer`}
               >
                 {cityToDelete.is_active ? 'Delete' : 'Restore'}
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </CommonModal>
     </div>
   );
 };

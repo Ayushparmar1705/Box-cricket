@@ -1,6 +1,5 @@
-import { Inbox } from 'lucide-react';
-
-import CommonActionButtons from './CommonActionButtons';
+import React from 'react';
+import { Inbox, Edit2, Trash2, Undo, Eye } from 'lucide-react';
 
 export interface Table<T = any> {
   header: string;
@@ -144,15 +143,73 @@ export function CommonTable<T extends { id?: string | number }>({
                     if (col.accessor === 'actions') {
                       return (
                         <td key={colIndex} className="px-5 py-4">
-                          <CommonActionButtons
-                            item={item}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onRestore={onRestore}
-                            onView={onView}
-                            isActive={isActive}
-                            theme={theme}
-                          />
+                          <div className="flex items-center gap-1.5 flex-nowrap">
+                            {onView && (
+                              <button
+                                type="button"
+                                onClick={() => onView(item)}
+                                className={`p-2 rounded-xl transition-all border cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                  isLight
+                                    ? 'text-slate-600 hover:text-emerald-700 bg-white hover:bg-emerald-50 border-slate-200'
+                                    : 'text-slate-300 hover:text-emerald-400 bg-slate-900/60 hover:bg-emerald-500/10 border-slate-800'
+                                }`}
+                                title="View Details"
+                              >
+                                <Eye size={14} />
+                              </button>
+                            )}
+
+                            {isActive ? (
+                              <>
+                                {onEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onEdit(item)}
+                                    className={`p-2 rounded-xl transition-all border cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                      isLight
+                                        ? 'text-cyan-700 bg-cyan-50/80 hover:bg-cyan-100/90 border-cyan-200'
+                                        : 'text-cyan-400 bg-cyan-950/40 hover:bg-cyan-900/50 border-cyan-800/60'
+                                    }`}
+                                    title="Edit Record"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                )}
+
+                                {onDelete && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onDelete(item)}
+                                    className={`p-2 rounded-xl transition-all border cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                      isLight
+                                        ? 'text-rose-700 bg-rose-50/80 hover:bg-rose-100/90 border-rose-200'
+                                        : 'text-rose-400 bg-rose-950/40 hover:bg-rose-900/50 border-rose-800/60'
+                                    }`}
+                                    title="Delete Record"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              (onRestore || onDelete) && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onRestore ? onRestore(item) : onDelete ? onDelete(item) : undefined
+                                  }
+                                  className={`p-2 rounded-xl transition-all border cursor-pointer inline-flex items-center gap-1.5 text-xs font-semibold ${
+                                    isLight
+                                      ? 'text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100/90 border-emerald-200'
+                                      : 'text-emerald-400 bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-800/60'
+                                  }`}
+                                  title="Restore Record"
+                                >
+                                  <Undo size={14} />
+                                </button>
+                              )
+                            )}
+                          </div>
                         </td>
                       );
                     }

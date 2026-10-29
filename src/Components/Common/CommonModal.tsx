@@ -1,19 +1,19 @@
-import { useEffect, type FC, type ReactNode } from 'react';
+import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export interface CommonModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: ReactNode;
+  title?: React.ReactNode;
   subtitle?: string;
-  icon?: ReactNode;
-  children: ReactNode;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   theme?: 'dark' | 'light';
   showCloseButton?: boolean;
 }
 
-const maxWidthMap = {
+const maxWidthMap: Record<string, string> = {
   sm: 'max-w-sm',
   md: 'max-w-md',
   lg: 'max-w-lg',
@@ -23,7 +23,7 @@ const maxWidthMap = {
   '4xl': 'max-w-4xl',
 };
 
-export const CommonModal: FC<CommonModalProps> = ({
+export const CommonModal: React.FC<CommonModalProps> = ({
   isOpen,
   onClose,
   title,
@@ -36,7 +36,7 @@ export const CommonModal: FC<CommonModalProps> = ({
 }) => {
   const isLight = theme === 'light';
 
-  // Handle ESC key to close modal
+  // Close modal on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -53,35 +53,32 @@ export const CommonModal: FC<CommonModalProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className={`w-full ${maxWidthMap[maxWidth]} rounded-3xl shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200 border transition-all ${
+        className={`w-full ${maxWidthMap[maxWidth] || 'max-w-md'} rounded-2xl shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-150 border transition-all ${
           isLight
             ? 'bg-white border-slate-200 text-slate-800'
-            : 'bg-[#0d1322] border-slate-800 text-white'
+            : 'bg-slate-900 border-slate-800 text-white'
         }`}
       >
-        {/* Subtle accent bar at top */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
-
-        {/* Modal Header */}
+        {/* Header */}
         {(title || showCloseButton) && (
           <div
-            className={`px-6 sm:px-8 pt-6 pb-4 flex items-center justify-between border-b ${
-              isLight ? 'border-slate-100' : 'border-slate-800/80'
+            className={`px-6 py-4 flex items-center justify-between border-b ${
+              isLight ? 'border-slate-100' : 'border-slate-800'
             }`}
           >
-            <div className="flex items-center gap-3 pr-8">
+            <div className="flex items-center gap-3">
               {icon && (
                 <div
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold flex-shrink-0 ${
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                     isLight
-                      ? 'bg-emerald-50 border border-emerald-100 text-emerald-700'
-                      : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400'
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : 'bg-emerald-500/10 text-emerald-400'
                   }`}
                 >
                   {icon}
@@ -90,7 +87,7 @@ export const CommonModal: FC<CommonModalProps> = ({
               <div>
                 {title && (
                   <h3
-                    className={`text-base sm:text-lg font-bold tracking-tight ${
+                    className={`text-base font-bold ${
                       isLight ? 'text-slate-900' : 'text-white'
                     }`}
                   >
@@ -113,23 +110,21 @@ export const CommonModal: FC<CommonModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className={`p-2 rounded-xl transition-colors cursor-pointer border ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   isLight
-                    ? 'text-slate-400 hover:text-slate-700 bg-slate-50 border-slate-200 hover:bg-slate-100'
-                    : 'text-slate-400 hover:text-white bg-slate-900 border-slate-800 hover:bg-slate-800'
+                    ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
                 title="Close"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             )}
           </div>
         )}
 
-        {/* Modal Body */}
-        <div className="p-6 sm:p-8 max-h-[80vh] overflow-y-auto">
-          {children}
-        </div>
+        {/* Body */}
+        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );

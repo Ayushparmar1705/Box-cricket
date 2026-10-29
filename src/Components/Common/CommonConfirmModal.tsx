@@ -1,5 +1,7 @@
+import React from 'react';
 import type { FC, ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, Undo } from 'lucide-react';
+import CommonModal from './CommonModal';
 
 export interface CommonConfirmModalProps {
   isOpen: boolean;
@@ -28,12 +30,9 @@ export const CommonConfirmModal: FC<CommonConfirmModalProps> = ({
   isLoading = false,
   theme = 'light',
 }) => {
-  if (!isOpen) return null;
-
   const isLight = theme === 'light';
   const isPositive = type === 'restore' || type === 'activate';
 
-  // Defaults based on type
   const defaultTitle =
     title ||
     (type === 'delete'
@@ -59,21 +58,14 @@ export const CommonConfirmModal: FC<CommonConfirmModalProps> = ({
       : 'Confirm');
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isLoading) onClose();
-      }}
+    <CommonModal
+      isOpen={isOpen}
+      onClose={isLoading ? () => {} : onClose}
+      maxWidth="sm"
+      theme={theme}
+      showCloseButton={!isLoading}
     >
-      <div
-        className={`w-full max-w-sm rounded-3xl p-6 sm:p-7 text-center relative shadow-2xl animate-in zoom-in-95 duration-200 border transition-all ${
-          isLight
-            ? 'bg-white border-slate-200 text-slate-800'
-            : 'bg-[#0d1322] border-slate-800 text-white'
-        }`}
-      >
+      <div className="text-center">
         {/* Status Icon */}
         <div
           className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 border transition-all ${
@@ -86,34 +78,21 @@ export const CommonConfirmModal: FC<CommonConfirmModalProps> = ({
               : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
           }`}
         >
-          {isPositive ? (
-            <CheckCircle2 size={28} />
-          ) : (
-            <AlertTriangle size={28} />
-          )}
+          {isPositive ? <CheckCircle2 size={28} /> : <AlertTriangle size={28} />}
         </div>
 
         {/* Title */}
-        <h3
-          className={`text-lg font-bold mb-1.5 ${
-            isLight ? 'text-slate-900' : 'text-white'
-          }`}
-        >
+        <h3 className={`text-lg font-bold mb-1.5 ${isLight ? 'text-slate-900' : 'text-white'}`}>
           {defaultTitle}
         </h3>
 
         {/* Message */}
-        <div
-          className={`text-xs mb-6 leading-relaxed ${
-            isLight ? 'text-slate-500' : 'text-slate-400'
-          }`}
-        >
+        <div className={`text-xs mb-6 leading-relaxed ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
           {message ? (
             message
           ) : (
             <p>
-              Are you sure you want to{' '}
-              <span className="font-semibold">{type}</span>{' '}
+              Are you sure you want to <span className="font-semibold">{type}</span>{' '}
               {itemName && (
                 <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   "{itemName}"
@@ -165,7 +144,7 @@ export const CommonConfirmModal: FC<CommonConfirmModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </CommonModal>
   );
 };
 

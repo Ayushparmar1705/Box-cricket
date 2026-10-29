@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, AlertTriangle, X, Globe2 } from 'lucide-react';
+import { Building2, AlertTriangle, Globe2 } from 'lucide-react';
+import CommonModal from '../../Components/Common/CommonModal';
 import CommonForm from '../../Components/Common/CommonForm';
 import type { FormField } from '../../Components/Common/CommonForm';
 import { CommonTable, type Table } from '../../Components/Common/CommonTable';
@@ -327,57 +328,51 @@ const StateManager: React.FC = () => {
       </div>
 
       {/* Add / Edit State Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-md shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden text-white">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
-
-            <button
-              onClick={closeModal}
-              className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors z-10 cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="p-7 sm:p-8">
-              <CommonForm
-                title={editingId ? 'Edit State' : 'Add New State'}
-                subtitle={
-                  editingId
-                    ? 'Update the state details below.'
-                    : 'Fill in the details below to add a new state.'
-                }
-                fields={formFields}
-                formData={{
-                  ...formData,
-                  is_active: formData.is_active ? 'Active' : 'Inactive'
-                }}
-                onChange={handleFormChange}
-                onSubmit={handleSubmit}
-                isLoading={isSubmitting}
-                submitText={editingId ? 'Update State' : 'Save State'}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
+      <CommonModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={editingId ? 'Edit State' : 'Add New State'}
+        subtitle={
+          editingId
+            ? 'Update the state details below.'
+            : 'Fill in the details below to add a new state.'
+        }
+        theme="dark"
+        maxWidth="md"
+      >
+        <CommonForm
+          fields={formFields}
+          formData={{
+            ...formData,
+            is_active: formData.is_active ? 'Active' : 'Inactive',
+          }}
+          onChange={handleFormChange}
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+          submitText={editingId ? 'Update State' : 'Save State'}
+          onCancel={closeModal}
+        />
+      </CommonModal>
 
       {/* Delete Confirmation Modal */}
-      {stateToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl relative animate-in zoom-in-95 duration-200 p-7 text-center text-white">
-            <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
-              <AlertTriangle className="text-rose-400" size={28} />
+      <CommonModal
+        isOpen={Boolean(stateToDelete)}
+        onClose={cancelDelete}
+        title="Confirm Deletion"
+        theme="dark"
+        maxWidth="sm"
+      >
+        {stateToDelete && (
+          <div className="text-center space-y-4">
+            <div className="w-14 h-14 bg-rose-500/10 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/20 text-rose-400">
+              <AlertTriangle size={28} />
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-1.5">Confirm Deletion</h3>
-            <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-              Are you sure you want to delete{' '}
-              <span className="text-white font-bold"> This action cannot be undone.</span>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Are you sure you want to delete <span className="text-white font-bold">{stateToDelete.name || stateToDelete.state_name || 'this state'}</span>? This action cannot be undone.
             </p>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
                 onClick={cancelDelete}
@@ -393,10 +388,9 @@ const StateManager: React.FC = () => {
                 Delete
               </button>
             </div>
-
           </div>
-        </div>
-      )}
+        )}
+      </CommonModal>
     </div>
   );
 };
