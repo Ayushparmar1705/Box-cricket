@@ -1,4 +1,3 @@
-import React from 'react';
 import type { FC, ReactNode } from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, Trash2, Undo } from 'lucide-react';
 import CommonModal from './CommonModal';

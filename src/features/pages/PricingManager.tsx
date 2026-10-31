@@ -3,16 +3,12 @@
 // Description: Dynamic Hourly Pricing, Surcharge Rules & Live Price Estimator
 // ============================================================================
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   DollarSign,
   Tag,
   Info,
-  Calculator,
-  Plus,
-  Sliders,
-  CheckCircle2,
-  Sparkles
+  Calculator
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 

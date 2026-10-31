@@ -1,12 +1,22 @@
 // ============================================================================
 // File: courtService.ts
-// Description: Court & Ground Specification API Service for Box Cricket App
-// Columns: venue_id, category_id, court_name, surface_type, max_players, description
+// Description: Pure API Service for Courts & Ground Operations
+// Integrates with backend at: http://localhost:3040/api/court
 // ============================================================================
 
 import baseUrl from '../../api/Api';
 
 export type SurfaceType = 'TURF' | 'MAT' | 'CONCRETE';
+
+export interface CourtImage {
+  id?: number | string;
+  courtId?: number | string;
+  court_id?: number | string;
+  imageUrl?: string;
+  image_url?: string;
+  createdAt?: string;
+  created_at?: string;
+}
 
 export interface CourtItem {
   id: string | number;
@@ -18,11 +28,12 @@ export interface CourtItem {
   surface_type: SurfaceType;
   max_players: number;
   description: string;
-  status: 'ACTIVE' | 'MAINTENANCE';
+  status: 'ACTIVE' | 'INACTIVE';
+  images?: CourtImage[];
   createdAt?: string;
   updatedAt?: string;
 
-  // Backward compatibility aliases if needed
+  // Aliases for compatibility
   turfId?: string | number;
   turfName?: string;
   courtNumber?: string;
@@ -37,7 +48,9 @@ export interface CourtPayload {
   surface_type: SurfaceType;
   max_players: number;
   description: string;
-  status?: 'ACTIVE' | 'MAINTENANCE';
+  status?: 'ACTIVE' | 'INACTIVE';
+  files?: File[];
+  images?: File[];
 }
 
 export interface CourtApiResponse<T = CourtItem> {
@@ -46,71 +59,17 @@ export interface CourtApiResponse<T = CourtItem> {
   data: T;
 }
 
-// Initial mock fallback courts matching new DB schema
-export const INITIAL_COURTS: CourtItem[] = [
-  {
-    id: 'crt-1',
-    venue_id: '1',
-    venue_name: 'Apex Arena Ground',
-    category_id: 'cat-1',
-    category_name: 'Box Cricket',
-    court_name: 'Apex Arena Pitch A',
-    surface_type: 'TURF',
-    max_players: 14,
-    description: 'High-density synthetic turf with perimeter netting and full night LED floodlights.',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'crt-2',
-    venue_id: '1',
-    venue_name: 'Apex Arena Ground',
-    category_id: 'cat-1',
-    category_name: 'Box Cricket',
-    court_name: 'Apex Arena Pitch B',
-    surface_type: 'MAT',
-    max_players: 12,
-    description: 'Pro cushion shock-absorbing rubber mat suited for high-speed bowling and spin.',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'crt-3',
-    venue_id: '2',
-    venue_name: 'Champions Cricket Turf',
-    category_id: 'cat-1',
-    category_name: 'Box Cricket',
-    court_name: 'Main Stadium Court',
-    surface_type: 'CONCRETE',
-    max_players: 16,
-    description: 'Solid concrete base court with marked creases and heavy-duty boundary wire mesh.',
-    status: 'ACTIVE',
-  },
-];
-
-const LOCAL_STORAGE_KEY = 'boxcricket_courts_cache_v2';
-
-const getStoredCourts = (): CourtItem[] => {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // fallback
-  }
-  return INITIAL_COURTS;
-};
-
-const saveStoredCourts = (courts: CourtItem[]) => {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(courts));
-  } catch {
-    // fallback
-  }
-};
-
-export const getCourtAuthHeaders = () => {
+/**
+ * Returns Bearer token headers.
+ * When isMultipart = true, Content-Type is omitted so browser sets boundary.
+ */
+export const getCourtAuthHeaders = (isMultipart: boolean = false): Record<string, string> => {
   const token = localStorage.getItem('token');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+
+  if (!isMultipart) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
@@ -118,154 +77,288 @@ export const getCourtAuthHeaders = () => {
 };
 
 /**
- * Fetch courts for an owner or specific venue.
- * Endpoint: GET http://localhost:3040/api/courts
+ * Normalizes backend CourtEntity JSON into a clean frontend CourtItem.
  */
-export const fetchCourtsApi = async (venueId?: string | number): Promise<CourtItem[]> => {
-  const query = venueId ? `?venueId=${venueId}` : '';
-  const url = `${baseUrl.venue}/api/courts${query}`;
+const normalizeCourt = (raw: any): CourtItem => {
+  const images: CourtImage[] = (raw.images || []).map((img: any) => ({
+    id: img.id,
+    courtId: img.courtId || img.court_id,
+    imageUrl: img.imageUrl || img.image_url,
+    createdAt: img.createdAt || img.created_at,
+  }));
 
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getCourtAuthHeaders(),
-    });
+  const isActive =
+    raw.is_active !== undefined
+      ? raw.is_active
+      : raw.isActive !== undefined
+      ? raw.isActive
+      : true;
 
-    if (response.ok) {
-      const result = await response.json();
-      const list = Array.isArray(result) ? result : (result.data || []);
-      if (Array.isArray(list) && list.length > 0) {
-        saveStoredCourts(list);
-        return list;
-      }
-    }
-  } catch (err) {
-    console.warn('Backend courts endpoint offline or returned error, using local state:', err);
-  }
-
-  // Graceful fallback to persistent localStorage / initial items
-  const stored = getStoredCourts();
-  if (venueId) {
-    return stored.filter(c => String(c.venue_id) === String(venueId));
-  }
-  return stored;
+  return {
+    id: raw.id,
+    venue_id: raw.venue_id || raw.venueId,
+    venue_name: raw.venue?.name || raw.venue?.venue_name || raw.venue_name || 'Arena Ground',
+    category_id: raw.category_id || raw.categoryId,
+    category_name: raw.category_name || 'Sport Category',
+    court_name: raw.court_name || raw.courtName || raw.courtNumber || 'Court',
+    surface_type: raw.surface_type || raw.surfaceType || 'TURF',
+    max_players: Number(raw.max_players || raw.maxPlayers || 12),
+    description: raw.description || '',
+    status: isActive ? 'ACTIVE' : 'INACTIVE',
+    images,
+    createdAt: raw.created_at || raw.createdAt,
+    updatedAt: raw.updated_at || raw.updatedAt,
+  };
 };
 
 /**
- * Create a new Court
- * Endpoint: POST http://localhost:3040/api/courts
+ * Helper to extract user-friendly error messages from backend responses.
  */
-export const createCourtApi = async (courtData: CourtPayload): Promise<CourtItem> => {
-  const url = `${baseUrl.venue}/api/courts`;
-  const headers = getCourtAuthHeaders();
+const getErrorMessage = (result: any, fallback: string): string => {
+  if (result?.message) return result.message;
+  if (result?.errors && typeof result.errors === 'object') {
+    return Object.values(result.errors).join(', ');
+  }
+  return fallback;
+};
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(courtData),
-    });
+// ============================================================================
+// API Functions
+// ============================================================================
 
-    if (response.ok) {
-      const result = await response.json();
-      const item: CourtItem = result.data || result;
-      // Sync local storage
-      const current = getStoredCourts();
-      saveStoredCourts([item, ...current]);
-      return item;
+export interface CourtFilterParams {
+  venueId?: string | number;
+  isActive?: boolean;
+  search?: string;
+  court_name?: string;
+  courtName?: string;
+  page?: number;
+  size?: number;
+}
+
+/**
+ * 1. Fetch Courts with Filters (venueId, isActive, search, court_name, pagination)
+ * Endpoint: GET http://localhost:3040/api/courts
+ */
+export const fetchCourtsApi = async (
+  params?: CourtFilterParams | string | number
+): Promise<CourtItem[]> => {
+  let query = '';
+  if (params !== undefined && params !== null) {
+    if (typeof params === 'object') {
+      const qp = new URLSearchParams();
+      if (params.venueId && params.venueId !== 'ALL') {
+        qp.append('venueId', String(params.venueId));
+      }
+      if (params.isActive !== undefined) {
+        qp.append('isActive', String(params.isActive));
+      }
+      if (params.search && params.search.trim()) {
+        qp.append('search', params.search.trim());
+      }
+      if (params.court_name && params.court_name.trim()) {
+        qp.append('court_name', params.court_name.trim());
+      } else if (params.courtName && params.courtName.trim()) {
+        qp.append('court_name', params.courtName.trim());
+      }
+      if (params.page !== undefined) {
+        qp.append('page', String(params.page));
+      }
+      if (params.size !== undefined) {
+        qp.append('size', String(params.size));
+      }
+      const qs = qp.toString();
+      if (qs) query = `?${qs}`;
+    } else if (params !== 'ALL') {
+      query = `?venueId=${params}`;
     }
-  } catch (err) {
-    console.warn('Backend court creation offline, storing locally:', err);
   }
 
-  // Fallback locally
-  const created: CourtItem = {
-    id: `crt-${Date.now()}`,
-    venue_id: courtData.venue_id,
-    venue_name: courtData.venue_name || 'Arena Ground',
-    category_id: courtData.category_id,
-    category_name: courtData.category_name || 'Sport Category',
-    court_name: courtData.court_name,
-    surface_type: courtData.surface_type,
-    max_players: Number(courtData.max_players) || 12,
-    description: courtData.description || '',
-    status: courtData.status || 'ACTIVE',
-    createdAt: new Date().toISOString(),
-  };
+  const url = `${baseUrl.venue}/api/courts${query}`;
 
-  const current = getStoredCourts();
-  saveStoredCourts([created, ...current]);
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getCourtAuthHeaders(false),
+  });
+
+  if (!response.ok) {
+    const errorJson = await response.json().catch(() => ({}));
+    throw new Error(getErrorMessage(errorJson, 'Failed to fetch courts from server'));
+  }
+
+  const result = await response.json();
+  const rawList = Array.isArray(result) ? result : result.data || [];
+
+  return Array.isArray(rawList) ? rawList.map(normalizeCourt) : [];
+};
+
+/**
+ * 2. Create Court with optional images
+ * Endpoint: POST http://localhost:3040/api/court/create
+ */
+export const createCourtApi = async (courtData: CourtPayload): Promise<CourtItem> => {
+  const url = `${baseUrl.venue}/api/court/create`;
+
+  // Build FormData for multipart upload
+  const formData = new FormData();
+  formData.append('venue_id', String(courtData.venue_id));
+  formData.append('venueId', String(courtData.venue_id));
+  formData.append('category_id', String(courtData.category_id));
+  formData.append('categoryId', String(courtData.category_id));
+  formData.append('court_name', courtData.court_name.trim());
+  formData.append('courtName', courtData.court_name.trim());
+  formData.append('surface_type', courtData.surface_type);
+  formData.append('surfaceType', courtData.surface_type);
+  formData.append('max_players', String(courtData.max_players || 12));
+  formData.append('maxPlayers', String(courtData.max_players || 12));
+  formData.append('description', courtData.description || '');
+
+  const isActive = courtData.status === 'ACTIVE' || courtData.status === undefined;
+  formData.append('is_active', String(isActive));
+  formData.append('isActive', String(isActive));
+
+  // Attach multiple image files
+  const fileList = courtData.files || courtData.images || [];
+  if (Array.isArray(fileList) && fileList.length > 0) {
+    fileList.forEach((file) => {
+      if (file instanceof File) {
+        formData.append('files', file);
+      }
+    });
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: getCourtAuthHeaders(true),
+    body: formData,
+  });
+
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, 'Failed to create court'));
+  }
+
+  const created = normalizeCourt(result.data || result);
+  if (courtData.venue_name) created.venue_name = courtData.venue_name;
+  if (courtData.category_name) created.category_name = courtData.category_name;
+
   return created;
 };
 
 /**
- * Update Court Details
+ * 3. Update Court Details
  * Endpoint: PUT http://localhost:3040/api/courts/{id}
  */
-export const updateCourtApi = async (id: string | number, updates: Partial<CourtPayload>): Promise<CourtItem> => {
+export const updateCourtApi = async (
+  id: string | number,
+  updates: Partial<CourtPayload>
+): Promise<CourtItem> => {
   const url = `${baseUrl.venue}/api/courts/${id}`;
-  const headers = getCourtAuthHeaders();
+  const fileList = updates.files || updates.images || [];
+  const hasFiles = Array.isArray(fileList) && fileList.length > 0;
 
-  try {
-    const response = await fetch(url, {
+  let response: Response;
+
+  if (hasFiles) {
+    const formData = new FormData();
+    if (updates.venue_id) {
+      formData.append('venue_id', String(updates.venue_id));
+      formData.append('venueId', String(updates.venue_id));
+    }
+    if (updates.category_id) {
+      formData.append('category_id', String(updates.category_id));
+      formData.append('categoryId', String(updates.category_id));
+    }
+    if (updates.court_name) {
+      formData.append('court_name', updates.court_name.trim());
+      formData.append('courtName', updates.court_name.trim());
+    }
+    if (updates.surface_type) {
+      formData.append('surface_type', updates.surface_type);
+      formData.append('surfaceType', updates.surface_type);
+    }
+    if (updates.max_players !== undefined) {
+      formData.append('max_players', String(updates.max_players));
+      formData.append('maxPlayers', String(updates.max_players));
+    }
+    if (updates.description !== undefined) {
+      formData.append('description', updates.description);
+    }
+    if (updates.status) {
+      const isActive = updates.status === 'ACTIVE';
+      formData.append('is_active', String(isActive));
+      formData.append('isActive', String(isActive));
+    }
+
+    fileList.forEach((file) => {
+      if (file instanceof File) {
+        formData.append('files', file);
+      }
+    });
+
+    response = await fetch(url, {
       method: 'PUT',
-      headers,
+      headers: getCourtAuthHeaders(true),
+      body: formData,
+    });
+  } else {
+    response = await fetch(url, {
+      method: 'PUT',
+      headers: getCourtAuthHeaders(false),
       body: JSON.stringify(updates),
     });
-
-    if (response.ok) {
-      const result = await response.json();
-      return result.data || result;
-    }
-  } catch (err) {
-    console.warn('Backend court update offline, updating locally:', err);
   }
 
-  const current = getStoredCourts();
-  const updated = current.map(c => (String(c.id) === String(id) ? { ...c, ...updates } : c));
-  saveStoredCourts(updated);
-  return updated.find(c => String(c.id) === String(id))!;
+  const result = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, 'Failed to update court'));
+  }
+
+  const updated = normalizeCourt(result.data || result);
+  if (updates.venue_name) updated.venue_name = updates.venue_name;
+  if (updates.category_name) updated.category_name = updates.category_name;
+
+  return updated;
 };
 
 /**
- * Toggle or change Court Status (ACTIVE / MAINTENANCE)
+ * 4. Change Court Status (ACTIVE / MAINTENANCE)
  * Endpoint: PUT http://localhost:3040/api/courts/{id}/status?status=...
  */
-export const changeCourtStatusApi = async (id: string | number, status: 'ACTIVE' | 'MAINTENANCE'): Promise<void> => {
-  const url = `${baseUrl.venue}/api/courts/${id}/status?status=${status}`;
-  const headers = getCourtAuthHeaders();
+export const changeCourtStatusApi = async (
+  id: string | number,
+  status: 'ACTIVE' | 'INACTIVE' | boolean | string
+): Promise<void> => {
+  const isBool = typeof status === 'boolean' ? status : status === 'ACTIVE';
+  const url = `${baseUrl.venue}/api/court/${id}/status?status=${isBool}&statusStr=${isBool ? 'ACTIVE' : 'INACTIVE'}`;
 
-  try {
-    await fetch(url, {
-      method: 'PUT',
-      headers,
-    });
-  } catch (err) {
-    console.warn('Backend court status offline, updating locally:', err);
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getCourtAuthHeaders(false),
+  });
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(getErrorMessage(result, 'Failed to update court status'));
   }
-
-  const current = getStoredCourts();
-  const updated = current.map(c => (String(c.id) === String(id) ? { ...c, status } : c));
-  saveStoredCourts(updated);
 };
 
 /**
- * Delete Court
+ * 5. Delete Court
  * Endpoint: DELETE http://localhost:3040/api/courts/{id}
  */
 export const deleteCourtApi = async (id: string | number): Promise<void> => {
   const url = `${baseUrl.venue}/api/courts/${id}`;
-  const headers = getCourtAuthHeaders();
 
-  try {
-    await fetch(url, {
-      method: 'DELETE',
-      headers,
-    });
-  } catch (err) {
-    console.warn('Backend court delete offline, deleting locally:', err);
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: getCourtAuthHeaders(false),
+  });
+
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(getErrorMessage(result, 'Failed to delete court'));
   }
-
-  const current = getStoredCourts();
-  saveStoredCourts(current.filter(c => String(c.id) !== String(id)));
 };

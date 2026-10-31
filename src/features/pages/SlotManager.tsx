@@ -3,18 +3,13 @@
 // Description: Slot Bookings & Match Schedule Management Page
 // ============================================================================
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Calendar,
   Search,
   Check,
   X,
-  Phone,
-  Clock,
-  IndianRupee,
-  RefreshCw,
-  Building2,
-  Filter
+  Phone
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
