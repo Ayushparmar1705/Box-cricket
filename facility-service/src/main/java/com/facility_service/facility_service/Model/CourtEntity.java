@@ -28,7 +28,7 @@ public class CourtEntity implements java.io.Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", updatable = false, nullable = false)
-    private int id;
+    private Integer id;
 
     @NotNull(message = "Venue ID is required")
     @Column(name = "venue_id", nullable = false)

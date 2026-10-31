@@ -73,7 +73,7 @@ public class Venuecontroller {
         return ResponseEntity.ok(responseMap);
     }
 
-    @PreAuthorize("hasAnyRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN')")
     @PutMapping(path = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> update(
             @Valid @ModelAttribute Updatevenuerequestdto dto) {

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping({"/api/court", "/api/courts"})
+@RequestMapping({ "/api/court", "/api/courts" })
 public class CourtController {
 
     private final CourtService courtService;
@@ -26,7 +27,8 @@ public class CourtController {
     }
 
     // 1. Create court with multipart form-data (Court details + optional image files)
-    @PostMapping(value = {"", "/create"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
+    @PostMapping(value = { "", "/create" }, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> createCourtWithImages(
             @Valid @ModelAttribute CourtEntity request,
             BindingResult bindingResult,
@@ -56,7 +58,8 @@ public class CourtController {
     }
 
     // 2. Create court with JSON
-    @PostMapping(value = {"", "/create"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
+    @PostMapping(value = { "", "/create" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> createCourtJson(
             @Valid @RequestBody CourtEntity request,
             BindingResult bindingResult) {
@@ -99,26 +102,26 @@ public class CourtController {
         }
     }
 
-    // 5. Get all courts (with optional active filter, search, court_name, pagination, or venueId filter)
-    @GetMapping({"", "/view"})
+    // 5. Get all courts with filters: venueId, isActive, search, court_name, and pagination
+    @GetMapping({ "", "/view" })
     public ResponseEntity<Map<String, Object>> getAllCourts(
-            @RequestParam(required = false) Integer venueId,
-            @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String court_name,
+            @RequestParam(name = "venueId", required = false) Integer venueId,
+            @RequestParam(name = "venue_id", required = false) Integer venue_id,
+            @RequestParam(name = "isActive", required = false) Boolean isActive,
+            @RequestParam(name = "is_active", required = false) Boolean is_active,
+            @RequestParam(name = "search", required = false) String search,
+            @RequestParam(name = "court_name", required = false) String court_name,
+            @RequestParam(name = "courtName", required = false) String courtName,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "50") int size) {
         Map<String, Object> response = new HashMap<>();
         try {
-            if (venueId != null) {
-                List<CourtEntity> courts = courtService.getCourtsByVenueId(venueId, isActive);
-                response.put("status", HttpStatus.OK.value());
-                response.put("message", "Courts fetched successfully");
-                response.put("data", courts);
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-            }
+            Integer targetVenueId = venueId != null ? venueId : venue_id;
+            Boolean targetIsActive = isActive != null ? isActive : is_active;
+            String targetCourtName = court_name != null ? court_name : courtName;
 
-            Page<CourtEntity> courts = courtService.getAllCourts(isActive, search, court_name, page, size);
+            Page<CourtEntity> courts = courtService.getAllCourts(targetVenueId, targetIsActive, search, targetCourtName, page, size);
+
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Courts fetched successfully");
             response.put("data", courts.getContent());
@@ -134,7 +137,8 @@ public class CourtController {
     }
 
     // 6. Update court with multipart form-data
-    @PutMapping(value = {"/{id}", "/update/{id}"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
+    @PutMapping(value = { "/{id}", "/update/{id}" }, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> updateCourtWithImages(
             @PathVariable int id,
             @ModelAttribute CourtEntity request,
@@ -154,7 +158,8 @@ public class CourtController {
     }
 
     // 7. Update court with JSON
-    @PutMapping(value = {"/{id}", "/update/{id}"}, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
+    @PutMapping(value = { "/{id}", "/update/{id}" }, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> updateCourtJson(
             @PathVariable int id,
             @RequestBody CourtEntity request) {
@@ -162,7 +167,8 @@ public class CourtController {
     }
 
     // 8. Change court status (toggle active/inactive)
-    @PutMapping({"/status/{id}/{status}", "/{id}/status"})
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN')")
+    @PutMapping({ "/status/{id}/{status}", "/{id}/status" })
     public ResponseEntity<Map<String, Object>> changeCourtStatus(
             @PathVariable int id,
             @PathVariable(required = false) Boolean status,
@@ -181,21 +187,4 @@ public class CourtController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
-
-    // 9. Delete court
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> deleteCourt(@PathVariable int id) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            courtService.deleteCourt(id);
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "Court deleted successfully");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (RuntimeException err) {
-            response.put("status", HttpStatus.BAD_REQUEST.value());
-            response.put("message", "Court deletion failed: " + err.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-    }
 }
-

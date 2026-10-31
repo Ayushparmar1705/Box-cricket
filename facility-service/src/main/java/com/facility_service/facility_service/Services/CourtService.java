@@ -99,9 +99,9 @@ public class CourtService {
         return courtRepository.findByVenueId(venueId);
     }
 
-    public Page<CourtEntity> getAllCourts(Boolean isActive, String search, String court_name, int page, int size) {
+    public Page<CourtEntity> getAllCourts(Integer venueId, Boolean isActive, String search, String court_name, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Specification<CourtEntity> specification = Courtspecification.filter(isActive, search, court_name);
+        Specification<CourtEntity> specification = Courtspecification.filter(venueId, isActive, search, court_name);
         return courtRepository.findAll(specification, pageable);
     }
 
@@ -153,12 +153,4 @@ public class CourtService {
         return courtRepository.save(court);
     }
 
-    @Transactional
-    public void deleteCourt(int id) {
-        CourtEntity court = courtRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Court not found with id: " + id));
-        courtImageRepository.deleteByCourtId(id);
-        courtRepository.delete(court);
-    }
 }
-

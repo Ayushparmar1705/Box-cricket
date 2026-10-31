@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +32,7 @@ public class PricingRuleController {
     }
 
     // 1. Create a new pricing rule
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
     @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createPricing(
             @Valid @RequestBody Pricingruleentity pricing,
@@ -94,6 +96,7 @@ public class PricingRuleController {
     }
 
     // 4. Delete pricing rule by ID
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Map<String, Object>> deletePricing(@PathVariable int id) {
         Map<String, Object> response = new HashMap<>();
