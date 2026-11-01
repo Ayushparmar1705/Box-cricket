@@ -81,14 +81,15 @@ public class PricingRuleController {
     }
 
     /**
-     * 2. GET ALL Pricing Rules
-     * URL: GET http://localhost:3040/api/pricing
+     * 2. GET ALL Pricing Rules (with optional isActive filter)
+     * URL: GET http://localhost:3040/api/pricing?isActive=true/false
      * Access: Public browse
      */
     @GetMapping({ "", "/all" })
-    public ResponseEntity<Map<String, Object>> getAllPricingRules() {
+    public ResponseEntity<Map<String, Object>> getAllPricingRules(
+            @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
-        List<Pricingruleentity> rules = pricingService.getAllPricingRules();
+        List<Pricingruleentity> rules = pricingService.getAllPricingRules(isActive);
         response.put("status", HttpStatus.OK.value());
         response.put("message", "All pricing rules fetched successfully");
         response.put("data", rules);
@@ -117,15 +118,17 @@ public class PricingRuleController {
     }
 
     /**
-     * 4. GET Pricing Rules for a specific Court
-     * URL: GET http://localhost:3040/api/pricing/court/{courtId}
+     * 4. GET Pricing Rules for a specific Court (with optional isActive filter)
+     * URL: GET http://localhost:3040/api/pricing/court/{courtId}?isActive=true/false
      * Access: Public browse
      */
     @GetMapping("/court/{courtId}")
-    public ResponseEntity<Map<String, Object>> getPricingByCourtId(@PathVariable Integer courtId) {
+    public ResponseEntity<Map<String, Object>> getPricingByCourtId(
+            @PathVariable Integer courtId,
+            @RequestParam(required = false) Boolean isActive) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<Pricingruleentity> rules = pricingService.getPricingRulesByCourtId(courtId);
+            List<Pricingruleentity> rules = pricingService.getPricingRulesByCourtId(courtId, isActive);
             response.put("status", HttpStatus.OK.value());
             response.put("message", "Pricing rules fetched for court id: " + courtId);
             response.put("data", rules);
@@ -167,7 +170,7 @@ public class PricingRuleController {
     }
 
     /**
-     * 6. DELETE a Pricing Rule by Integer ID
+     * 6. SOFT DELETE a Pricing Rule by Integer ID (marks is_active = false)
      * URL: DELETE http://localhost:3040/api/pricing/{id}
      * Access: Authenticated OWNER or SUPER_ADMIN
      */
@@ -176,9 +179,34 @@ public class PricingRuleController {
     public ResponseEntity<Map<String, Object>> deletePricing(@PathVariable Integer id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            pricingService.deletePricingRule(id);
+            Pricingruleentity softDeleted = pricingService.deletePricingRule(id);
             response.put("status", HttpStatus.OK.value());
-            response.put("message", "Pricing rule deleted successfully");
+            response.put("message", "Pricing rule soft-deleted successfully");
+            response.put("data", softDeleted);
+            return ResponseEntity.ok(response);
+        } catch (ResourceNotFoundException err) {
+            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("message", err.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    /**
+     * 7. RESTORE / ACTIVATE / CHANGE STATUS of a Pricing Rule
+     * URL: PUT http://localhost:3040/api/pricing/{id}/status?status=true/false
+     * Access: Authenticated OWNER or SUPER_ADMIN
+     */
+    @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN')")
+    @PutMapping(value = { "/{id}/status", "/status/{id}" })
+    public ResponseEntity<Map<String, Object>> changeStatus(
+            @PathVariable Integer id,
+            @RequestParam boolean status) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Pricingruleentity updated = pricingService.changeStatus(id, status);
+            response.put("status", HttpStatus.OK.value());
+            response.put("message", status ? "Pricing rule activated successfully" : "Pricing rule deactivated successfully");
+            response.put("data", updated);
             return ResponseEntity.ok(response);
         } catch (ResourceNotFoundException err) {
             response.put("status", HttpStatus.NOT_FOUND.value());

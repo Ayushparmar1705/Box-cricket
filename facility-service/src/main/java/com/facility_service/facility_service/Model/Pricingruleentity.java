@@ -111,6 +111,13 @@ public class Pricingruleentity implements Serializable {
     @JsonAlias({"validTo", "valid_to"})
     private LocalDate validTo;
 
+    // 9. Soft Delete & Status Flag: true = Active, false = Soft-deleted / Deactivated
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    @JsonProperty("is_active")
+    @JsonAlias({"isActive", "is_active", "active"})
+    private boolean isActive = true;
+
     // Audit fields: auto-managed timestamp of record creation
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

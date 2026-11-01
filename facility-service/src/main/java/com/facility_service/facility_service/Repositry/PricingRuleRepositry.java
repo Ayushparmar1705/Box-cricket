@@ -19,15 +19,33 @@ public interface PricingRuleRepositry extends JpaRepository<Pricingruleentity, I
 
     /**
      * Find all pricing rules configured for a specific court.
-     * SQL equivalent: SELECT * FROM pricing_rules WHERE court_id = ?
      */
     List<Pricingruleentity> findByCourtId(Integer courtId);
 
     /**
+     * Find pricing rules for a court filtered by active status.
+     */
+    List<Pricingruleentity> findByCourtIdAndIsActive(Integer courtId, boolean isActive);
+
+    /**
+     * Find all pricing rules filtered by active status.
+     */
+    List<Pricingruleentity> findByIsActive(boolean isActive);
+
+    /**
      * Find pricing rules for a court filtered by day type (e.g., WEEKDAY, WEEKEND).
-     * SQL equivalent: SELECT * FROM pricing_rules WHERE court_id = ? AND day_type = ?
      */
     List<Pricingruleentity> findByCourtIdAndDayType(Integer courtId, Dayenum dayType);
+
+    /**
+     * Find active pricing rules for a court filtered by day type.
+     */
+    List<Pricingruleentity> findByCourtIdAndDayTypeAndIsActive(Integer courtId, Dayenum dayType, boolean isActive);
+
+    /**
+     * Check if at least one active pricing rule exists for a specific court.
+     */
+    boolean existsByCourtIdAndIsActive(Integer courtId, boolean isActive);
 
     /**
      * Check if at least one pricing rule exists for a specific court.

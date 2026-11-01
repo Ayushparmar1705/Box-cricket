@@ -51,7 +51,8 @@ public class PricingruleService {
             throw new IllegalArgumentException("Both start time and end time are required");
         }
         if (!pricing.getStartTime().isBefore(pricing.getEndTime())) {
-            throw new IllegalArgumentException("Start time (" + pricing.getStartTime() + ") must be before end time (" + pricing.getEndTime() + ")");
+            throw new IllegalArgumentException("Start time (" + pricing.getStartTime() + ") must be before end time ("
+                    + pricing.getEndTime() + ")");
         }
 
         // Step 3: Validate Price
@@ -62,20 +63,30 @@ public class PricingruleService {
         // Step 4: Validate Effective Date Range (if provided)
         if (pricing.getValidFrom() != null && pricing.getValidTo() != null) {
             if (pricing.getValidFrom().isAfter(pricing.getValidTo())) {
-                throw new IllegalArgumentException("valid_from date (" + pricing.getValidFrom() + ") cannot be after valid_to date (" + pricing.getValidTo() + ")");
+                throw new IllegalArgumentException("valid_from date (" + pricing.getValidFrom()
+                        + ") cannot be after valid_to date (" + pricing.getValidTo() + ")");
             }
         }
 
-        // Step 5: Save record into database and return saved entity with generated Integer ID
+        // Step 5: Save record into database and return saved entity with generated
+        // Integer ID
         return pricingRepository.save(pricing);
     }
 
     /**
-     * 2. Get all Pricing Rules
+     * 2. Get Pricing Rules with optional isActive filter
      */
     @Transactional(readOnly = true)
-    public List<Pricingruleentity> getAllPricingRules() {
+    public List<Pricingruleentity> getAllPricingRules(Boolean isActive) {
+        if (isActive != null) {
+            return pricingRepository.findByIsActive(isActive);
+        }
         return pricingRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pricingruleentity> getAllPricingRules() {
+        return getAllPricingRules(null);
     }
 
     /**
@@ -88,14 +99,22 @@ public class PricingruleService {
     }
 
     /**
-     * 4. Get all Pricing Rules for a specific Court
+     * 4. Get Pricing Rules for a specific Court with optional isActive filter
      */
     @Transactional(readOnly = true)
-    public List<Pricingruleentity> getPricingRulesByCourtId(Integer courtId) {
+    public List<Pricingruleentity> getPricingRulesByCourtId(Integer courtId, Boolean isActive) {
         if (!courtRepository.existsById(courtId)) {
             throw new ResourceNotFoundException("Court not found with id: " + courtId);
         }
+        if (isActive != null) {
+            return pricingRepository.findByCourtIdAndIsActive(courtId, isActive);
+        }
         return pricingRepository.findByCourtId(courtId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pricingruleentity> getPricingRulesByCourtId(Integer courtId) {
+        return getPricingRulesByCourtId(courtId, null);
     }
 
     /**
@@ -134,18 +153,29 @@ public class PricingruleService {
             existingRule.setValidTo(updatedData.getValidTo());
         }
 
+        existingRule.setActive(updatedData.isActive());
+
         return pricingRepository.save(existingRule);
     }
 
     /**
-     * 6. Delete a Pricing Rule by Integer ID
+     * 6. Soft Delete a Pricing Rule by Integer ID (sets is_active = false)
      */
     @Transactional
-    public void deletePricingRule(Integer id) {
-        if (!pricingRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Pricing rule not found with id: " + id);
-        }
-        pricingRepository.deleteById(id);
+    public Pricingruleentity deletePricingRule(Integer id) {
+        Pricingruleentity existingRule = getPricingRuleById(id);
+        existingRule.setActive(false);
+        return pricingRepository.save(existingRule);
+    }
+
+    /**
+     * 7. Change Status / Restore Pricing Rule (sets is_active = status)
+     */
+    @Transactional
+    public Pricingruleentity changeStatus(Integer id, boolean status) {
+        Pricingruleentity existingRule = getPricingRuleById(id);
+        existingRule.setActive(status);
+        return pricingRepository.save(existingRule);
     }
 
     // Backward-compatibility aliases for existing controller methods
