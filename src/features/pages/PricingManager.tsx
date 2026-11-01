@@ -38,7 +38,6 @@ import { fetchCourtsApi, type CourtItem } from '../services/courtService';
 // Common Modals & Loading
 import CommonModal from '../../Components/Common/CommonModal';
 import CommonConfirmModal from '../../Components/Common/CommonConfirmModal';
-import CommonLoadingBar from '../../Components/Common/CommonLoadingBar';
 
 export default function PricingManager() {
   // ── 1. Data States ──────────────────────────────────────────────────────────
@@ -46,6 +45,7 @@ export default function PricingManager() {
   const [courts, setCourts] = useState<CourtItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
+  const [togglingStatusRuleId, setTogglingStatusRuleId] = useState<number | null>(null);
 
   // ── 2. Filters & Search ─────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -249,6 +249,7 @@ export default function PricingManager() {
   const handleConfirmDelete = async () => {
     if (!ruleToDelete) return;
     setIsActionLoading(true);
+    setTogglingStatusRuleId(ruleToDelete.id);
     try {
       await deletePricingRuleApi(ruleToDelete.id);
       toast.success(`⚠️ Pricing rule #${ruleToDelete.id} deactivated (soft deleted).`);
@@ -258,12 +259,14 @@ export default function PricingManager() {
       toast.error(err.message || 'Failed to deactivate pricing rule');
     } finally {
       setIsActionLoading(false);
+      setTogglingStatusRuleId(null);
     }
   };
 
   // ── 13. Restore / Reactivate Rule Handler ──────────────────────────────────
   const handleRestoreRule = async (rule: PricingRuleItem) => {
     setIsActionLoading(true);
+    setTogglingStatusRuleId(rule.id);
     try {
       await changePricingRuleStatusApi(rule.id, true);
       toast.success(`🎉 Pricing rule #${rule.id} reactivated!`);
@@ -272,6 +275,7 @@ export default function PricingManager() {
       toast.error(err.message || 'Failed to reactivate rule');
     } finally {
       setIsActionLoading(false);
+      setTogglingStatusRuleId(null);
     }
   };
 
@@ -301,6 +305,13 @@ export default function PricingManager() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
+      {/* ── Status Change Top Linear Loading Bar ── */}
+      {togglingStatusRuleId !== null && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1.5 bg-emerald-100 overflow-hidden shadow-sm">
+          <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 animate-pulse w-full transition-all duration-300" />
+        </div>
+      )}
+
       {/* ── Header & Action Toolbar ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -436,25 +447,11 @@ export default function PricingManager() {
         </div>
       </div>
 
-      {/* ── Action Loading Overlay ── */}
-      {isActionLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-xs">
-          <div className="p-6 rounded-3xl bg-white shadow-xl border border-slate-200 flex flex-col items-center gap-2">
-            <CommonLoadingBar className="w-20 h-20" />
-            <p className="text-xs font-bold text-slate-700 animate-pulse">
-              Processing pricing rules...
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Rules Grid Display ── */}
       {isLoading ? (
-        <div className="p-12 text-center rounded-3xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
-          <CommonLoadingBar className="w-24 h-24" />
-          <h3 className="text-sm font-bold text-slate-800 animate-pulse">
-            Loading Pricing Rules from Backend...
-          </h3>
+        <div className="p-12 text-center space-y-3 rounded-3xl bg-white border border-slate-200 shadow-sm">
+          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+          <h3 className="text-sm font-bold text-slate-800">Loading Pricing Rules from Backend...</h3>
         </div>
       ) : filteredRules.length === 0 ? (
         <div className="p-12 text-center space-y-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
@@ -485,12 +482,19 @@ export default function PricingManager() {
             return (
               <div
                 key={rule.id}
-                className={`rounded-3xl bg-white border shadow-sm transition-all flex flex-col justify-between overflow-hidden group ${
+                className={`relative rounded-3xl bg-white border shadow-sm transition-all flex flex-col justify-between overflow-hidden group ${
                   isRuleActive
                     ? 'border-slate-200/90 hover:border-emerald-300 hover:shadow-md'
                     : 'border-slate-200 bg-slate-50/60 opacity-80'
                 }`}
               >
+                {/* Individual Card Status Loading Bar */}
+                {togglingStatusRuleId === rule.id && (
+                  <div className="absolute top-0 left-0 right-0 z-30 h-1.5 bg-emerald-100 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 animate-pulse w-full" />
+                  </div>
+                )}
+
                 {/* Header Banner */}
                 <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-gradient-to-r from-slate-50/50 to-white">
                   <div className="space-y-1">
@@ -569,7 +573,8 @@ export default function PricingManager() {
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(rule)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition-colors cursor-pointer"
+                            disabled={togglingStatusRuleId === rule.id}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition-colors cursor-pointer disabled:opacity-50"
                             title="Edit pricing rule"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -579,10 +584,15 @@ export default function PricingManager() {
                           <button
                             type="button"
                             onClick={() => setRuleToDelete(rule)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                            disabled={togglingStatusRuleId === rule.id}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer disabled:opacity-50"
                             title="Deactivate rule (Soft Delete)"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            {togglingStatusRuleId === rule.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         </>
                       ) : (
@@ -590,11 +600,16 @@ export default function PricingManager() {
                         <button
                           type="button"
                           onClick={() => handleRestoreRule(rule)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer"
+                          disabled={togglingStatusRuleId === rule.id}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
                           title="Reactivate pricing rule"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Restore</span>
+                          {togglingStatusRuleId === rule.id ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                          ) : (
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          )}
+                          <span>{togglingStatusRuleId === rule.id ? 'Restoring...' : 'Restore'}</span>
                         </button>
                       )}
                     </div>
