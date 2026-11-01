@@ -86,6 +86,7 @@ export default function CourtManager({
   const [viewingCourt, setViewingCourt] = useState<CourtItem | null>(null);
   const [courtToDelete, setCourtToDelete] = useState<CourtItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [togglingStatusCourtId, setTogglingStatusCourtId] = useState<string | number | null>(null);
 
   // Inline Category Addition inside Court Form Modal
   const [showAddCategoryInline, setShowAddCategoryInline] = useState<boolean>(false);
@@ -382,12 +383,15 @@ export default function CourtManager({
   // Toggle Court Status (Active <-> Inactive)
   const handleToggleStatus = async (crt: CourtItem) => {
     const nextStatus = crt.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    setTogglingStatusCourtId(crt.id);
     try {
       await changeCourtStatusApi(crt.id, nextStatus);
       toast.success(`${crt.court_name || crt.courtNumber} marked as ${nextStatus === 'ACTIVE' ? 'Active' : 'Inactive'}`);
       await fetchFilteredCourts();
     } catch (err: any) {
       toast.error('Failed to change status');
+    } finally {
+      setTogglingStatusCourtId(null);
     }
   };
 
@@ -440,6 +444,12 @@ export default function CourtManager({
 
   return (
     <div className={`space-y-6 animate-in fade-in duration-200 ${standalone ? 'p-6 max-w-7xl mx-auto' : ''}`}>
+      {/* ── Status Change Top Linear Loading Bar ── */}
+      {togglingStatusCourtId !== null && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1.5 bg-emerald-100 overflow-hidden shadow-sm">
+          <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 animate-pulse w-full transition-all duration-300" />
+        </div>
+      )}
       {/* ── Standalone Navigation Bar (when accessed directly) ── */}
       {standalone && (
         <div className="flex items-center justify-between pb-4 border-b border-slate-200">
@@ -607,8 +617,14 @@ export default function CourtManager({
             return (
               <div
                 key={crt.id}
-                className="rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                className="relative rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
               >
+                {/* Individual Card Status Loading Bar */}
+                {togglingStatusCourtId === crt.id && (
+                  <div className="absolute top-0 left-0 right-0 z-30 h-1.5 bg-emerald-100 overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 animate-pulse w-full" />
+                  </div>
+                )}
                 {/* Court Image Banner */}
                 {firstImage ? (
                   <div className="relative h-44 w-full overflow-hidden bg-slate-100">
@@ -734,15 +750,25 @@ export default function CourtManager({
                     <div className="flex items-center gap-1.5">
                       <button
                         type="button"
+                        disabled={togglingStatusCourtId === crt.id}
                         onClick={() => handleToggleStatus(crt)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-                          crt.status === 'ACTIVE'
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          togglingStatusCourtId === crt.id
+                            ? 'opacity-70 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-500'
+                            : crt.status === 'ACTIVE'
                             ? 'border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100'
                             : 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
                         }`}
                         title={crt.status === 'ACTIVE' ? 'Deactivate Court' : 'Activate Court'}
                       >
-                        {crt.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                        {togglingStatusCourtId === crt.id ? (
+                          <>
+                            <RefreshCw className="w-3 h-3 animate-spin text-emerald-600" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <span>{crt.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</span>
+                        )}
                       </button>
 
                       <button
