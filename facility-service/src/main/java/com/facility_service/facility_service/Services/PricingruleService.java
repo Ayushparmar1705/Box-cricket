@@ -1,64 +1,171 @@
 package com.facility_service.facility_service.Services;
 
-import java.util.List;
-
+import com.facility_service.facility_service.Model.Pricingruleentity;
+import com.facility_service.facility_service.Repositry.CourtRepository;
+import com.facility_service.facility_service.Repositry.PricingRuleRepositry;
+import com.facility_service.facility_service.Exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.facility_service.facility_service.Model.Pricingruleentity;
-import com.facility_service.facility_service.Repositry.PricingRuleRepositry;
+import java.math.BigDecimal;
+import java.util.List;
 
+/**
+ * ============================================================================
+ * Service Layer: PricingruleService
+ * Description: Contains business logic and validation for Court Pricing Rules.
+ * ============================================================================
+ */
 @Service
 public class PricingruleService {
 
-    private final PricingRuleRepositry rep;
+    private final PricingRuleRepositry pricingRepository;
+    private final CourtRepository courtRepository;
 
-    public PricingruleService(PricingRuleRepositry rep) {
-        this.rep = rep;
+    // Constructor Injection (recommended for Spring Boot)
+    public PricingruleService(PricingRuleRepositry pricingRepository, CourtRepository courtRepository) {
+        this.pricingRepository = pricingRepository;
+        this.courtRepository = courtRepository;
     }
 
+    /**
+     * 1. Create a new Pricing Rule
+     * Performs validations before saving:
+     * - Parent Court exists in database
+     * - start_time is before end_time
+     * - price is greater than 0
+     * - valid_from is before or equal to valid_to
+     */
     @Transactional
-    public Pricingruleentity createPricing(Pricingruleentity pricing) {
-        if (pricing.getStart_time() == null || pricing.getEnd_time() == null) {
-            throw new IllegalArgumentException("Start time and end time are required");
+    public Pricingruleentity createPricingRule(Pricingruleentity pricing) {
+        // Step 1: Validate Court Existence
+        if (pricing.getCourtId() == null) {
+            throw new IllegalArgumentException("Court ID is required");
+        }
+        if (!courtRepository.existsById(pricing.getCourtId())) {
+            throw new ResourceNotFoundException("Court not found with id: " + pricing.getCourtId());
         }
 
-        if (!pricing.getStart_time().isBefore(pricing.getEnd_time())) {
-            throw new IllegalArgumentException("Start time must be before end time");
+        // Step 2: Validate Time Window
+        if (pricing.getStartTime() == null || pricing.getEndTime() == null) {
+            throw new IllegalArgumentException("Both start time and end time are required");
+        }
+        if (!pricing.getStartTime().isBefore(pricing.getEndTime())) {
+            throw new IllegalArgumentException("Start time (" + pricing.getStartTime() + ") must be before end time (" + pricing.getEndTime() + ")");
         }
 
-        if (pricing.getPrice() <= 0) {
-            throw new IllegalArgumentException("Price must be greater than 0");
+        // Step 3: Validate Price
+        if (pricing.getPrice() == null || pricing.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price must be a positive number greater than zero");
         }
 
-        if (pricing.getValid_from() != null && pricing.getValid_to() != null) {
-            if (pricing.getValid_from().isAfter(pricing.getValid_to())) {
-                throw new IllegalArgumentException("Valid from date must be before or equal to valid to date");
+        // Step 4: Validate Effective Date Range (if provided)
+        if (pricing.getValidFrom() != null && pricing.getValidTo() != null) {
+            if (pricing.getValidFrom().isAfter(pricing.getValidTo())) {
+                throw new IllegalArgumentException("valid_from date (" + pricing.getValidFrom() + ") cannot be after valid_to date (" + pricing.getValidTo() + ")");
             }
         }
 
-        if (rep.existsBycourtid(pricing.getCourtid())) {
-            throw new IllegalArgumentException("Pricing rule already exists for court id: " + pricing.getCourtid());
+        // Step 5: Save record into database and return saved entity with generated Integer ID
+        return pricingRepository.save(pricing);
+    }
+
+    /**
+     * 2. Get all Pricing Rules
+     */
+    @Transactional(readOnly = true)
+    public List<Pricingruleentity> getAllPricingRules() {
+        return pricingRepository.findAll();
+    }
+
+    /**
+     * 3. Get Pricing Rule by Integer Primary Key
+     */
+    @Transactional(readOnly = true)
+    public Pricingruleentity getPricingRuleById(Integer id) {
+        return pricingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pricing rule not found with id: " + id));
+    }
+
+    /**
+     * 4. Get all Pricing Rules for a specific Court
+     */
+    @Transactional(readOnly = true)
+    public List<Pricingruleentity> getPricingRulesByCourtId(Integer courtId) {
+        if (!courtRepository.existsById(courtId)) {
+            throw new ResourceNotFoundException("Court not found with id: " + courtId);
+        }
+        return pricingRepository.findByCourtId(courtId);
+    }
+
+    /**
+     * 5. Update an existing Pricing Rule by Integer ID
+     */
+    @Transactional
+    public Pricingruleentity updatePricingRule(Integer id, Pricingruleentity updatedData) {
+        // Find existing record
+        Pricingruleentity existingRule = getPricingRuleById(id);
+
+        // Update fields if new values are provided
+        if (updatedData.getDayType() != null) {
+            existingRule.setDayType(updatedData.getDayType());
         }
 
-        return rep.save(pricing);
+        if (updatedData.getStartTime() != null && updatedData.getEndTime() != null) {
+            if (!updatedData.getStartTime().isBefore(updatedData.getEndTime())) {
+                throw new IllegalArgumentException("Start time must be before end time");
+            }
+            existingRule.setStartTime(updatedData.getStartTime());
+            existingRule.setEndTime(updatedData.getEndTime());
+        }
+
+        if (updatedData.getPrice() != null) {
+            if (updatedData.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Price must be greater than zero");
+            }
+            existingRule.setPrice(updatedData.getPrice());
+        }
+
+        if (updatedData.getValidFrom() != null) {
+            existingRule.setValidFrom(updatedData.getValidFrom());
+        }
+
+        if (updatedData.getValidTo() != null) {
+            existingRule.setValidTo(updatedData.getValidTo());
+        }
+
+        return pricingRepository.save(existingRule);
     }
 
+    /**
+     * 6. Delete a Pricing Rule by Integer ID
+     */
+    @Transactional
+    public void deletePricingRule(Integer id) {
+        if (!pricingRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Pricing rule not found with id: " + id);
+        }
+        pricingRepository.deleteById(id);
+    }
+
+    // Backward-compatibility aliases for existing controller methods
+    @Transactional
+    public Pricingruleentity createPricing(Pricingruleentity pricing) {
+        return createPricingRule(pricing);
+    }
+
+    @Transactional(readOnly = true)
     public List<Pricingruleentity> getPricingByCourtId(int courtId) {
-        return rep.findByCourtid(courtId);
+        return getPricingRulesByCourtId(courtId);
     }
 
-    public Pricingruleentity getPricingById(int id) {
-        return rep.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Pricing rule not found with id: " + id));
+    @Transactional(readOnly = true)
+    public Pricingruleentity getPricingById(Integer id) {
+        return getPricingRuleById(id);
     }
 
     @Transactional
-    public void deletePricing(int id) {
-        if (!rep.existsById(id)) {
-            throw new IllegalArgumentException("Pricing rule not found with id: " + id);
-        }
-        rep.deleteById(id);
+    public void deletePricing(Integer id) {
+        deletePricingRule(id);
     }
 }
-
