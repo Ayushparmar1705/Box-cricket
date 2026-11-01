@@ -116,7 +116,23 @@ public class Pricingruleentity implements Serializable {
     @Builder.Default
     @JsonProperty("is_active")
     @JsonAlias({"isActive", "is_active", "active"})
-    private boolean isActive = true;
+    private Boolean isActive = Boolean.TRUE;
+
+    public Boolean getIsActive() {
+        return isActive != null ? isActive : Boolean.TRUE;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive != null ? isActive : Boolean.TRUE;
+    }
+
+    public boolean isActive() {
+        return isActive != null && isActive;
+    }
+
+    public void setActive(boolean active) {
+        this.isActive = active;
+    }
 
     // Audit fields: auto-managed timestamp of record creation
     @CreationTimestamp

@@ -154,6 +154,9 @@ public class PricingruleService {
         }
 
         existingRule.setActive(updatedData.isActive());
+        if (updatedData.getIsActive() != null) {
+            existingRule.setIsActive(updatedData.getIsActive());
+        }
 
         return pricingRepository.save(existingRule);
     }
