@@ -29,6 +29,8 @@ export interface PricingRuleItem {
   validFrom?: string;
   valid_to?: string;   // format: YYYY-MM-DD
   validTo?: string;
+  is_active?: boolean;
+  isActive?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -99,6 +101,8 @@ const normalizePricingRule = (raw: any): PricingRuleItem => {
     validFrom: raw.validFrom || raw.valid_from || '',
     valid_to: raw.valid_to || raw.validTo || '',
     validTo: raw.validTo || raw.valid_to || '',
+    is_active: raw.is_active !== undefined ? Boolean(raw.is_active) : (raw.isActive !== undefined ? Boolean(raw.isActive) : true),
+    isActive: raw.is_active !== undefined ? Boolean(raw.is_active) : (raw.isActive !== undefined ? Boolean(raw.isActive) : true),
     created_at: raw.created_at || raw.createdAt,
     updated_at: raw.updated_at || raw.updatedAt,
   };
@@ -109,11 +113,11 @@ const normalizePricingRule = (raw: any): PricingRuleItem => {
 // ============================================================================
 
 /**
- * 1. Fetch All Pricing Rules
- * Endpoint: GET http://localhost:3040/api/pricing
+ * 1. Fetch All Pricing Rules (with optional isActive filter)
+ * Endpoint: GET http://localhost:3040/api/pricing?isActive=true/false
  */
-export const fetchAllPricingRulesApi = async (): Promise<PricingRuleItem[]> => {
-  const url = `${baseUrl.venue}/api/pricing`;
+export const fetchAllPricingRulesApi = async (isActive?: boolean): Promise<PricingRuleItem[]> => {
+  const url = isActive !== undefined ? `${baseUrl.venue}/api/pricing?isActive=${isActive}` : `${baseUrl.venue}/api/pricing`;
   const response = await fetch(url, {
     method: 'GET',
     headers: getAuthHeaders(),
@@ -279,5 +283,27 @@ export const deletePricingRuleApi = async (id: number | string): Promise<void> =
     const result = await response.json().catch(() => ({}));
     throw new Error(getErrorMessage(result, 'Failed to delete pricing rule'));
   }
+};
+
+/**
+ * 7. Change Status / Restore a Pricing Rule (Soft Delete Toggle)
+ * Endpoint: PUT http://localhost:3040/api/pricing/{id}/status?status=true/false
+ */
+export const changePricingRuleStatusApi = async (
+  id: number | string,
+  status: boolean
+): Promise<PricingRuleItem> => {
+  const url = `${baseUrl.venue}/api/pricing/${id}/status?status=${status}`;
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, 'Failed to update pricing rule status'));
+  }
+
+  return normalizePricingRule(result.data || result);
 };
 

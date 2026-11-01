@@ -16,6 +16,8 @@ import {
   Trash2,
   Filter,
   Search,
+  RotateCcw,
+  CheckCircle2,
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -26,6 +28,7 @@ import {
   createPricingRuleApi,
   updatePricingRuleApi,
   deletePricingRuleApi,
+  changePricingRuleStatusApi,
   type PricingRuleItem,
   type PricingRulePayload,
   type DayType,
@@ -48,6 +51,7 @@ export default function PricingManager() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedCourtFilter, setSelectedCourtFilter] = useState<string>('ALL');
   const [selectedDayTypeFilter, setSelectedDayTypeFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
 
   // ── 3. Modals State ─────────────────────────────────────────────────────────
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -118,6 +122,13 @@ export default function PricingManager() {
       if (selectedDayTypeFilter !== 'ALL' && rule.day_type !== selectedDayTypeFilter) {
         return false;
       }
+      // Status Filter (Active vs Deactivated)
+      if (statusFilter === 'ACTIVE' && rule.is_active === false) {
+        return false;
+      }
+      if (statusFilter === 'INACTIVE' && rule.is_active !== false) {
+        return false;
+      }
       // Search Keyword
       if (searchTerm.trim()) {
         const query = searchTerm.toLowerCase();
@@ -131,7 +142,7 @@ export default function PricingManager() {
       }
       return true;
     });
-  }, [pricingRules, selectedCourtFilter, selectedDayTypeFilter, searchTerm, courtsMap]);
+  }, [pricingRules, selectedCourtFilter, selectedDayTypeFilter, statusFilter, searchTerm, courtsMap]);
 
   // ── 9. Executive Metrics Computation ────────────────────────────────────────
   const metrics = useMemo(() => {
@@ -234,17 +245,31 @@ export default function PricingManager() {
     }
   };
 
-  // ── 12. Delete Handler ──────────────────────────────────────────────────────
+  // ── 12. Soft Delete Handler (Deactivate) ──────────────────────────────────
   const handleConfirmDelete = async () => {
     if (!ruleToDelete) return;
     setIsActionLoading(true);
     try {
       await deletePricingRuleApi(ruleToDelete.id);
-      toast.success('Pricing rule removed successfully');
+      toast.success(`⚠️ Pricing rule #${ruleToDelete.id} deactivated (soft deleted).`);
       setRuleToDelete(null);
       await loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete pricing rule');
+      toast.error(err.message || 'Failed to deactivate pricing rule');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  // ── 13. Restore / Reactivate Rule Handler ──────────────────────────────────
+  const handleRestoreRule = async (rule: PricingRuleItem) => {
+    setIsActionLoading(true);
+    try {
+      await changePricingRuleStatusApi(rule.id, true);
+      toast.success(`🎉 Pricing rule #${rule.id} reactivated!`);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to reactivate rule');
     } finally {
       setIsActionLoading(false);
     }
@@ -395,6 +420,19 @@ export default function PricingManager() {
               <option value="HOLIDAY">Holiday</option>
             </select>
           </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-xs text-xs">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'INACTIVE')}
+              className="bg-transparent font-bold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active Rules</option>
+              <option value="INACTIVE">Deactivated Rules</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -442,19 +480,39 @@ export default function PricingManager() {
           {filteredRules.map((rule) => {
             const courtInfo = courtsMap.get(rule.court_id);
             const dayBadge = getDayTypeBadge(rule.day_type);
+            const isRuleActive = rule.is_active !== false;
 
             return (
               <div
                 key={rule.id}
-                className="rounded-3xl bg-white border border-slate-200/90 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                className={`rounded-3xl bg-white border shadow-sm transition-all flex flex-col justify-between overflow-hidden group ${
+                  isRuleActive
+                    ? 'border-slate-200/90 hover:border-emerald-300 hover:shadow-md'
+                    : 'border-slate-200 bg-slate-50/60 opacity-80'
+                }`}
               >
                 {/* Header Banner */}
                 <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 bg-gradient-to-r from-slate-50/50 to-white">
                   <div className="space-y-1">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${dayBadge.bg}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${dayBadge.dot}`} />
-                      <span>{dayBadge.label}</span>
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${dayBadge.bg}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${dayBadge.dot}`} />
+                        <span>{dayBadge.label}</span>
+                      </span>
+
+                      {/* Status Tag */}
+                      {isRuleActive ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                          Deactivated
+                        </span>
+                      )}
+                    </div>
+
                     <h3 className="text-sm font-extrabold text-slate-900 pt-1">
                       {courtInfo?.name || `Court #${rule.court_id}`}
                     </h3>
@@ -463,7 +521,9 @@ export default function PricingManager() {
 
                   {/* Price Chip */}
                   <div className="text-right">
-                    <div className="text-2xl font-extrabold text-emerald-700">₹{rule.price.toLocaleString()}</div>
+                    <div className={`text-2xl font-extrabold ${isRuleActive ? 'text-emerald-700' : 'text-slate-500'}`}>
+                      ₹{rule.price.toLocaleString()}
+                    </div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">per hour</span>
                   </div>
                 </div>
@@ -503,25 +563,40 @@ export default function PricingManager() {
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                      {/* Edit Button */}
-                      <button
-                        type="button"
-                        onClick={() => handleOpenEdit(rule)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition-colors cursor-pointer"
-                        title="Edit pricing rule"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isRuleActive ? (
+                        <>
+                          {/* Edit Button */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(rule)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 transition-colors cursor-pointer"
+                            title="Edit pricing rule"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
 
-                      {/* Delete Button */}
-                      <button
-                        type="button"
-                        onClick={() => setRuleToDelete(rule)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
-                        title="Delete pricing rule"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                          {/* Soft Delete (Deactivate) Button */}
+                          <button
+                            type="button"
+                            onClick={() => setRuleToDelete(rule)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer"
+                            title="Deactivate rule (Soft Delete)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        /* Reactivate / Restore Button */
+                        <button
+                          type="button"
+                          onClick={() => handleRestoreRule(rule)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer"
+                          title="Reactivate pricing rule"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Restore</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -720,15 +795,16 @@ export default function PricingManager() {
         </form>
       </CommonModal>
 
-      {/* ── MODAL: Delete Confirmation ── */}
+      {/* ── MODAL: Delete / Deactivate Confirmation ── */}
       <CommonConfirmModal
         isOpen={ruleToDelete !== null}
         onClose={() => setRuleToDelete(null)}
         onConfirm={handleConfirmDelete}
-        title="Delete Pricing Rule?"
-        message={`Are you sure you want to delete this pricing rule for ${courtsMap.get(ruleToDelete?.court_id || 0)?.name || 'Court'
-          } (${ruleToDelete?.day_type} at ₹${ruleToDelete?.price}/hr)? This action cannot be undone.`}
-        confirmText="Yes, Delete Rule"
+        title="Deactivate Pricing Rule?"
+        message={`Are you sure you want to deactivate this pricing rule for ${
+          courtsMap.get(ruleToDelete?.court_id || 0)?.name || 'Court'
+        } (${ruleToDelete?.day_type} at ₹${ruleToDelete?.price}/hr)? This will safely archive/soft-delete the rule. You can reactivate it anytime.`}
+        confirmText="Yes, Deactivate"
         cancelText="Cancel"
         type="delete"
         isLoading={isActionLoading}
