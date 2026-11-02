@@ -32,7 +32,6 @@ public class PricingruleService {
      * 1. Create a new Pricing Rule
      * Performs validations before saving:
      * - Parent Court exists in database
-     * - start_time is before end_time
      * - price is greater than 0
      * - valid_from is before or equal to valid_to
      */
@@ -46,21 +45,12 @@ public class PricingruleService {
             throw new ResourceNotFoundException("Court not found with id: " + pricing.getCourtId());
         }
 
-        // Step 2: Validate Time Window
-        if (pricing.getStartTime() == null || pricing.getEndTime() == null) {
-            throw new IllegalArgumentException("Both start time and end time are required");
-        }
-        if (!pricing.getStartTime().isBefore(pricing.getEndTime())) {
-            throw new IllegalArgumentException("Start time (" + pricing.getStartTime() + ") must be before end time ("
-                    + pricing.getEndTime() + ")");
-        }
-
-        // Step 3: Validate Price
+        // Step 2: Validate Price
         if (pricing.getPrice() == null || pricing.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Price must be a positive number greater than zero");
         }
 
-        // Step 4: Validate Effective Date Range (if provided)
+        // Step 3: Validate Effective Date Range (if provided)
         if (pricing.getValidFrom() != null && pricing.getValidTo() != null) {
             if (pricing.getValidFrom().isAfter(pricing.getValidTo())) {
                 throw new IllegalArgumentException("valid_from date (" + pricing.getValidFrom()
@@ -128,14 +118,6 @@ public class PricingruleService {
         // Update fields if new values are provided
         if (updatedData.getDayType() != null) {
             existingRule.setDayType(updatedData.getDayType());
-        }
-
-        if (updatedData.getStartTime() != null && updatedData.getEndTime() != null) {
-            if (!updatedData.getStartTime().isBefore(updatedData.getEndTime())) {
-                throw new IllegalArgumentException("Start time must be before end time");
-            }
-            existingRule.setStartTime(updatedData.getStartTime());
-            existingRule.setEndTime(updatedData.getEndTime());
         }
 
         if (updatedData.getPrice() != null) {

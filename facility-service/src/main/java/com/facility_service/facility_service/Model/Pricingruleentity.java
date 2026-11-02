@@ -28,11 +28,9 @@ import java.util.UUID;
  * 1. id         -> Integer (Primary Key, auto-increment)
  * 2. court_id   -> Foreign Key referencing courts(id)
  * 3. day_type   -> Enum: WEEKDAY, WEEKEND, HOLIDAY
- * 4. start_time -> Time when the rule window begins (HH:mm:ss)
- * 5. end_time   -> Time when the rule window ends (HH:mm:ss)
- * 6. price      -> Price per hour/slot (DECIMAL 10,2)
- * 7. valid_from -> Effective start date (YYYY-MM-DD, optional)
- * 8. valid_to   -> Effective end date (YYYY-MM-DD, optional)
+ * 4. price      -> Price per hour/slot (DECIMAL 10,2)
+ * 5. valid_from -> Effective start date (YYYY-MM-DD, optional)
+ * 6. valid_to   -> Effective end date (YYYY-MM-DD, optional)
  * ============================================================================
  */
 @Entity
@@ -74,30 +72,14 @@ public class Pricingruleentity implements Serializable {
     @JsonAlias({"dayType", "day_type"})
     private Dayenum dayType;
 
-    // 4. Start Time: e.g. 06:00:00 or 18:00:00
-    @NotNull(message = "Start time is required (format: HH:mm:ss)")
-    @JsonFormat(pattern = "HH:mm:ss")
-    @Column(name = "start_time", nullable = false)
-    @JsonProperty("start_time")
-    @JsonAlias({"startTime", "start_time"})
-    private LocalTime startTime;
-
-    // 5. End Time: e.g. 18:00:00 or 23:00:00
-    @NotNull(message = "End time is required (format: HH:mm:ss)")
-    @JsonFormat(pattern = "HH:mm:ss")
-    @Column(name = "end_time", nullable = false)
-    @JsonProperty("end_time")
-    @JsonAlias({"endTime", "end_time"})
-    private LocalTime endTime;
-
-    // 6. Price: Decimal with 2 decimal places (e.g. 800.00, 1250.50)
+    // 4. Price: Decimal with 2 decimal places (e.g. 800.00, 1250.50)
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.01", inclusive = true, message = "Price must be greater than 0")
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     @JsonProperty("price")
     private BigDecimal price;
 
-    // 7. Effective Start Date (optional): e.g. 2026-01-01
+    // 5. Effective Start Date (optional): e.g. 2026-01-01
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "valid_from")
     @JsonProperty("valid_from")
