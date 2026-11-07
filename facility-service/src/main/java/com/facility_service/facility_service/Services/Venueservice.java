@@ -7,6 +7,11 @@ import java.util.Optional;
 import com.facility_service.facility_service.Model.Venueamenitiesmodel;
 import com.facility_service.facility_service.Exception.ResourceNotFoundException;
 import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -102,12 +107,56 @@ public class Venueservice {
             venueModel.setImageUrl(imageUrl);
         }
 
-        // Step 5: Save the venue model into database (cascades to amenities
-        // automatically)
+        // Step 5: Save the venue model into database (cascades to amenities automatically)
         Venuemodel savedVenue = venueRepository.save(venueModel);
 
         // Step 7: Convert saved entity model to response DTO and return
         return mapper.toResponseDto(savedVenue);
+    }
+
+    /**
+     * Get single venue by ID
+     */
+    @Transactional(readOnly = true)
+    public Venueresponsedto getVenueById(int id) {
+        Venuemodel venue = venueRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + id));
+        return mapper.toResponseDto(venue);
+    }
+
+    /**
+     * Common get, filter, and search venues (unpaged list)
+     */
+    @Transactional(readOnly = true)
+    public List<Venueresponsedto> getAllVenues(
+            Integer ownerId,
+            String city,
+            Boolean isActive,
+            String search,
+            String name) {
+        Specification<Venuemodel> spec = Venuespecification.filter(ownerId, city, isActive, search, name);
+        List<Venuemodel> venues = venueRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "id"));
+        return venues.stream()
+                .map(mapper::toResponseDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Common get, filter, and search venues with pagination
+     */
+    @Transactional(readOnly = true)
+    public Page<Venueresponsedto> getAllVenuesPaged(
+            Integer ownerId,
+            String city,
+            Boolean isActive,
+            String search,
+            String name,
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+        Specification<Venuemodel> spec = Venuespecification.filter(ownerId, city, isActive, search, name);
+        Page<Venuemodel> venuesPage = venueRepository.findAll(spec, pageable);
+        return venuesPage.map(mapper::toResponseDto);
     }
 
     /**
