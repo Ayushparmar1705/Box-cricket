@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
+import com.facility_service.facility_service.dto.Responsedto.CourtResponseDto;
 import com.facility_service.facility_service.dto.Responsedto.Venueresponsedto;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,19 +14,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.facility_service.facility_service.Model.Venuemodel;
 import com.facility_service.facility_service.Services.Venueservice;
 import com.facility_service.facility_service.dto.Requestdto.Venuerequestdto;
 
-import jakarta.validation.Valid;
+import jakarta.validation.Valid;*/
 
-/**
- * ============================================================================
- * Controller: Venuecontroller
- * Description: REST API controller for Venue management.
- *              Provides a unified endpoint for get, filter, and search,
- *              as well as create, update, and status toggle operations.
- * ============================================================================
- */
 @RestController
 @RequestMapping("/api/venues")
 public class Venuecontroller {
@@ -39,7 +32,8 @@ public class Venuecontroller {
 
     /**
      * 1. CREATE VENUE
-     * Supports multipart form-data for venue details and image file upload.
+     * URL: POST /api/venues
+     * Allows owner or admin to create a new venue with an image upload.
      */
     @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN', 'PLAYER')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -47,82 +41,59 @@ public class Venuecontroller {
             @Valid @ModelAttribute Venuerequestdto dto,
             Authentication authentication) {
 
-        int id = Integer.parseInt(authentication.getName());
-        dto.setOwner_id(id);
+        // Get logged in user ID from token
+        int userId = Integer.parseInt(authentication.getName());
+        dto.setOwner_id(userId);
 
-        var createdVenue = service.create(dto);
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("status", HttpStatus.OK.value());
-        resultMap.put("message", "Venue created successfully");
-        resultMap.put("data", createdVenue);
-        return ResponseEntity.ok(resultMap);
+        // Call service to save venue
+        Venueresponsedto createdVenue = service.create(dto);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Venue created successfully");
+        response.put("data", createdVenue);
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * 2. COMMON API FOR GET, FILTER, AND SEARCH VENUES
+     * 2. GET ALL VENUES / SEARCH VENUES / FILTER VENUES
+     * URL: GET /api/venues
+     * URL: GET /api/venues/search?search=demo
      *
-     * Accessible endpoints:
-     * - GET /api/venues
-     * - GET /api/venues/search
-     * - GET /api/venues/filter
-     * - GET /api/venues/view
-     *
-     * Capabilities:
-     * - Get all venues: GET /api/venues
-     * - Filter by city: GET /api/venues?city=Mumbai
-     * - Filter by status: GET /api/venues?status=true (or is_active=true)
-     * - Filter by owner ID: GET /api/venues?owner_id=3 (or ownerId=3)
-     * - Search by keyword: GET /api/venues?search=cricket (across name, city, address, description)
-     * - Owner Dashboard auto-detect: When logged-in as OWNER with no search/city specified,
-     *   automatically defaults to their venues (supports legacy fetchMyVenuesApi calls).
-     *   Pass all=true to view all venues platform-wide.
-     * - Optional Pagination: GET /api/venues?page=0&size=10
+     * Supports:
+     * - ?search=... (search by venue name)
+     * - ?city=... (filter by city)
+     * - ?status=... (true for active, false for inactive)
      */
-    @GetMapping({ "", "/search", "/filter", "/view" })
+    @GetMapping({ "", "/search" })
     public ResponseEntity<Map<String, Object>> getVenues(
-            @RequestParam(name = "search", required = false) String search,
-            @RequestParam(name = "query", required = false) String query,
-            @RequestParam(name = "city", required = false) String city,
-            @RequestParam(name = "name", required = false) String name,
-            @RequestParam(name = "venue_name", required = false) String venue_name,
-            @RequestParam(name = "venueName", required = false) String venueName,
-            @RequestParam(name = "status", required = false) Boolean status,
-            @RequestParam(name = "isActive", required = false) Boolean isActive,
-            @RequestParam(name = "is_active", required = false) Boolean is_active,
-            @RequestParam(name = "ownerId", required = false) Integer ownerId,
-            @RequestParam(name = "owner_id", required = false) Integer owner_id,
-            @RequestParam(name = "ownerOnly", required = false) Boolean ownerOnly,
-            @RequestParam(name = "myVenues", required = false) Boolean myVenues,
-            @RequestParam(name = "all", required = false) Boolean all,
-            @RequestParam(name = "page", required = false) Integer page,
-            @RequestParam(name = "size", required = false) Integer size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) Boolean status,
+            @RequestParam(name = "is_active", required = false) Boolean isActive,
+            @RequestParam(name = "owner_id", required = false) Integer ownerId,
+            @RequestParam(name = "ownerId", required = false) Integer ownerIdAlt,
             Authentication authentication) {
 
         Map<String, Object> response = new HashMap<>();
 
         try {
-            // Resolve alias parameters
-            Boolean targetStatus = status != null ? status : (isActive != null ? isActive : is_active);
+            // Read active status from either ?status=... or ?is_active=...
+            Boolean activeStatus = status;
+            if (activeStatus == null) {
+                activeStatus = isActive;
+            }
 
-            String targetSearch = (search != null && !search.trim().isEmpty()) ? search.trim()
-                    : ((query != null && !query.trim().isEmpty()) ? query.trim() : null);
+            // Read owner ID from either ?owner_id=... or ?ownerId=...
+            Integer targetOwnerId = ownerId;
+            if (targetOwnerId == null) {
+                targetOwnerId = ownerIdAlt;
+            }
 
-            String targetCity = (city != null && !city.trim().isEmpty()) ? city.trim() : null;
-
-            String targetName = (name != null && !name.trim().isEmpty()) ? name.trim()
-                    : ((venue_name != null && !venue_name.trim().isEmpty()) ? venue_name.trim()
-                    : ((venueName != null && !venueName.trim().isEmpty()) ? venueName.trim() : null));
-
-            Integer targetOwnerId = ownerId != null ? ownerId : owner_id;
-            boolean requestMyVenues = Boolean.TRUE.equals(ownerOnly) || Boolean.TRUE.equals(myVenues);
-
-            // Context-aware owner resolution for owner dashboard calls
-            if (targetOwnerId == null && authentication != null && authentication.isAuthenticated()
-                    && !"anonymousUser".equals(authentication.getPrincipal())) {
-                boolean isOwner = authentication.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals("ROLE_OWNER"));
-
-                if (requestMyVenues || (isOwner && targetSearch == null && targetCity == null && !Boolean.TRUE.equals(all))) {
+            // If an Owner is logged in and didn't specify search/city, show their venues
+            if (targetOwnerId == null && authentication != null) {
+                String roles = authentication.getAuthorities().toString();
+                if (roles.contains("ROLE_OWNER") && search == null && city == null) {
                     try {
                         targetOwnerId = Integer.parseInt(authentication.getName());
                     } catch (NumberFormatException ignored) {
@@ -130,86 +101,110 @@ public class Venuecontroller {
                 }
             }
 
-            // Paginated response if page and size are provided
-            if (page != null && size != null) {
-                Page<Venueresponsedto> venuesPage = service.getAllVenuesPaged(
-                        targetOwnerId, targetCity, targetStatus, targetSearch, targetName, page, size);
+            // Fetch venues list
+            List<Venueresponsedto> venues = service.getAllVenues(targetOwnerId, city, activeStatus, search, null);
 
-                response.put("status", HttpStatus.OK.value());
-                response.put("message", "Venues fetched successfully");
-                response.put("data", venuesPage.getContent());
-                response.put("currentPage", venuesPage.getNumber());
-                response.put("totalItems", venuesPage.getTotalElements());
-                response.put("totalPages", venuesPage.getTotalPages());
-                return ResponseEntity.ok(response);
-            }
-
-            // Unpaged list response
-            List<Venueresponsedto> venues = service.getAllVenues(
-                    targetOwnerId, targetCity, targetStatus, targetSearch, targetName);
-
-            response.put("status", HttpStatus.OK.value());
+            response.put("status", 200);
             response.put("message", "Venues fetched successfully");
             response.put("data", venues);
             response.put("totalItems", venues.size());
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException err) {
-            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("status", 400);
             response.put("message", "Failed to fetch venues: " + err.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.badRequest().body(response);
         }
     }
 
     /**
-     * 3. GET VENUE BY ID
-     * Accessible via GET /api/venues/{id}
+     * 3. GET SINGLE VENUE BY ID (WITH COURTS FOR BOOKING)
+     * URL: GET /api/venues/{id}
+     *
+     * When a user clicks a particular venue, this API is called.
+     * It returns the full venue details along with all active courts,
+     * court photos, and hourly pricing rules for booking.
      */
-    @GetMapping("/{id:[0-9]+}")
+    @GetMapping("/{id}")
     public ResponseEntity<Map<String, Object>> getVenueById(@PathVariable int id) {
         Map<String, Object> response = new HashMap<>();
+
         try {
+            // Service fetches venue details AND attaches its courts with prices
             Venueresponsedto venue = service.getVenueById(id);
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "Venue fetched successfully");
+
+            response.put("status", 200);
+            response.put("message", "Venue details fetched successfully");
             response.put("data", venue);
             return ResponseEntity.ok(response);
+
         } catch (RuntimeException err) {
-            response.put("status", HttpStatus.NOT_FOUND.value());
+            response.put("status", 404);
             response.put("message", err.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
 
     /**
-     * 4. TOGGLE VENUE ACTIVE/INACTIVE STATUS
+     * 4. GET COURTS OF A SPECIFIC VENUE
+     * URL: GET /api/venues/{id}/courts
+     */
+    @GetMapping("/{id}/courts")
+    public ResponseEntity<Map<String, Object>> getCourtsByVenueId(
+            @PathVariable int id,
+            @RequestParam(defaultValue = "true") boolean activeOnly) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<CourtResponseDto> courts = service.getCourtsByVenueId(id, activeOnly);
+
+            response.put("status", 200);
+            response.put("message", "Courts fetched successfully");
+            response.put("data", courts);
+            response.put("totalItems", courts.size());
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException err) {
+            response.put("status", 404);
+            response.put("message", err.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    /**
+     * 5. TOGGLE VENUE ACTIVE/INACTIVE STATUS
+     * URL: PUT /api/venues?venueid=2&status=true
      */
     @PreAuthorize("hasRole('OWNER')")
     @PutMapping
     public ResponseEntity<Map<String, String>> toggleStatus(
             @RequestParam("venueid") int venueid,
             @RequestParam("status") boolean status) {
-        Map<String, String> responseMap = new HashMap<>();
 
         service.toggleStatus(venueid, status);
-        responseMap.put("status", "success");
-        responseMap.put("message", "Venue status updated succesfully");
-        return ResponseEntity.ok(responseMap);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "Venue status updated succesfully");
+        return ResponseEntity.ok(response);
     }
 
     /**
-     * 5. UPDATE VENUE DETAILS
+     * 6. UPDATE VENUE DETAILS
+     * URL: PUT /api/venues/update
      */
     @PreAuthorize("hasAnyRole('OWNER', 'SUPER_ADMIN')")
     @PutMapping(path = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> update(
             @Valid @ModelAttribute Updatevenuerequestdto dto) {
 
-        var updatedVenue = service.update(dto);
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("status", HttpStatus.OK.value());
-        resultMap.put("message", "Venue updated successfully");
-        resultMap.put("data", updatedVenue);
-        return ResponseEntity.ok(resultMap);
+        Venuemodel updatedVenue = service.update(dto);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "Venue updated successfully");
+        response.put("data", updatedVenue);
+        return ResponseEntity.ok(response);
     }
 }

@@ -2,6 +2,8 @@ package com.facility_service.facility_service.Mapper;
 
 import com.facility_service.facility_service.Model.CourtEntity;
 import com.facility_service.facility_service.Model.CourtImageEntity;
+import com.facility_service.facility_service.Model.Pricingruleentity;
+import com.facility_service.facility_service.Repositry.PricingRuleRepositry;
 import com.facility_service.facility_service.dto.Requestdto.CourtRequestDto;
 import com.facility_service.facility_service.dto.Requestdto.UpdateCourtRequestDto;
 import com.facility_service.facility_service.dto.Responsedto.CourtImageResponseDto;
@@ -15,21 +17,23 @@ import java.util.List;
 /**
  * ============================================================================
  * Mapper: CourtMapper
- * Description: Converts between CourtEntity and Court DTOs.
- * Simple, clean, and fresher-level friendly.
+ * Description: Simple and easy-to-read mapper that converts between
+ *              CourtEntity and Court DTOs.
  * ============================================================================
  */
 @Component
 public class CourtMapper {
 
     private final CourtImageMapper courtImageMapper;
+    private final PricingRuleRepositry pricingRuleRepository;
 
-    public CourtMapper(CourtImageMapper courtImageMapper) {
+    public CourtMapper(CourtImageMapper courtImageMapper, PricingRuleRepositry pricingRuleRepository) {
         this.courtImageMapper = courtImageMapper;
+        this.pricingRuleRepository = pricingRuleRepository;
     }
 
     /**
-     * Map Request DTO -> Database Entity
+     * Convert CourtRequestDto -> CourtEntity
      */
     public CourtEntity toEntity(CourtRequestDto dto) {
         if (dto == null) {
@@ -49,7 +53,11 @@ public class CourtMapper {
     }
 
     /**
-     * Map Database Entity -> Response DTO
+     * Convert CourtEntity -> CourtResponseDto
+     * Simple step-by-step logic:
+     * 1. Copy basic court fields.
+     * 2. Copy court images.
+     * 3. Attach pricing rules and calculate min/max price for easy display.
      */
     public CourtResponseDto toResponseDto(CourtEntity entity) {
         if (entity == null) {
@@ -57,6 +65,8 @@ public class CourtMapper {
         }
 
         CourtResponseDto dto = new CourtResponseDto();
+
+        // 1. Basic fields
         dto.setId(entity.getId());
         dto.setVenueId(entity.getVenueId());
         dto.setCategoryId(entity.getCategoryId());
@@ -68,12 +78,12 @@ public class CourtMapper {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
 
-        // Venue name (if relationship is loaded)
+        // Venue name
         if (entity.getVenue() != null) {
             dto.setVenueName(entity.getVenue().getName());
         }
 
-        // Map images list and collect image URLs
+        // 2. Court Images
         if (entity.getImages() != null && !entity.getImages().isEmpty()) {
             List<CourtImageResponseDto> imageDtos = courtImageMapper.toResponseDtoList(entity.getImages());
             dto.setImages(imageDtos);
@@ -90,11 +100,56 @@ public class CourtMapper {
             dto.setImageUrls(new ArrayList<>());
         }
 
+        // 3. Pricing Rules for Booking
+        List<Pricingruleentity> rules = null;
+
+        // If rules are already loaded with the entity, use active ones
+        if (entity.getPricingRules() != null && !entity.getPricingRules().isEmpty()) {
+            rules = new ArrayList<>();
+            for (Pricingruleentity rule : entity.getPricingRules()) {
+                if (rule != null && Boolean.TRUE.equals(rule.getIsActive())) {
+                    rules.add(rule);
+                }
+            }
+        } else if (entity.getId() != null && pricingRuleRepository != null) {
+            // Otherwise, fetch active rules from repository
+            rules = pricingRuleRepository.findByCourtIdAndIsActive(entity.getId(), true);
+        }
+
+        if (rules != null && !rules.isEmpty()) {
+            dto.setPricingRules(rules);
+
+            // Calculate min and max price using simple for-loop
+            double min = Double.MAX_VALUE;
+            double max = 0.0;
+            boolean hasPrice = false;
+
+            for (Pricingruleentity rule : rules) {
+                if (rule.getPrice() != null) {
+                    double price = rule.getPrice().doubleValue();
+                    if (price < min) {
+                        min = price;
+                    }
+                    if (price > max) {
+                        max = price;
+                    }
+                    hasPrice = true;
+                }
+            }
+
+            if (hasPrice) {
+                dto.setMinPrice(min);
+                dto.setMaxPrice(max);
+            }
+        } else {
+            dto.setPricingRules(new ArrayList<>());
+        }
+
         return dto;
     }
 
     /**
-     * Map List of Entities -> List of Response DTOs
+     * Convert List of CourtEntity -> List of CourtResponseDto
      */
     public List<CourtResponseDto> toResponseDtoList(List<CourtEntity> entities) {
         if (entities == null || entities.isEmpty()) {
@@ -111,7 +166,7 @@ public class CourtMapper {
     }
 
     /**
-     * Partially update an existing CourtEntity from UpdateCourtRequestDto
+     * Update existing CourtEntity from UpdateCourtRequestDto
      */
     public void updateEntityFromDto(CourtEntity entity, UpdateCourtRequestDto dto) {
         if (entity == null || dto == null) {
@@ -138,4 +193,3 @@ public class CourtMapper {
         }
     }
 }
-

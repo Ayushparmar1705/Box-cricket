@@ -10,9 +10,8 @@ import java.util.List;
 /**
  * ============================================================================
  * Specification: Venuespecification
- * Description: Dynamic JPA query filter for venues.
- *              Supports filtering by owner, city, active status, name,
- *              and keyword search across multiple fields.
+ * Description: Simple and clean filter for venues.
+ *              Builds SQL queries dynamically based on provided filters.
  * ============================================================================
  */
 public class Venuespecification {
@@ -23,47 +22,35 @@ public class Venuespecification {
             Boolean isActive,
             String search,
             String name) {
+
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 1. Filter by Owner ID
+            // 1. Filter by Owner ID (if provided)
             if (ownerId != null) {
                 predicates.add(cb.equal(root.get("owner_id"), ownerId));
             }
 
-            // 2. Filter by City (case-insensitive partial match)
+            // 2. Filter by City (if provided)
             if (city != null && !city.trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("city")),
-                        "%" + city.trim().toLowerCase() + "%"
-                ));
+                String cityKeyword = "%" + city.trim().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("city")), cityKeyword));
             }
 
-            // 3. Filter by Active status (is_active)
+            // 3. Filter by Active Status (if provided)
             if (isActive != null) {
                 predicates.add(cb.equal(root.get("active"), isActive));
             }
 
-            // 4. Filter by Venue Name (case-insensitive partial match)
-            if (name != null && !name.trim().isEmpty()) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("name")),
-                        "%" + name.trim().toLowerCase() + "%"
-                ));
+            // 4. Search by Venue Name (if provided)
+            String nameKeyword = search != null ? search : name;
+            if (nameKeyword != null && !nameKeyword.trim().isEmpty()) {
+                String namePattern = "%" + nameKeyword.trim().toLowerCase() + "%";
+                predicates.add(cb.like(cb.lower(root.get("name")), namePattern));
             }
 
-            // 5. Keyword search across name, city, address, and description
-            if (search != null && !search.trim().isEmpty()) {
-                String keyword = "%" + search.trim().toLowerCase() + "%";
-                Predicate nameMatch = cb.like(cb.lower(cb.coalesce(root.get("name"), "")), keyword);
-                Predicate cityMatch = cb.like(cb.lower(cb.coalesce(root.get("city"), "")), keyword);
-                Predicate addressMatch = cb.like(cb.lower(cb.coalesce(root.get("address"), "")), keyword);
-                Predicate descMatch = cb.like(cb.lower(cb.coalesce(root.get("description"), "")), keyword);
-                predicates.add(cb.or(nameMatch, cityMatch, addressMatch, descMatch));
-            }
-
+            // Combine all conditions with AND
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 }
-

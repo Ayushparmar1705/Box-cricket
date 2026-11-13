@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -39,6 +40,16 @@ public class Venueresponsedto implements java.io.Serializable {
     private LocalTime closing_time;
 
     private String cancellation_policy;
+
+    // List of courts available under this venue for booking
+    @JsonProperty("courts")
+    @Builder.Default
+    private List<CourtResponseDto> courts = new ArrayList<>();
+
+    @JsonProperty("total_courts")
+    public int getTotalCourts() {
+        return courts != null ? courts.size() : 0;
+    }
 
     @JsonProperty("venue_name")
     public String getVenue_name() {

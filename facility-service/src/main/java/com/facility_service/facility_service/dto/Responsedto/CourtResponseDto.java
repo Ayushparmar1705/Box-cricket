@@ -1,5 +1,6 @@
 package com.facility_service.facility_service.dto.Responsedto;
 
+import com.facility_service.facility_service.Model.Pricingruleentity;
 import com.facility_service.facility_service.Model.SurfaceType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -13,7 +14,7 @@ import java.util.List;
  * ============================================================================
  * Response DTO: CourtResponseDto
  * Description: Data returned to clients containing full court details,
- * including venue info and list of court images.
+ * including venue info, court images, and pricing rules for booking.
  * ============================================================================
  */
 @Getter
@@ -61,10 +62,20 @@ public class CourtResponseDto implements Serializable {
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
 
+    // Active pricing rules for this court (e.g. WEEKDAY, WEEKEND pricing)
+    @JsonProperty("pricing_rules")
+    @Builder.Default
+    private List<Pricingruleentity> pricingRules = new ArrayList<>();
+
+    @JsonProperty("min_price")
+    private Double minPrice;
+
+    @JsonProperty("max_price")
+    private Double maxPrice;
+
     @JsonProperty("created_at")
     private Date createdAt;
 
     @JsonProperty("updated_at")
     private Date updatedAt;
 }
-

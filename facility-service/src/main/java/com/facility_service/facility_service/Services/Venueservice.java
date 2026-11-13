@@ -2,14 +2,14 @@ package com.facility_service.facility_service.Services;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+import com.facility_service.facility_service.Mapper.CourtMapper;
+import com.facility_service.facility_service.Model.CourtEntity;
 import com.facility_service.facility_service.Model.Venueamenitiesmodel;
 import com.facility_service.facility_service.Exception.ResourceNotFoundException;
+import com.facility_service.facility_service.Repositry.CourtRepository;
 import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import com.facility_service.facility_service.dto.Responsedto.CourtResponseDto;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,65 +25,35 @@ import com.facility_service.facility_service.Repositry.Venuerepositry;
 import com.facility_service.facility_service.dto.Requestdto.Venuerequestdto;
 import com.facility_service.facility_service.dto.Responsedto.Venueresponsedto;
 
+/**
+ * ============================================================================
+ * Service: Venueservice
+ * Description: Business logic for managing venues and their courts.
+ *              Written in simple, clear, and beginner-friendly Java.
+ * ============================================================================
+ */
 @Service
 public class Venueservice {
 
-    // Dependencies
-    private Venuerepositry venueRepository;
-    private Venueamenitiesrepositry amenitiesRepository;
-    private VenueMapper mapper;
-    private CloudinaryService cloudinaryService;
+    private final Venuerepositry venueRepository;
+    private final Venueamenitiesrepositry amenitiesRepository;
+    private final VenueMapper mapper;
+    private final CloudinaryService cloudinaryService;
+    private final CourtRepository courtRepository;
+    private final CourtMapper courtMapper;
 
-    // Default Constructor
-    public Venueservice() {
-    }
-
-    // Constructor Injection
-    @org.springframework.beans.factory.annotation.Autowired
     public Venueservice(Venuerepositry venueRepository,
-            Venueamenitiesrepositry amenitiesRepository,
-            VenueMapper mapper,
-            CloudinaryService cloudinaryService) {
+                        Venueamenitiesrepositry amenitiesRepository,
+                        VenueMapper mapper,
+                        CloudinaryService cloudinaryService,
+                        CourtRepository courtRepository,
+                        CourtMapper courtMapper) {
         this.venueRepository = venueRepository;
         this.amenitiesRepository = amenitiesRepository;
         this.mapper = mapper;
         this.cloudinaryService = cloudinaryService;
-    }
-
-    // ==========================================
-    // Getter and Setter Methods
-    // ==========================================
-
-    public Venuerepositry getVenueRepository() {
-        return venueRepository;
-    }
-
-    public void setVenueRepository(Venuerepositry venueRepository) {
-        this.venueRepository = venueRepository;
-    }
-
-    public Venueamenitiesrepositry getAmenitiesRepository() {
-        return amenitiesRepository;
-    }
-
-    public void setAmenitiesRepository(Venueamenitiesrepositry amenitiesRepository) {
-        this.amenitiesRepository = amenitiesRepository;
-    }
-
-    public VenueMapper getMapper() {
-        return mapper;
-    }
-
-    public void setMapper(VenueMapper mapper) {
-        this.mapper = mapper;
-    }
-
-    public CloudinaryService getCloudinaryService() {
-        return cloudinaryService;
-    }
-
-    public void setCloudinaryService(CloudinaryService cloudinaryService) {
-        this.cloudinaryService = cloudinaryService;
+        this.courtRepository = courtRepository;
+        this.courtMapper = courtMapper;
     }
 
     /**
@@ -94,38 +64,81 @@ public class Venueservice {
             throw new ResourceAlreadyExistsException("Venue already exists with name: " + dto.getName());
         }
 
+        // Upload image to Cloudinary if provided
         String imageUrl = null;
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
             imageUrl = cloudinaryService.uploadVenueImage(dto.getImage());
         }
 
-        // Step 3: Convert request DTO to Venue entity model
+        // Convert DTO to Entity
         Venuemodel venueModel = mapper.toEntity(dto);
-
-        // Step 4: Set uploaded Cloudinary image URL if uploaded
         if (imageUrl != null) {
             venueModel.setImageUrl(imageUrl);
         }
 
-        // Step 5: Save the venue model into database (cascades to amenities automatically)
+        // Save venue to database
         Venuemodel savedVenue = venueRepository.save(venueModel);
 
-        // Step 7: Convert saved entity model to response DTO and return
         return mapper.toResponseDto(savedVenue);
     }
 
     /**
-     * Get single venue by ID
+     * Get single venue by ID along with its courts for booking.
+     *
+     * Simple Step-by-Step Flow:
+     * 1. Find the venue in database. If not found, throw 404 exception.
+     * 2. Convert venue entity to response DTO.
+     * 3. Find active courts for this venue.
+     * 4. Convert court entities to court DTOs (includes images and pricing rules).
+     * 5. Set the courts list into the venue DTO and return.
      */
     @Transactional(readOnly = true)
     public Venueresponsedto getVenueById(int id) {
+        // Step 1: Find venue
         Venuemodel venue = venueRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + id));
-        return mapper.toResponseDto(venue);
+
+        // Step 2: Convert to DTO
+        Venueresponsedto responseDto = mapper.toResponseDto(venue);
+
+        // Step 3: Fetch active courts for this venue
+        List<CourtEntity> courts = courtRepository.findByVenueIdAndIsActive(id, true);
+
+        // If no active courts found, fallback to all courts
+        if (courts.isEmpty()) {
+            courts = courtRepository.findByVenueId(id);
+        }
+
+        // Step 4: Convert courts to response DTOs
+        List<CourtResponseDto> courtDtos = courtMapper.toResponseDtoList(courts);
+
+        // Step 5: Attach courts to the venue response
+        responseDto.setCourts(courtDtos != null ? courtDtos : new ArrayList<>());
+
+        return responseDto;
     }
 
     /**
-     * Common get, filter, and search venues (unpaged list)
+     * Get courts for a specific venue
+     */
+    @Transactional(readOnly = true)
+    public List<CourtResponseDto> getCourtsByVenueId(int venueId, boolean activeOnly) {
+        if (!venueRepository.existsById(venueId)) {
+            throw new ResourceNotFoundException("Venue not found with id: " + venueId);
+        }
+
+        List<CourtEntity> courts;
+        if (activeOnly) {
+            courts = courtRepository.findByVenueIdAndIsActive(venueId, true);
+        } else {
+            courts = courtRepository.findByVenueId(venueId);
+        }
+
+        return courtMapper.toResponseDtoList(courts);
+    }
+
+    /**
+     * Get all venues matching optional filters (city, status, search keyword)
      */
     @Transactional(readOnly = true)
     public List<Venueresponsedto> getAllVenues(
@@ -134,29 +147,16 @@ public class Venueservice {
             Boolean isActive,
             String search,
             String name) {
+
         Specification<Venuemodel> spec = Venuespecification.filter(ownerId, city, isActive, search, name);
         List<Venuemodel> venues = venueRepository.findAll(spec, Sort.by(Sort.Direction.ASC, "id"));
-        return venues.stream()
-                .map(mapper::toResponseDto)
-                .collect(java.util.stream.Collectors.toList());
-    }
 
-    /**
-     * Common get, filter, and search venues with pagination
-     */
-    @Transactional(readOnly = true)
-    public Page<Venueresponsedto> getAllVenuesPaged(
-            Integer ownerId,
-            String city,
-            Boolean isActive,
-            String search,
-            String name,
-            int page,
-            int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
-        Specification<Venuemodel> spec = Venuespecification.filter(ownerId, city, isActive, search, name);
-        Page<Venuemodel> venuesPage = venueRepository.findAll(spec, pageable);
-        return venuesPage.map(mapper::toResponseDto);
+        List<Venueresponsedto> resultList = new ArrayList<>();
+        for (Venuemodel venue : venues) {
+            resultList.add(mapper.toResponseDto(venue));
+        }
+
+        return resultList;
     }
 
     /**
@@ -165,30 +165,36 @@ public class Venueservice {
     public List<Venueresponsedto> getVenuesByOwnerId(int ownerId, boolean status) {
         List<Venuemodel> venues = venueRepository.findByOwnerId(ownerId, status);
 
-        return venues.stream()
-                .map(mapper::toResponseDto)
-                .collect(java.util.stream.Collectors.toList());
+        List<Venueresponsedto> resultList = new ArrayList<>();
+        for (Venuemodel venue : venues) {
+            resultList.add(mapper.toResponseDto(venue));
+        }
+        return resultList;
     }
 
     /**
-     * Update venue status (activate or deactivate / soft-delete)
+     * Toggle venue status (activate / deactivate)
      */
     @Transactional
     public Venuemodel toggleStatus(int venueId, boolean status) {
         Venuemodel venue = venueRepository.findById(venueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + venueId));
+
         venue.set_active(status);
         venue.setUpdated_at(java.time.LocalDateTime.now());
         return venueRepository.save(venue);
     }
 
+    /**
+     * Update venue details
+     */
     @Transactional
     @CacheEvict(value = "venueSearch", allEntries = true)
     public Venuemodel update(Updatevenuerequestdto dto) {
         Venuemodel model = venueRepository.findById(dto.getVenue_id())
                 .orElseThrow(() -> new ResourceNotFoundException("Venue not found with id: " + dto.getVenue_id()));
 
-        // Set venue details from DTO getters to model setters
+        // Update basic fields if provided
         if (dto.getName() != null && !dto.getName().isBlank()) {
             model.setName(dto.getName());
         }
@@ -251,17 +257,20 @@ public class Venueservice {
         }
 
         model.setUpdated_at(java.time.LocalDateTime.now());
-
         return venueRepository.save(model);
     }
 
+    /**
+     * Search venues by city
+     */
     @Transactional(readOnly = true)
     @Cacheable(value = "venueSearch", key = "'venue_search' + #search")
     public List<Venueresponsedto> getVenuesByCity(String search) {
         List<Venuemodel> venues = venueRepository.findByNameContainingIgnoreCase(search);
-        System.out.println("Postgre SQL Database Hit");
-        return venues.stream()
-                .map(mapper::toResponseDto)
-                .collect(java.util.stream.Collectors.toList());
+        List<Venueresponsedto> resultList = new ArrayList<>();
+        for (Venuemodel venue : venues) {
+            resultList.add(mapper.toResponseDto(venue));
+        }
+        return resultList;
     }
 }
