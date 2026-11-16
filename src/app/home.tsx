@@ -1,572 +1,633 @@
+import BottomNavbar from '@/components/BottomNavbar';
+import { fetchCategory, fetchVenue } from '@/services/venueService';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
-  FlatList,
+  Animated,
+  Dimensions,
   Image,
-  Keyboard,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { fetchVenues, Venue } from '../services/venueService';
 
-const DEFAULT_VENUE_IMAGE =
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const DEFAULT_IMAGE =
   'https://res.cloudinary.com/dblawr8bm/image/upload/v1792169801/box-cricket/venues/memugxm4lgwr5j7bm8ax.png';
 
-export default function HomeScreen() {
-  const [venues, setVenues] = useState<Venue[]>([]);
+export default function Home() {
+  const [location, setLocation] = useState('Detecting location...');
+  const [category, setCategory] = useState<any[]>([]);
+  const [venue, setVenue] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadVenues = async (search: string = '') => {
-    setLoading(true);
-    try {
-      const data = await fetchVenues(search);
-      setVenues(Array.isArray(data) ? data : []);
-    } catch {
-      Alert.alert('Notice', 'Unable to fetch venues.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  // Animated loading progress bar
+  const [progressAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
+    let animation: Animated.CompositeAnimation | null = null;
+    if (loading) {
+      animation = Animated.loop(
+        Animated.timing(progressAnim, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        })
+      );
+      animation.start();
+    } else {
+      progressAnim.setValue(0);
+    }
+
+    return () => {
+      animation?.stop();
+    };
+  }, [loading, progressAnim]);
+
+  const progressTranslate = useMemo(
+    () =>
+      progressAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [-SCREEN_WIDTH * 0.5, SCREEN_WIDTH],
+      }),
+    [progressAnim]
+  );
+
+  // 1. Fetch Location
+  useEffect(() => {
     let isMounted = true;
-    fetchVenues('')
-      .then((data) => {
-        if (isMounted) {
-          setVenues(Array.isArray(data) ? data : []);
-          setLoading(false);
+
+    const fetchLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          if (isMounted) setLocation('Location permission denied');
+          return;
         }
-      })
-      .catch(() => {
+
+        const position = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const { latitude, longitude } = position.coords;
+        const result = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
+
+        const addr = result[0];
+        const locationName = [addr?.street, addr?.district, addr?.city]
+          .filter(Boolean)
+          .filter(
+            (value, index, array) =>
+              array.findIndex(
+                (item) => item?.toLowerCase() === value?.toLowerCase()
+              ) === index
+          )
+          .join(', ');
+
         if (isMounted) {
-          setLoading(false);
+          setLocation(locationName || 'Location not found');
         }
-      });
+      } catch (err) {
+        console.log('Error fetching location:', err);
+        if (isMounted) setLocation('Failed to fetch location');
+      }
+    };
+
+    fetchLocation();
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const handleSearch = () => {
-    Keyboard.dismiss();
-    loadVenues(searchQuery);
+  // 2. Fetch categories and venues
+  const loadData = () => {
+    return Promise.all([fetchCategory(), fetchVenue()])
+      .then(([categoryData, venueData]) => {
+        setCategory(categoryData || []);
+        setVenue(venueData || []);
+      })
+      .catch((err) => {
+        console.log('Error fetching data:', err);
+      });
   };
 
-  const handleClear = () => {
-    setSearchQuery('');
-    loadVenues('');
-  };
+  useEffect(() => {
+    let isMounted = true;
 
-  const onRefresh = useCallback(() => {
+    loadData().finally(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Pull to refresh handler
+  const onRefresh = () => {
     setRefreshing(true);
-    loadVenues(searchQuery);
-  }, [searchQuery]);
-
-  const handleBookVenue = (venue: Venue) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch { }
-
-    const title = venue.name || venue.venue_name || 'Venue';
-    Alert.alert(
-      'Book Slot',
-      `Book slot at ${title}?\nTiming: ${venue.opening_time || '06:00:00'} - ${venue.closing_time || '23:00:00'}\nContact: ${venue.contact_number || venue.phone_number || 'N/A'}`
-    );
-  };
-
-  const handleLogout = () => {
-    Alert.alert('Sign Out', 'Do you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.removeItem('token');
-          await AsyncStorage.removeItem('authToken');
-          router.replace('/login');
-        },
-      },
-    ]);
-  };
-
-  const renderVenueCard = ({ item }: { item: Venue }) => {
-    const venueName = item.name || item.venue_name || 'Box Cricket Turf';
-    const amenities = item.venue_amenities || item.amenities || [];
-    const imageUri = item.imageUrl || DEFAULT_VENUE_IMAGE;
-
-    return (
-      <View style={styles.cardContainer}>
-        {/* Venue Image */}
-        <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUri }} style={styles.venueImage} resizeMode="cover" />
-          <LinearGradient
-            colors={['transparent', 'rgba(10, 15, 13, 0.85)']}
-            style={styles.imageGradientOverlay}
-          />
-
-          {/* Badges */}
-          <View style={styles.imageTopBadgesRow}>
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={13} color="#F59E0B" />
-              <Text style={styles.ratingText}>
-                {item.rating ? item.rating.toFixed(1) : '4.8'}
-              </Text>
-            </View>
-
-            {item.is_active && (
-              <View style={styles.availableBadge}>
-                <View style={styles.availableDot} />
-                <Text style={styles.availableText}>Open Now</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* Card Content */}
-        <View style={styles.cardContent}>
-          <Text style={styles.venueTitle} numberOfLines={1}>
-            {venueName}
-          </Text>
-
-          <View style={styles.locationRow}>
-            <Ionicons name="location-sharp" size={14} color="#10B981" />
-            <Text style={styles.locationText} numberOfLines={1}>
-              {item.address || 'Ahmedabad, Gujarat'}
-            </Text>
-          </View>
-
-          {/* Amenities Chips */}
-          {amenities.length > 0 && (
-            <View style={styles.amenitiesRow}>
-              {amenities.slice(0, 3).map((amenity, idx) => (
-                <View key={idx} style={styles.amenityChip}>
-                  <Text style={styles.amenityChipText}>{String(amenity).trim()}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Action Row */}
-          <View style={styles.cardActionRow}>
-            <View style={styles.timingInfo}>
-              <Ionicons name="time-outline" size={13} color="#94A3B8" />
-              <Text style={styles.timingText}>
-                {item.opening_time || '06:00:00'} - {item.closing_time || '23:00:00'}
-              </Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.bookButton}
-              activeOpacity={0.85}
-              onPress={() => handleBookVenue(item)}
-            >
-              <LinearGradient
-                colors={['#10B981', '#059669']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.bookButtonGradient}
-              >
-                <Text style={styles.bookButtonText}>Book Slot</Text>
-                <Ionicons name="arrow-forward" size={14} color="#0A0F0D" />
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
+    setLoading(true);
+    loadData().finally(() => {
+      setRefreshing(false);
+      setLoading(false);
+    });
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerSubtitle}>Ahmedabad 📍</Text>
-            <Text style={styles.headerMainTitle}>Box Cricket Turfs</Text>
-          </View>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Search Bar with Dedicated Button */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color="#64748B" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search (e.g. demo)..."
-              placeholderTextColor="#475569"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              returnKeyType="search"
-              onSubmitEditing={handleSearch}
-              autoCapitalize="none"
-              autoCorrect={false}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      {/* Location Top Bar */}
+      <View style={styles.topBar}>
+        <View style={styles.topBarContent}>
+          <View style={styles.locationBox}>
+            <Image
+              source={require('../../assets/images/pin.png')}
+              style={styles.pinIcon}
+              resizeMode="contain"
             />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={handleClear} style={styles.clearIconWrapper}>
-                <Ionicons name="close-circle" size={18} color="#94A3B8" />
-              </TouchableOpacity>
-            )}
+            <Text style={styles.locationText} numberOfLines={1}>
+              {location}
+            </Text>
           </View>
-
-          {/* Search Button */}
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch} activeOpacity={0.85}>
-            <LinearGradient
-              colors={['#10B981', '#059669']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.searchButtonGradient}
-            >
-              <Ionicons name="search" size={15} color="#0A0F0D" />
-              <Text style={styles.searchButtonText}>Search</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* Venues List or Loading */}
-        {loading ? (
-          <View style={styles.loaderCenter}>
-            <ActivityIndicator size="large" color="#10B981" />
-            <Text style={styles.loadingText}>Fetching venues...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={venues}
-            keyExtractor={(item) => String(item.id)}
-            renderItem={renderVenueCard}
-            contentContainerStyle={styles.venueList}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor="#10B981"
-                colors={['#10B981']}
-              />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={48} color="#475569" />
-                <Text style={styles.emptyTitle}>No Venues Found</Text>
-                <Text style={styles.emptySubtitle}>
-                  {searchQuery
-                    ? `No venues match "${searchQuery}".`
-                    : 'No active venues available at this time.'}
-                </Text>
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity style={styles.clearSearchBtn} onPress={handleClear}>
-                    <Text style={styles.clearSearchBtnText}>Show All Venues</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            }
+          <Image
+            source={require('../../assets/images/Notifications.png')}
+            resizeMode="contain"
+            style={styles.notificationIcon}
           />
-        )}
-      </SafeAreaView>
-    </View>
+        </View>
+      </View>
+
+      {/* Animated Linear Loading Bar */}
+      {loading && (
+        <View style={styles.loadingBarTrack}>
+          <Animated.View
+            style={[
+              styles.loadingBarIndicator,
+              {
+                transform: [{ translateX: progressTranslate }],
+              },
+            ]}
+          />
+        </View>
+      )}
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#183D30', '#10B981']}
+            tintColor="#183D30"
+          />
+        }
+      >
+        {/* Category Horizontal Row */}
+        <ScrollView
+          horizontal={true}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          {category.map((cat: any, index: number) => (
+            <View key={cat.id || index} style={styles.categoryContent}>
+              <TouchableOpacity>
+                <Text style={styles.categoryText}>{cat.category_name}</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Venues List Container */}
+        <View style={styles.venueSection}>
+          <Text style={styles.sectionTitle}>Box Cricket & Sports Venues</Text>
+
+          {/* Loading State or Empty State or List */}
+          {loading && venue.length === 0 ? (
+            <View style={styles.loadingStateContainer}>
+              <ActivityIndicator size="large" color="#183D30" />
+              <Text style={styles.loadingStateText}>
+                Fetching turfs & venues near you...
+              </Text>
+            </View>
+          ) : venue.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="football-outline" size={48} color="#9CA3AF" />
+              <Text style={styles.emptyTitle}>No Venues Found</Text>
+              <Text style={styles.emptySub}>
+                Please pull down to refresh or check back later.
+              </Text>
+            </View>
+          ) : (
+            venue.map((item: any, index: number) => {
+              const venueName =
+                item.name || item.venue_name || 'Box Cricket Turf';
+              const imageUri = item.imageUrl || DEFAULT_IMAGE;
+              const amenities = item.venue_amenities || [];
+              const court =
+                item.courts && item.courts.length > 0 ? item.courts[0] : null;
+
+              // Calculate starting price from court min_price or pricing rules
+              const startingPrice =
+                court?.min_price ||
+                court?.pricing_rules?.[0]?.price ||
+                1000;
+
+              return (
+                <TouchableOpacity
+                  key={item.id || index}
+                  style={styles.venueCard}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/Venuedetails',
+                      params: { id: String(item.id) },
+                    })
+                  }
+                >
+                  {/* 1. Hero Image with Badges */}
+                  <View style={styles.imageWrapper}>
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.venueImage}
+                      resizeMode="cover"
+                    />
+
+                    {/* Active / Closed Badge (Top Right) */}
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        {
+                          backgroundColor: item.is_active
+                            ? 'rgba(16, 185, 129, 0.9)'
+                            : 'rgba(239, 68, 68, 0.9)',
+                        },
+                      ]}
+                    >
+                      <View style={styles.statusDot} />
+                      <Text style={styles.statusText}>
+                        {item.is_active ? 'Open Now' : 'Closed'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* 2. Card Body Details */}
+                  <View style={styles.cardBody}>
+                    {/* Venue Name */}
+                    <Text style={styles.venueTitle} numberOfLines={1}>
+                      {venueName}
+                    </Text>
+
+                    {/* Address */}
+                    <View style={styles.row}>
+                      <Ionicons name="location-sharp" size={15} color="#10B981" />
+                      <Text style={styles.addressText} numberOfLines={1}>
+                        {item.address || 'Ahmedabad, Gujarat'}
+                      </Text>
+                    </View>
+
+                    {/* Timing & Court Name */}
+                    <View style={styles.rowBetween}>
+                      <View style={styles.row}>
+                        <Ionicons name="time-outline" size={14} color="#6B7280" />
+                        <Text style={styles.timingText}>
+                          {item.opening_time ? item.opening_time.slice(0, 5) : '06:00'} -{' '}
+                          {item.closing_time ? item.closing_time.slice(0, 5) : '23:00'}
+                        </Text>
+                      </View>
+
+                      {court?.court_name && (
+                        <View style={styles.courtBadge}>
+                          <Text style={styles.courtBadgeText} numberOfLines={1}>
+                            🏟️ {court.court_name}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Amenities Chips */}
+                    {amenities.length > 0 && (
+                      <View style={styles.amenitiesRow}>
+                        {amenities.slice(0, 3).map((amenity: string, idx: number) => (
+                          <View key={idx} style={styles.amenityChip}>
+                            <Text style={styles.amenityText}>{amenity}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* 3. Card Bottom Row: Price & Book Button */}
+                    <View style={styles.cardFooter}>
+                      <View>
+                        <Text style={styles.priceLabel}>Starts at</Text>
+                        <Text style={styles.priceAmount}>
+                          ₹{startingPrice}{' '}
+                          <Text style={styles.pricePerHour}>/ hour</Text>
+                        </Text>
+                      </View>
+
+                      <View style={styles.bookButton}>
+                        <Text style={styles.bookButtonText}>Book Slot</Text>
+                        <Ionicons name="arrow-forward" size={14} color="#FFFFFF" />
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Bottom Navbar */}
+      <BottomNavbar activeTab="home" />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0F0D',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 14,
-  },
-  headerSubtitle: {
-    color: '#10B981',
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  headerMainTitle: {
-    color: '#F8FAFC',
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  logoutButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F7F9F5',
   },
 
-  /* Search */
-  searchRow: {
+  /* Top Bar */
+  topBar: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    height: 52,
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  topBarContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  locationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  pinIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 6,
+  },
+  locationText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    flex: 1,
+  },
+  notificationIcon: {
+    width: 24,
+    height: 24,
+  },
+
+  /* Animated Linear Loading Bar */
+  loadingBarTrack: {
+    height: 3,
+    width: '100%',
+    backgroundColor: '#E5E7EB',
+    overflow: 'hidden',
+  },
+  loadingBarIndicator: {
+    height: '100%',
+    width: '45%',
+    backgroundColor: '#10B981',
+    borderRadius: 2,
+  },
+
+  /* Categories */
+  categoryScroll: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 10,
   },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#121A15',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    height: 48,
+  categoryContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#F8FAFC',
-    fontSize: 14,
-    height: '100%',
-  },
-  clearIconWrapper: {
-    padding: 4,
-  },
-  searchButton: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    height: 48,
-  },
-  searchButtonGradient: {
-    height: '100%',
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  searchButtonText: {
-    color: '#0A0F0D',
+  categoryText: {
     fontSize: 13,
-    fontWeight: '800',
+    fontWeight: '600',
+    color: '#374151',
   },
 
-  /* Venue List */
-  venueList: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+  /* Venues Section */
+  venueSection: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 24,
   },
-  loaderCenter: {
-    flex: 1,
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#183D30',
+    marginBottom: 14,
+  },
+
+  /* Loading State Container */
+  loadingStateContainer: {
+    paddingVertical: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
   },
-  loadingText: {
-    color: '#94A3B8',
+  loadingStateText: {
+    marginTop: 14,
     fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+
+  /* Empty Container */
+  emptyContainer: {
+    paddingVertical: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 10,
+  },
+  emptySub: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 4,
+    textAlign: 'center',
   },
 
   /* Venue Card */
-  cardContainer: {
-    backgroundColor: '#121A15',
-    borderRadius: 18,
+  venueCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
-    marginBottom: 18,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   imageWrapper: {
+    position: 'relative',
     width: '100%',
     height: 180,
-    position: 'relative',
+    backgroundColor: '#E5E7EB',
   },
   venueImage: {
     width: '100%',
     height: '100%',
   },
-  imageGradientOverlay: {
-    ...StyleSheet.absoluteFill,
-  },
-  imageTopBadgesRow: {
+  statusBadge: {
     position: 'absolute',
     top: 12,
-    left: 12,
     right: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  ratingBadge: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(10, 15, 13, 0.85)',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  ratingText: {
-    color: '#F8FAFC',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  availableBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    borderRadius: 20,
     gap: 5,
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
-    borderWidth: 1,
-    borderColor: '#10B981',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
   },
-  availableDot: {
+  statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
+    backgroundColor: '#FFFFFF',
   },
-  availableText: {
-    color: '#34D399',
+  statusText: {
     fontSize: 11,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
 
-  /* Card Content */
-  cardContent: {
-    padding: 16,
+  /* Card Body */
+  cardBody: {
+    padding: 14,
   },
   venueTitle: {
-    color: '#F8FAFC',
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#183D30',
+    marginBottom: 4,
   },
-  locationRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 6,
+    gap: 4,
   },
-  locationText: {
-    color: '#94A3B8',
+  addressText: {
     fontSize: 13,
+    color: '#6B7280',
     flex: 1,
   },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  timingText: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  courtBadge: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  courtBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
+  },
+
+  /* Amenities */
   amenitiesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginVertical: 12,
+    marginTop: 10,
   },
   amenityChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#F7F9F5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  amenityChipText: {
-    color: '#94A3B8',
+  amenityText: {
     fontSize: 11,
+    color: '#4B5563',
     fontWeight: '500',
   },
-  cardActionRow: {
+
+  /* Card Footer */
+  cardFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    borderTopColor: '#F3F4F6',
   },
-  timingInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+  priceLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
   },
-  timingText: {
-    color: '#64748B',
+  priceAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#183D30',
+  },
+  pricePerHour: {
     fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
   },
   bookButton: {
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  bookButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#183D30',
+    paddingHorizontal: 16,
     paddingVertical: 9,
-    paddingHorizontal: 14,
+    borderRadius: 10,
+    gap: 6,
   },
   bookButtonText: {
-    color: '#0A0F0D',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-
-  /* Empty State */
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 20,
-    gap: 8,
-  },
-  emptyTitle: {
-    color: '#F8FAFC',
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  emptySubtitle: {
-    color: '#64748B',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-    maxWidth: 280,
-  },
-  clearSearchBtn: {
-    marginTop: 12,
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderWidth: 1,
-    borderColor: '#10B981',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  clearSearchBtnText: {
-    color: '#10B981',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
