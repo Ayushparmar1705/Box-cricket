@@ -39,6 +39,11 @@ export const useLogin = () => {
         const roles = data.roles || (data.role ? [data.role] : ['ADMIN']);
         localStorage.setItem('roles', JSON.stringify(roles));
 
+        const uId = data.userId || data.user?.id || data.id;
+        if (uId) {
+          localStorage.setItem('userId', String(uId));
+        }
+
         toast.success('Logged in successfully');
         const targetPath = redirectByRole(roles);
         navigate(targetPath);

@@ -26,7 +26,15 @@ export const OwnerrequestApi = async (data: Ownerrequest) => {
         // Create FormData object to send text inputs + binary file uploads together
         const formData = new FormData();
         formData.append("business_name", data.business_name);
-        formData.append("business_type", data.business_type);
+
+        let bType = (data.business_type || "SOLO").toUpperCase().trim();
+        if (bType.includes("PARTNER") || bType.includes("PATNER")) {
+            bType = "PATNERSHIP";
+        } else {
+            bType = "SOLO";
+        }
+        formData.append("business_type", bType);
+
         formData.append("gstn_number", data.gstn_number);
         formData.append("contact_number", data.contact_number);
         formData.append("contact_email", data.contact_email);
@@ -52,7 +60,14 @@ export const OwnerrequestApi = async (data: Ownerrequest) => {
             body: formData,
         });
 
-        const response = await result.json();
+        const response = await result.json().catch(() => ({}));
+        if (!result.ok) {
+            return {
+                success: false,
+                message: response.message || response.error || (result.status === 403 ? "You must be logged in as a Player to submit an owner request" : "Failed to submit request"),
+                data: response
+            };
+        }
         return response;
     } catch (error) {
         console.error("Error submitting turf owner request:", error);
@@ -76,7 +91,16 @@ export const getOwnerRequestsApi = async () => {
             headers: headers,
         });
 
-        const response = await result.json();
+        const response = await result.json().catch(() => ({}));
+        if (!result.ok) {
+            const errorMsg =
+                response.message ||
+                response.error ||
+                (result.status === 403
+                    ? "Access denied: Super Admin role required"
+                    : "Failed to fetch owner requests");
+            throw new Error(errorMsg);
+        }
         return response;
     } catch (error) {
         console.error("Error fetching owner requests:", error);
@@ -129,3 +153,27 @@ export const rejectOwnerRequestApi = async (id: number | string, remark: string 
         throw error;
     }
 };
+
+/**
+ * getMyOwnerRequestApi: Fetches the logged-in user's own owner verification request status.
+ */
+export const getMyOwnerRequestApi = async (userId: number | string) => {
+    try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const result = await fetch(`${baseUrl.profile}/api/owner-request/my-request?userId=${userId}`, {
+            method: "GET",
+            headers: headers,
+        });
+
+        return await result.json();
+    } catch (error) {
+        console.error("Error fetching my owner request:", error);
+        throw error;
+    }
+};
+

@@ -9,7 +9,6 @@ import {
   DollarSign,
   Plus,
   RefreshCw,
-  Clock,
   Calendar,
   Layers,
   Edit2,
@@ -34,15 +33,21 @@ import {
   type DayType,
 } from '../services/pricingService';
 import { fetchCourtsApi, type CourtItem } from '../services/courtService';
+import { fetchMyVenuesApi, type VenueItem } from '../services/venueService';
+import { getCurrentUserId, isOwner } from '../services/authService';
 
 // Common Modals & Loading
 import CommonModal from '../../Components/Common/CommonModal';
 import CommonConfirmModal from '../../Components/Common/CommonConfirmModal';
 
 export default function PricingManager() {
+  const isOwnerUser = isOwner();
+  const currentOwnerId = isOwnerUser ? getCurrentUserId() : null;
+
   // ── 1. Data States ──────────────────────────────────────────────────────────
   const [pricingRules, setPricingRules] = useState<PricingRuleItem[]>([]);
   const [courts, setCourts] = useState<CourtItem[]>([]);
+  const [venues, setVenues] = useState<VenueItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
   const [togglingStatusRuleId, setTogglingStatusRuleId] = useState<number | null>(null);
@@ -63,8 +68,6 @@ export default function PricingManager() {
   const initialForm: PricingRulePayload = {
     court_id: 1,
     day_type: 'WEEKDAY',
-    start_time: '09:00',
-    end_time: '18:00',
     price: 800,
     valid_from: '',
     valid_to: '',
@@ -75,17 +78,32 @@ export default function PricingManager() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [fetchedRules, fetchedCourts] = await Promise.all([
+      const [fetchedRules, fetchedCourts, venuesRes] = await Promise.all([
         fetchAllPricingRulesApi().catch(() => []),
         fetchCourtsApi().catch(() => []),
+        fetchMyVenuesApi(true, currentOwnerId).catch(() => ({ data: [] })),
       ]);
 
-      setPricingRules(fetchedRules);
-      setCourts(fetchedCourts);
+      const venueList: VenueItem[] = Array.isArray(venuesRes) ? venuesRes : (venuesRes?.data || []);
+      setVenues(venueList);
+      const ownerVenueIds = new Set(venueList.map((v) => String(v.id)));
 
-      // Default the form court to the first available court if present
-      if (fetchedCourts.length > 0) {
-        initialForm.court_id = Number(fetchedCourts[0].id);
+      // If user is owner, only keep courts belonging to their venues
+      const scopedCourts = isOwnerUser
+        ? fetchedCourts.filter((c) => ownerVenueIds.has(String(c.venue_id)))
+        : fetchedCourts;
+      setCourts(scopedCourts);
+
+      // If user is owner, only keep pricing rules belonging to their courts
+      const scopedCourtIds = new Set(scopedCourts.map((c) => Number(c.id)));
+      const scopedRules = isOwnerUser
+        ? fetchedRules.filter((r) => scopedCourtIds.has(Number(r.court_id)))
+        : fetchedRules;
+      setPricingRules(scopedRules);
+
+      // Default the form court to the first available scoped court
+      if (scopedCourts.length > 0) {
+        setFormData((prev) => ({ ...prev, court_id: Number(scopedCourts[0].id) }));
       }
     } catch (err: any) {
       console.error('Error loading pricing data:', err);
@@ -137,8 +155,7 @@ export default function PricingManager() {
         const matchVenue = courtInfo?.venue.toLowerCase().includes(query) || false;
         const matchPrice = String(rule.price).includes(query);
         const matchDay = rule.day_type.toLowerCase().includes(query);
-        const matchTime = `${rule.start_time} ${rule.end_time}`.toLowerCase().includes(query);
-        return matchCourt || matchVenue || matchPrice || matchDay || matchTime;
+        return matchCourt || matchVenue || matchPrice || matchDay;
       }
       return true;
     });
@@ -171,13 +188,14 @@ export default function PricingManager() {
 
   // ── 10. Modal Open Handlers ─────────────────────────────────────────────────
   const handleOpenAdd = () => {
-    const defaultCourtId = courts[0] ? Number(courts[0].id) : 1;
+    if (courts.length === 0) {
+      return toast.error('Please add at least one court before creating pricing rules');
+    }
+    const defaultCourtId = Number(courts[0].id);
     setFormData({
       ...initialForm,
       court_id: defaultCourtId,
       day_type: 'WEEKDAY',
-      start_time: '09:00',
-      end_time: '18:00',
       price: 800,
       valid_from: '',
       valid_to: '',
@@ -191,8 +209,6 @@ export default function PricingManager() {
     setFormData({
       court_id: rule.court_id,
       day_type: rule.day_type,
-      start_time: rule.start_time.substring(0, 5), // "09:00:00" -> "09:00"
-      end_time: rule.end_time.substring(0, 5),     // "18:00:00" -> "18:00"
       price: rule.price,
       valid_from: rule.valid_from || '',
       valid_to: rule.valid_to || '',
@@ -207,12 +223,6 @@ export default function PricingManager() {
     if (!formData.court_id) {
       return toast.error('Please select a target court');
     }
-    if (!formData.start_time || !formData.end_time) {
-      return toast.error('Start time and end time are required');
-    }
-    if (formData.start_time >= formData.end_time) {
-      return toast.error('Start time must be earlier than end time');
-    }
     if (!formData.price || formData.price <= 0) {
       return toast.error('Price must be greater than 0');
     }
@@ -226,7 +236,10 @@ export default function PricingManager() {
     try {
       if (editingRule) {
         // Update existing rule via PUT /api/pricing/{id}
-        await updatePricingRuleApi(editingRule.id, formData);
+        await updatePricingRuleApi(editingRule.id, {
+          ...formData,
+          is_active: editingRule.is_active !== false,
+        });
         toast.success('🎉 Pricing rule updated successfully!');
       } else {
         // Create new rule via POST /api/pricing/create
@@ -322,7 +335,7 @@ export default function PricingManager() {
             <span>Court Pricing Rules & Hourly Rates</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Configure dynamic time-window prices, weekday/weekend peak rates, and holiday specials.
+            Configure dynamic rates for weekdays, weekend peak times, and holidays.
           </p>
         </div>
 
@@ -382,7 +395,7 @@ export default function PricingManager() {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by court, price, or time window..."
+            placeholder="Search by court, venue, price, or day type..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 pl-10 pr-10 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
@@ -462,7 +475,7 @@ export default function PricingManager() {
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {searchTerm || selectedCourtFilter !== 'ALL' || selectedDayTypeFilter !== 'ALL'
               ? 'No pricing rules match your active filters. Try clearing your filters.'
-              : 'Click "Add Pricing Rule" above to configure your first hourly rate window.'}
+              : 'Click "Add Pricing Rule" above to configure your first hourly rate.'}
           </p>
           <button
             onClick={handleOpenAdd}
@@ -535,17 +548,6 @@ export default function PricingManager() {
                 {/* Body Details */}
                 <div className="p-5 space-y-3.5 flex-1 flex flex-col justify-between text-xs">
                   <div className="space-y-2.5">
-                    {/* Time Window */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                      <div className="flex items-center gap-2 text-slate-600 font-semibold">
-                        <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span>Slot Time Window:</span>
-                      </div>
-                      <span className="font-extrabold text-slate-900">
-                        {rule.start_time.substring(0, 5)} - {rule.end_time.substring(0, 5)}
-                      </span>
-                    </div>
-
                     {/* Validity Date Range (if set) */}
                     {(rule.valid_from || rule.valid_to) && (
                       <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100">
@@ -630,7 +632,7 @@ export default function PricingManager() {
           setEditingRule(null);
         }}
         title={editingRule ? 'Edit Pricing Rule' : 'Configure New Pricing Rule'}
-        subtitle="Set the court, day category, start and end time window, and hourly booking rate."
+        subtitle="Set the court, day category, and hourly booking rate."
         icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
         maxWidth="lg"
         theme="light"
@@ -677,54 +679,6 @@ export default function PricingManager() {
                 );
               })}
             </div>
-          </div>
-
-          {/* Time Window (Start Time & End Time) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                Start Time <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="time"
-                value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-slate-900 font-bold focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="block font-bold text-slate-700">
-                End Time <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="time"
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-slate-900 font-bold focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          {/* Quick Time Window Presets */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold text-slate-400">Presets:</span>
-            {[
-              { label: 'Morning (06:00 - 12:00)', start: '06:00', end: '12:00' },
-              { label: 'Afternoon (12:00 - 18:00)', start: '12:00', end: '18:00' },
-              { label: 'Prime Night (18:00 - 23:59)', start: '18:00', end: '23:59' },
-            ].map((p) => (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => setFormData({ ...formData, start_time: p.start, end_time: p.end })}
-                className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-600 transition-colors cursor-pointer"
-              >
-                {p.label}
-              </button>
-            ))}
           </div>
 
           {/* Hourly Price Input */}

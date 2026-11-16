@@ -20,10 +20,6 @@ export interface PricingRuleItem {
   venue_name?: string;
   day_type: DayType;
   dayType?: DayType;
-  start_time: string; // format: HH:mm:ss
-  startTime?: string;
-  end_time: string;   // format: HH:mm:ss
-  endTime?: string;
   price: number;      // price per hour / slot window
   valid_from?: string; // format: YYYY-MM-DD
   validFrom?: string;
@@ -41,11 +37,11 @@ export interface PricingRuleItem {
 export interface PricingRulePayload {
   court_id: number;
   day_type: DayType;
-  start_time: string;
-  end_time: string;
   price: number;
   valid_from?: string;
   valid_to?: string;
+  is_active?: boolean;
+  isActive?: boolean;
 }
 
 /**
@@ -92,10 +88,6 @@ const normalizePricingRule = (raw: any): PricingRuleItem => {
     courtId: raw.courtId ?? raw.court_id,
     day_type: (raw.day_type || raw.dayType || 'WEEKDAY') as DayType,
     dayType: (raw.dayType || raw.day_type || 'WEEKDAY') as DayType,
-    start_time: raw.start_time || raw.startTime || '09:00:00',
-    startTime: raw.startTime || raw.start_time || '09:00:00',
-    end_time: raw.end_time || raw.endTime || '18:00:00',
-    endTime: raw.endTime || raw.end_time || '18:00:00',
     price: Number(raw.price || 0),
     valid_from: raw.valid_from || raw.validFrom || '',
     validFrom: raw.validFrom || raw.valid_from || '',
@@ -123,39 +115,17 @@ export const fetchAllPricingRulesApi = async (isActive?: boolean): Promise<Prici
     headers: getAuthHeaders(),
   });
 
+  const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    throw new Error(getErrorMessage(errorJson, 'Failed to fetch pricing rules'));
+    throw new Error(getErrorMessage(result, 'Failed to fetch pricing rules'));
   }
 
-  const result = await response.json();
-  const rawList = Array.isArray(result) ? result : result.data || [];
-  return Array.isArray(rawList) ? rawList.map(normalizePricingRule) : [];
+  const items = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : [];
+  return items.map(normalizePricingRule);
 };
 
 /**
- * 2. Fetch Pricing Rules for a Specific Court
- * Endpoint: GET http://localhost:3040/api/pricing/court/{courtId}
- */
-export const fetchPricingRulesByCourtApi = async (courtId: number | string): Promise<PricingRuleItem[]> => {
-  const url = `${baseUrl.venue}/api/pricing/court/${courtId}`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    throw new Error(getErrorMessage(errorJson, `Failed to fetch pricing rules for court ${courtId}`));
-  }
-
-  const result = await response.json();
-  const rawList = Array.isArray(result) ? result : result.data || [];
-  return Array.isArray(rawList) ? rawList.map(normalizePricingRule) : [];
-};
-
-/**
- * 3. Fetch Pricing Rule by Integer ID
+ * 2. Fetch Pricing Rule by Integer ID
  * Endpoint: GET http://localhost:3040/api/pricing/{id}
  */
 export const fetchPricingRuleByIdApi = async (id: number | string): Promise<PricingRuleItem> => {
@@ -165,13 +135,38 @@ export const fetchPricingRuleByIdApi = async (id: number | string): Promise<Pric
     headers: getAuthHeaders(),
   });
 
+  const result = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const errorJson = await response.json().catch(() => ({}));
-    throw new Error(getErrorMessage(errorJson, 'Failed to fetch pricing rule details'));
+    throw new Error(getErrorMessage(result, 'Failed to fetch pricing rule'));
   }
 
-  const result = await response.json();
   return normalizePricingRule(result.data || result);
+};
+
+/**
+ * 3. Fetch Pricing Rules for a Court (with optional isActive filter)
+ * Endpoint: GET http://localhost:3040/api/pricing/court/{courtId}?isActive=true/false
+ */
+export const fetchPricingRulesByCourtApi = async (
+  courtId: number | string,
+  isActive?: boolean
+): Promise<PricingRuleItem[]> => {
+  const url = isActive !== undefined
+    ? `${baseUrl.venue}/api/pricing/court/${courtId}?isActive=${isActive}`
+    : `${baseUrl.venue}/api/pricing/court/${courtId}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(getErrorMessage(result, `Failed to fetch pricing rules for court #${courtId}`));
+  }
+
+  const items = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : [];
+  return items.map(normalizePricingRule);
 };
 
 /**
@@ -181,25 +176,22 @@ export const fetchPricingRuleByIdApi = async (id: number | string): Promise<Pric
 export const createPricingRuleApi = async (payload: PricingRulePayload): Promise<PricingRuleItem> => {
   const url = `${baseUrl.venue}/api/pricing/create`;
 
-  // Format time values to HH:mm:ss if passed as HH:mm
-  const formattedStartTime = payload.start_time.length === 5 ? `${payload.start_time}:00` : payload.start_time;
-  const formattedEndTime = payload.end_time.length === 5 ? `${payload.end_time}:00` : payload.end_time;
-
-  const bodyData = {
+  const bodyData: Record<string, any> = {
     court_id: Number(payload.court_id),
     courtId: Number(payload.court_id),
     day_type: payload.day_type,
     dayType: payload.day_type,
-    start_time: formattedStartTime,
-    startTime: formattedStartTime,
-    end_time: formattedEndTime,
-    endTime: formattedEndTime,
     price: Number(payload.price),
     valid_from: payload.valid_from || null,
     validFrom: payload.valid_from || null,
     valid_to: payload.valid_to || null,
     validTo: payload.valid_to || null,
   };
+
+  if (payload.is_active !== undefined) {
+    bodyData.is_active = Boolean(payload.is_active);
+    bodyData.isActive = Boolean(payload.is_active);
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -234,14 +226,6 @@ export const updatePricingRuleApi = async (
     bodyData.day_type = payload.day_type;
     bodyData.dayType = payload.day_type;
   }
-  if (payload.start_time !== undefined) {
-    bodyData.start_time = payload.start_time.length === 5 ? `${payload.start_time}:00` : payload.start_time;
-    bodyData.startTime = bodyData.start_time;
-  }
-  if (payload.end_time !== undefined) {
-    bodyData.end_time = payload.end_time.length === 5 ? `${payload.end_time}:00` : payload.end_time;
-    bodyData.endTime = bodyData.end_time;
-  }
   if (payload.price !== undefined) {
     bodyData.price = Number(payload.price);
   }
@@ -252,6 +236,10 @@ export const updatePricingRuleApi = async (
   if (payload.valid_to !== undefined) {
     bodyData.valid_to = payload.valid_to || null;
     bodyData.validTo = payload.valid_to || null;
+  }
+  if (payload.is_active !== undefined) {
+    bodyData.is_active = Boolean(payload.is_active);
+    bodyData.isActive = Boolean(payload.is_active);
   }
 
   const response = await fetch(url, {
@@ -306,4 +294,3 @@ export const changePricingRuleStatusApi = async (
 
   return normalizePricingRule(result.data || result);
 };
-

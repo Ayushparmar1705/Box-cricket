@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Building2,
   Plus,
@@ -17,12 +18,14 @@ import toast from 'react-hot-toast';
 // All venue endpoints communicate with facility-service at http://localhost:3040/api/venues
 import {
   createVenueApi,
+  updateVenueApi,
   fetchMyVenuesApi,
   searchVenueApi,
   updateVenueStatusApi,
   type VenueItem
 } from '../services/venueService';
 import { fetchCitiesApi, type CityItem } from '../services/cityService';
+import { getCurrentUserId, isOwner } from '../services/authService';
 
 // ── Reusable Common Components ──────────────────────────────────────────────
 import CommonTable, { type TableColumn } from '../../Components/Common/CommonTable';
@@ -54,6 +57,12 @@ interface VenueManagerProps {
 }
 
 export default function VenueManager({ onVenuesUpdated, showTitle = true }: VenueManagerProps) {
+  const location = useLocation();
+  const isOwnerPanel = location.pathname.includes('/owner-') || isOwner();
+  const currentOwnerId = isOwnerPanel ? getCurrentUserId() : null;
+  const isLight = isOwnerPanel;
+  const tableTheme: 'light' | 'dark' = isLight ? 'light' : 'dark';
+
   // ============================================================================
   // SECTION 1: COMPONENT STATE
   // Beginner note: useState holds current data that React displays on screen.
@@ -70,8 +79,9 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
   const [searchQuery, setSearchQuery] = useState('');
   const [filterActive, setFilterActive] = useState<boolean>(true); // true = Active, false = Deactivated
 
-  // 4. Form state for adding a new venue
+  // 4. Form state for adding / editing a venue
   const [venueForm, setVenueForm] = useState(initialVenueForm);
+  const [editingVenue, setEditingVenue] = useState<VenueItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // 5. Modals visibility state
@@ -86,14 +96,17 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
 
   /**
    * API CALL #1: Load Owner's Venues
-   * Calls: GET http://localhost:3040/api/venues?status=true/false
+   * Calls: GET http://localhost:3040/api/venues?status=true/false&owner_id=...
    */
   const loadVenues = async (status: boolean = filterActive) => {
     setIsLoadingVenues(true);
     try {
-      const response = await fetchMyVenuesApi(status);
+      const response = await fetchMyVenuesApi(status, currentOwnerId);
       const list = Array.isArray(response) ? response : (response?.data || []);
-      setVenues(list);
+      const filteredList = currentOwnerId
+        ? list.filter((v: VenueItem) => Number(v.owner_id) === Number(currentOwnerId))
+        : list;
+      setVenues(filteredList);
       if (onVenuesUpdated) onVenuesUpdated();
     } catch {
       setVenues([]);
@@ -214,8 +227,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
 
     setIsSubmitting(true);
     try {
-      // Step 2: Send all 12 fields to http://localhost:3040/api/venues
-      const response = await createVenueApi({
+      const payload = {
         venue_name: venueForm.venue_name.trim().slice(0, 150),
         name: venueForm.venue_name.trim().slice(0, 150),
         city_id: Number(venueForm.city_id),
@@ -232,23 +244,58 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
         closing_time: venueForm.closing_time,
         cancellation_policy: venueForm.cancellation_policy,
         image: venueForm.image,
-      });
+      };
 
-      // Step 3: Show success toast and reload table
-      toast.success(response.message || `🎉 ${venueForm.venue_name} created successfully!`);
+      if (editingVenue) {
+        const response = await updateVenueApi(editingVenue.id, payload);
+        toast.success(response.message || `🎉 ${venueForm.venue_name} updated successfully!`);
+      } else {
+        const response = await createVenueApi(payload);
+        toast.success(response.message || `🎉 ${venueForm.venue_name} created successfully!`);
+      }
+
       await loadVenues(filterActive);
 
-      // Step 4: Close modal and reset form
       setShowAddModal(false);
+      setEditingVenue(null);
       setVenueForm({
         ...initialVenueForm,
         city_id: availableCities.length > 0 ? Number(availableCities[0].id) : 1,
       });
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create venue');
+      toast.error(err.message || 'Failed to save venue');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOpenAdd = () => {
+    setEditingVenue(null);
+    setVenueForm({
+      ...initialVenueForm,
+      city_id: availableCities.length > 0 ? Number(availableCities[0].id) : 1,
+    });
+    setShowAddModal(true);
+  };
+
+  const handleOpenEdit = (venue: VenueItem) => {
+    setEditingVenue(venue);
+    setVenueForm({
+      city_id: Number(venue.city_id || venue.city) || 1,
+      venue_name: venue.venue_name || venue.name || '',
+      description: venue.description || '',
+      address: venue.address || '',
+      latitude: Number(venue.latitude) || 23.04009,
+      longitude: Number(venue.longitude) || 72.52904,
+      google_map_link: venue.google_map_link || '',
+      contact_number: venue.contact_number || venue.phone_number || '',
+      email: venue.email || '',
+      opening_time: venue.opening_time || '06:00:00',
+      closing_time: venue.closing_time || '23:00:00',
+      cancellation_policy: venue.cancellation_policy || '',
+      image: null,
+    });
+    setShowAddModal(true);
   };
 
   /**
@@ -284,8 +331,12 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       return;
     }
     try {
-      const response = await searchVenueApi(value);
-      setVenues(Array.isArray(response) ? response : (response?.data || []));
+      const response = await searchVenueApi(value, currentOwnerId);
+      const list = Array.isArray(response) ? response : (response?.data || []);
+      const filteredList = currentOwnerId
+        ? list.filter((v: VenueItem) => Number(v.owner_id) === Number(currentOwnerId))
+        : list;
+      setVenues(filteredList);
     } catch (err: any) {
       console.warn('Search failed:', err);
     }
@@ -307,7 +358,13 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
 
         return (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 font-bold overflow-hidden shadow-xs">
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold overflow-hidden shadow-xs border ${
+                isLight
+                  ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                  : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-400'
+              }`}
+            >
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={venueTitle} className="w-full h-full object-cover" />
               ) : (
@@ -315,14 +372,30 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
               )}
             </div>
             <div>
-              <div className="font-bold text-slate-900 text-xs sm:text-sm">{venueTitle}</div>
-              <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                <MapPin size={11} className="text-emerald-600 shrink-0" />
-                <span className="font-medium text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+              <div
+                className={`font-bold text-xs sm:text-sm ${
+                  isLight ? 'text-slate-900' : 'text-slate-100'
+                }`}
+              >
+                {venueTitle}
+              </div>
+              <div
+                className={`text-[11px] flex items-center gap-1 mt-0.5 ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                <MapPin size={11} className="text-emerald-500 shrink-0" />
+                <span
+                  className={`font-medium px-1.5 py-0.5 rounded border ${
+                    isLight
+                      ? 'text-emerald-800 bg-emerald-50 border-emerald-100'
+                      : 'text-emerald-300 bg-emerald-950/50 border-emerald-800/60'
+                  }`}
+                >
                   {cityName}
                 </span>
                 {item.address && (
-                  <span className="text-slate-500 truncate max-w-[180px]" title={item.address}>
+                  <span className="truncate max-w-[180px]" title={item.address}>
                     • {item.address}
                   </span>
                 )}
@@ -337,11 +410,21 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       accessor: 'opening_time',
       render: (item: VenueItem) => (
         <div className="text-xs">
-          <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
+          <span
+            className={`inline-flex items-center gap-1 font-semibold ${
+              isLight ? 'text-slate-700' : 'text-slate-200'
+            }`}
+          >
             <Clock size={12} className="text-amber-500" />
             {item.opening_time} - {item.closing_time}
           </span>
-          <span className="block text-[10px] text-slate-400 font-medium">Daily Slots</span>
+          <span
+            className={`block text-[10px] font-medium ${
+              isLight ? 'text-slate-400' : 'text-slate-500'
+            }`}
+          >
+            Daily Slots
+          </span>
         </div>
       ),
     },
@@ -350,11 +433,19 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       accessor: 'phone_number',
       render: (item: VenueItem) => (
         <div className="text-xs space-y-0.5">
-          <div className="font-semibold text-slate-800 flex items-center gap-1">
-            <Phone size={12} className="text-emerald-600" />
+          <div
+            className={`font-semibold flex items-center gap-1 ${
+              isLight ? 'text-slate-800' : 'text-slate-200'
+            }`}
+          >
+            <Phone size={12} className="text-emerald-500" />
             <span>{item.contact_number || item.phone_number}</span>
           </div>
-          <div className="text-[11px] text-slate-500 truncate max-w-xs flex items-center gap-1">
+          <div
+            className={`text-[11px] truncate max-w-xs flex items-center gap-1 ${
+              isLight ? 'text-slate-500' : 'text-slate-400'
+            }`}
+          >
             <Mail size={12} className="text-slate-400" />
             <span>{item.email}</span>
           </div>
@@ -366,8 +457,12 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       accessor: 'google_map_link',
       render: (item: VenueItem) => (
         <div className="text-xs space-y-0.5">
-          <div className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
-            <MapPin size={11} className="text-emerald-600" />
+          <div
+            className={`text-[11px] font-mono flex items-center gap-1 ${
+              isLight ? 'text-slate-500' : 'text-slate-400'
+            }`}
+          >
+            <MapPin size={11} className="text-emerald-500" />
             <span>
               {Number(item.latitude || 0).toFixed(4)}, {Number(item.longitude || 0).toFixed(4)}
             </span>
@@ -377,7 +472,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
               href={item.google_map_link}
               target="_blank"
               rel="noreferrer"
-              className="text-emerald-600 hover:text-emerald-700 font-semibold underline text-[11px] inline-flex items-center gap-0.5"
+              className="text-emerald-500 hover:text-emerald-400 font-semibold underline text-[11px] inline-flex items-center gap-0.5"
             >
               Open in Maps <ExternalLink size={10} />
             </a>
@@ -390,14 +485,20 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       accessor: 'is_active',
       render: (item: VenueItem) => (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${item.is_active !== false
-            ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-            : 'bg-rose-50 border border-rose-200 text-rose-700'
-            }`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
+            item.is_active !== false
+              ? isLight
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+              : isLight
+              ? 'bg-rose-50 border border-rose-200 text-rose-700'
+              : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+          }`}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${item.is_active !== false ? 'bg-emerald-500' : 'bg-rose-500'
-              }`}
+            className={`w-1.5 h-1.5 rounded-full ${
+              item.is_active !== false ? 'bg-emerald-500' : 'bg-rose-500'
+            }`}
           />
           <span>{item.is_active !== false ? 'Active' : 'Inactive'}</span>
         </span>
@@ -539,21 +640,23 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {showTitle && (
           <div>
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" />
+            <h2 className={`text-lg font-bold flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <Building2 className="w-5 h-5 text-emerald-500" />
               <span>
-                {filterActive ? 'My Active Venues' : 'Deactivated Venues'} ({venues.length})
+                {filterActive ? 'Active Venues' : 'Deactivated Venues'} ({venues.length})
               </span>
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Manage your box cricket grounds
+            <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+              Manage your box cricket grounds and arena locations
             </p>
           </div>
         )}
 
         <div className="flex items-center gap-3 ml-auto flex-wrap sm:flex-nowrap">
           {/* Active / Inactive Filter */}
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-xs text-xs">
+          <div className={`flex items-center gap-1.5 border rounded-xl px-2.5 py-1.5 shadow-xs text-xs ${
+            isLight ? 'bg-white border-slate-200' : 'bg-[#0d1322] border-slate-800'
+          }`}>
             <Filter className="w-3.5 h-3.5 text-slate-400" />
             <select
               value={filterActive ? 'true' : 'false'}
@@ -562,10 +665,16 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
                 setFilterActive(isAct);
                 loadVenues(isAct);
               }}
-              className="bg-transparent font-bold text-slate-700 outline-none cursor-pointer"
+              className={`bg-transparent font-bold outline-none cursor-pointer ${
+                isLight ? 'text-slate-700' : 'text-slate-200'
+              }`}
             >
-              <option value="true">Active Venues</option>
-              <option value="false">Deactivated Venues</option>
+              <option value="true" className={isLight ? 'text-slate-900 bg-white' : 'text-white bg-slate-900'}>
+                Active Venues
+              </option>
+              <option value="false" className={isLight ? 'text-slate-900 bg-white' : 'text-white bg-slate-900'}>
+                Deactivated Venues
+              </option>
             </select>
           </div>
 
@@ -573,15 +682,19 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
           <button
             onClick={() => loadVenues(filterActive)}
             disabled={isLoadingVenues}
-            className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            className={`p-2.5 rounded-xl border transition-all cursor-pointer shadow-xs disabled:opacity-50 ${
+              isLight
+                ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
+                : 'bg-[#0d1322] border-slate-800 text-slate-300 hover:text-white'
+            }`}
             title="Refresh List"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingVenues ? 'animate-spin text-emerald-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoadingVenues ? 'animate-spin text-emerald-500' : ''}`} />
           </button>
 
           {/* Open Add Venue Modal */}
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAdd}
             className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -597,30 +710,28 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
           type="text"
           placeholder="Search venue by name, phone, or email..."
           value={searchQuery}
-          onChange={(e) => {
-            searchVenue(e);
-          }}
-          className="w-full bg-white border border-slate-200 rounded-2xl py-2.5 pl-10 pr-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
+          onChange={(e) => searchVenue(e)}
+          className={`w-full border rounded-2xl py-2.5 pl-10 pr-4 text-xs placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs transition-colors ${
+            isLight
+              ? 'bg-white border-slate-200 text-slate-800'
+              : 'bg-slate-900 border-slate-800 text-white'
+          }`}
         />
       </div>
 
       {/* ── Venues Table View ── */}
       {isLoadingVenues ? (
-        <div className="p-12 text-center space-y-3 rounded-3xl bg-white border border-slate-200 shadow-sm">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">Loading Venues from Facility Service...</h3>
-        </div>
-      ) : venues.length === 0 ? (
-        <div className="p-12 text-center space-y-4 rounded-3xl bg-white border border-slate-200 shadow-sm">
-          <Building2 className="w-10 h-10 text-emerald-600 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-800">
-            {filterActive ? 'No Active Venues Found' : 'No Deactivated Venues Found'}
+        <div
+          className={`p-12 text-center space-y-3 rounded-2xl border ${
+            isLight
+              ? 'bg-white border-slate-200 shadow-sm'
+              : 'bg-[#0d1322] border-slate-800 shadow-xl'
+          }`}
+        >
+          <RefreshCw className="w-8 h-8 animate-spin text-emerald-500 mx-auto" />
+          <h3 className={`text-sm font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+            Loading Venues...
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            {filterActive
-              ? 'Click "List New Venue" above to add your first box cricket arena.'
-              : 'There are no deactivated venues in the archive.'}
-          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -628,41 +739,58 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
             columns={venueColumns}
             data={venues}
             onView={(item) => setSelectedVenue(item)}
-            onEdit={(item) => setSelectedVenue(item)}
+            onEdit={(item) => handleOpenEdit(item)}
             onDelete={(item) => setVenueToDelete(item)}
             onRestore={(item) => setVenueToDelete(item)}
             isActive={filterActive}
-            theme="light"
+            theme={tableTheme}
           />
-          <div className="flex items-center justify-between text-xs text-slate-500 px-2">
-            <span>Showing {venues.length} grounds ({filterActive ? 'Active' : 'Deactivated'})</span>
-            <span>API: http://localhost:3040/api/venues</span>
+          <div className={`flex items-center justify-between text-xs px-2 ${
+            isLight ? 'text-slate-500' : 'text-slate-400'
+          }`}>
+            <span>Showing {venues.length} {filterActive ? 'active' : 'deactivated'} venue(s)</span>
           </div>
         </div>
       )}
 
       {/* ======================================================================== */}
-      {/* MODAL 1: ADD NEW TURF (POST http://localhost:3040/api/venues)           */}
+      {/* MODAL 1: ADD / EDIT TURF                                                 */}
       {/* ======================================================================== */}
       <CommonModal
         isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="List New Box Cricket Turf"
-        subtitle="Fill in ground specifications, timings, and select map coordinates"
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingVenue(null);
+        }}
+        title={editingVenue ? 'Edit Box Cricket Venue' : 'List New Box Cricket Turf'}
+        subtitle={
+          editingVenue
+            ? `Update specifications for ${editingVenue.venue_name || editingVenue.name}`
+            : 'Fill in ground specifications, timings, and select map coordinates'
+        }
         icon={<Building2 className="w-5 h-5" />}
         maxWidth="2xl"
-        theme="light"
+        theme={tableTheme}
       >
         <CommonForm
           fields={venueFormFields}
           formData={venueForm}
           onChange={handleVenueFormChange}
           onSubmit={handleCreateVenue}
-          submitText={isSubmitting ? 'Submitting to API...' : 'Create Box Cricket Venue'}
+          submitText={
+            isSubmitting
+              ? 'Saving Venue...'
+              : editingVenue
+              ? 'Update Box Cricket Venue'
+              : 'Create Box Cricket Venue'
+          }
           isLoading={isSubmitting}
-          theme="light"
+          theme={tableTheme}
           gridCols={2}
-          onCancel={() => setShowAddModal(false)}
+          onCancel={() => {
+            setShowAddModal(false);
+            setEditingVenue(null);
+          }}
         />
       </CommonModal>
 
@@ -676,7 +804,7 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
         subtitle={selectedVenue ? `Venue ID #${selectedVenue.id} • Owner #${selectedVenue.owner_id}` : undefined}
         icon={<Building2 className="w-5 h-5" />}
         maxWidth="2xl"
-        theme="light"
+        theme={tableTheme}
       >
         {selectedVenue && (
           <div className="space-y-5 text-xs">
@@ -692,47 +820,71 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
 
             {/* 4 Details Grid Boxes */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-0.5">
+              <div
+                className={`p-3 rounded-2xl border space-y-0.5 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">City</span>
-                <p className="font-bold text-slate-900 text-sm">
+                <p className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {availableCities.find((c) => String(c.id) === String(selectedVenue.city_id || selectedVenue.city))
                     ?.city_name || `City #${selectedVenue.city_id || selectedVenue.city}`}
                 </p>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-0.5">
+              <div
+                className={`p-3 rounded-2xl border space-y-0.5 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Operating Timings</span>
-                <p className="font-bold text-emerald-700 text-sm">
+                <p className="font-bold text-emerald-500 text-sm">
                   {selectedVenue.opening_time} - {selectedVenue.closing_time}
                 </p>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-0.5">
+              <div
+                className={`p-3 rounded-2xl border space-y-0.5 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Phone</span>
-                <p className="font-bold text-slate-900 text-sm">
+                <p className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   {selectedVenue.contact_number || selectedVenue.phone_number}
                 </p>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-0.5">
+              <div
+                className={`p-3 rounded-2xl border space-y-0.5 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Email</span>
-                <p className="font-bold text-slate-900 text-sm truncate">{selectedVenue.email}</p>
+                <p className={`font-bold text-sm truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{selectedVenue.email}</p>
               </div>
             </div>
 
             {/* Street Address */}
             {selectedVenue.address && (
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+              <div
+                className={`p-3 rounded-2xl border space-y-1 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Street Address</span>
-                <p className="text-slate-800 font-medium">{selectedVenue.address}</p>
+                <p className={`font-medium ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{selectedVenue.address}</p>
               </div>
             )}
 
             {/* Description */}
             {selectedVenue.description && (
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+              <div
+                className={`p-3 rounded-2xl border space-y-1 ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-slate-900 border-slate-800'
+                }`}
+              >
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Description</span>
-                <p className="text-slate-700">{selectedVenue.description}</p>
+                <p className={isLight ? 'text-slate-700' : 'text-slate-300'}>{selectedVenue.description}</p>
               </div>
             )}
 
@@ -741,7 +893,11 @@ export default function VenueManager({ onVenuesUpdated, showTitle = true }: Venu
               <button
                 type="button"
                 onClick={() => setSelectedVenue(null)}
-                className="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer"
+                className={`px-5 py-2 rounded-xl font-bold cursor-pointer transition-colors ${
+                  isLight
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                }`}
               >
                 Close
               </button>

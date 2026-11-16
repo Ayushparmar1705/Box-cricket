@@ -30,7 +30,7 @@ import {
 } from 'recharts';
 
 // Services
-import { type UserProfile } from '../services/authService';
+import { type UserProfile, getCurrentUserId, isOwner } from '../services/authService';
 import { fetchMyVenuesApi, type VenueItem } from '../services/venueService';
 import { fetchCourtsApi, type CourtItem } from '../services/courtService';
 
@@ -112,13 +112,18 @@ export default function OwnerDashboard() {
 
     const loadStats = async () => {
       try {
+        const ownerId = isOwner() ? getCurrentUserId() : null;
         const [venuesRes, courtsRes] = await Promise.all([
-          fetchMyVenuesApi().catch(() => ({ data: [] })),
+          fetchMyVenuesApi(true, ownerId).catch(() => ({ data: [] })),
           fetchCourtsApi().catch(() => []),
         ]);
         const venueList = Array.isArray(venuesRes) ? venuesRes : (venuesRes?.data || []);
         setVenues(venueList);
-        setCourts(courtsRes || []);
+        const ownerVenueIds = new Set(venueList.map((v: any) => String(v.id)));
+        const ownerCourts = (courtsRes || []).filter((c: CourtItem) =>
+          ownerVenueIds.has(String(c.venue_id))
+        );
+        setCourts(ownerCourts);
       } catch {
         // fallback
       }
@@ -129,8 +134,8 @@ export default function OwnerDashboard() {
 
   // Computed values
   const ownerName = user?.username || 'Turf Owner';
-  const totalVenues = venues.length > 0 ? venues.length : 2;
-  const totalCourts = courts.length > 0 ? courts.length : 3;
+  const totalVenues = venues.length;
+  const totalCourts = courts.length;
 
   return (
     <div className="space-y-8">

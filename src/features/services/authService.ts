@@ -154,3 +154,116 @@ export const viewProfile = async () => {
 export const logoutUser = (): void => {
   localStorage.clear();
 };
+
+// ============================================================================
+// 5. CURRENT USER & SESSION HELPERS
+// ============================================================================
+
+/**
+ * Safely decodes JWT token payload from Base64
+ */
+export const decodeToken = (token?: string | null): any => {
+  const t = token || localStorage.getItem('token');
+  if (!t) return null;
+  try {
+    const parts = t.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    try {
+      return JSON.parse(atob(t.split('.')[1]));
+    } catch {
+      return null;
+    }
+  }
+};
+
+/**
+ * Returns current logged-in user ID as number, or null
+ */
+export const getCurrentUserId = (): number | null => {
+  // 1. From JWT token claims (userid or userId or sub)
+  const decoded = decodeToken();
+  if (decoded) {
+    const rawId = decoded.userid ?? decoded.userId ?? decoded.id;
+    if (rawId !== undefined && rawId !== null && !isNaN(Number(rawId))) {
+      return Number(rawId);
+    }
+  }
+
+  // 2. From stored user JSON in localStorage
+  const userStr =
+    localStorage.getItem('boxcricket_user') ||
+    localStorage.getItem('user_profile') ||
+    localStorage.getItem('user');
+
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      const rawId = u.id ?? u.userId ?? u.userid;
+      if (rawId !== undefined && rawId !== null && !isNaN(Number(rawId))) {
+        return Number(rawId);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Returns array of normalized uppercase roles for current user
+ */
+export const getCurrentUserRoles = (): string[] => {
+  const decoded = decodeToken();
+  if (decoded) {
+    const r = decoded.role || decoded.roles;
+    if (r) {
+      const rArr = Array.isArray(r) ? r : [r];
+      return rArr.map((x: any) =>
+        (typeof x === 'string' ? x : x?.name || '').toUpperCase().replace(/^ROLE_/, '')
+      );
+    }
+  }
+
+  const rolesStr = localStorage.getItem('roles');
+  if (rolesStr) {
+    try {
+      const roles = JSON.parse(rolesStr);
+      const rArr = Array.isArray(roles) ? roles : [roles];
+      return rArr.map((x: any) =>
+        (typeof x === 'string' ? x : x?.name || '').toUpperCase().replace(/^ROLE_/, '')
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  return [];
+};
+
+/**
+ * Checks if current logged in user has OWNER role
+ */
+export const isOwner = (): boolean => {
+  const roles = getCurrentUserRoles();
+  return roles.some((r) => r.includes('OWNER'));
+};
+
+/**
+ * Checks if current logged in user has ADMIN / SUPER_ADMIN role
+ */
+export const isAdmin = (): boolean => {
+  const roles = getCurrentUserRoles();
+  return roles.some((r) => r.includes('ADMIN'));
+};
+

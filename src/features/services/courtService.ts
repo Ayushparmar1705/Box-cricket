@@ -128,6 +128,8 @@ const getErrorMessage = (result: any, fallback: string): string => {
 
 export interface CourtFilterParams {
   venueId?: string | number;
+  ownerId?: string | number;
+  owner_id?: string | number;
   isActive?: boolean;
   search?: string;
   court_name?: string;
@@ -137,18 +139,23 @@ export interface CourtFilterParams {
 }
 
 /**
- * 1. Fetch Courts with Filters (venueId, isActive, search, court_name, pagination)
+ * 1. Fetch Courts with Filters (venueId, ownerId, isActive, search, court_name, pagination)
  * Endpoint: GET http://localhost:3040/api/courts
  */
 export const fetchCourtsApi = async (
   params?: CourtFilterParams | string | number
 ): Promise<CourtItem[]> => {
-  let query = '';
+  const qp = new URLSearchParams();
+
   if (params !== undefined && params !== null) {
     if (typeof params === 'object') {
-      const qp = new URLSearchParams();
       if (params.venueId && params.venueId !== 'ALL') {
         qp.append('venueId', String(params.venueId));
+      }
+      if (params.ownerId) {
+        qp.append('ownerId', String(params.ownerId));
+      } else if (params.owner_id) {
+        qp.append('ownerId', String(params.owner_id));
       }
       if (params.isActive !== undefined) {
         qp.append('isActive', String(params.isActive));
@@ -167,14 +174,26 @@ export const fetchCourtsApi = async (
       if (params.size !== undefined) {
         qp.append('size', String(params.size));
       }
-      const qs = qp.toString();
-      if (qs) query = `?${qs}`;
     } else if (params !== 'ALL') {
-      query = `?venueId=${params}`;
+      qp.append('venueId', String(params));
     }
   }
 
-  const url = `${baseUrl.venue}/api/courts${query}`;
+  // If ownerId was not passed in params, check if logged in as an OWNER
+  if (!qp.has('ownerId')) {
+    try {
+      const storedUserId = localStorage.getItem('userId') || localStorage.getItem('user_id');
+      const roles = localStorage.getItem('roles') || '';
+      if (storedUserId && roles.includes('OWNER')) {
+        qp.append('ownerId', String(storedUserId));
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const qs = qp.toString();
+  const url = `${baseUrl.venue}/api/courts${qs ? `?${qs}` : ''}`;
 
   const response = await fetch(url, {
     method: 'GET',

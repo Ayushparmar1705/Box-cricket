@@ -18,8 +18,8 @@ import {
   BadgeCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { OwnerrequestApi, type Ownerrequest } from '../services/ProfileService';
-import { viewProfile } from '../services/authService';
+import { OwnerrequestApi, getMyOwnerRequestApi, type Ownerrequest } from '../services/ProfileService';
+import { viewProfile, getCurrentUserId } from '../services/authService';
 
 interface OwnerDocumentState {
   file: File | null;
@@ -35,7 +35,7 @@ const PlayerProfile: React.FC = () => {
 
   const [ownerForm, setOwnerForm] = useState({
     business_name: "",
-    business_type: "Turf Owner",
+    business_type: "SOLO",
     gstn_number: "",
     contact_email: "",
     contact_number: "",
@@ -63,32 +63,52 @@ const PlayerProfile: React.FC = () => {
   });
 
   const fetchProfile = async () => {
-    const result = await viewProfile();
-    console.log("Profile API result:", result);
-    if (result) {
-      setProfileForm({
-        username: result.name || result.username || "",
-        email: result.email || "",
-        phone: result.phone || "",
-        city: result.city || "",
-      });
+    try {
+      const result = await viewProfile();
+      console.log("Profile API result:", result);
+      if (result) {
+        setProfileForm({
+          username: result.name || result.username || "",
+          email: result.email || "",
+          phone: result.phone || "",
+          city: result.city || "",
+        });
 
-      // Check roles in API response
-      const rawRoles = result.roles || result.role || [];
-      const rolesArray = Array.isArray(rawRoles) ? rawRoles : [rawRoles];
-      const hasOwnerRole = rolesArray.some((r: any) => {
-        const str = typeof r === "object" ? r?.name || r?.role || "" : String(r);
-        return str.toUpperCase().includes("OWNER");
-      });
+        // Check roles in API response
+        const rawRoles = result.roles || result.role || [];
+        const rolesArray = Array.isArray(rawRoles) ? rawRoles : [rawRoles];
+        const hasOwnerRole = rolesArray.some((r: any) => {
+          const str = typeof r === "object" ? r?.name || r?.role || "" : String(r);
+          return str.toUpperCase().includes("OWNER");
+        });
 
-      if (hasOwnerRole) {
-        setIsOwner(true);
+        if (hasOwnerRole) {
+          setIsOwner(true);
+        }
       }
-    }
-    else {
+    } catch {
       console.log("error fetching profile");
     }
-  }
+
+    // Check existing owner verification request status
+    const uid = getCurrentUserId();
+    if (uid) {
+      try {
+        const reqResult = await getMyOwnerRequestApi(uid);
+        if (reqResult && reqResult.success && reqResult.data) {
+          const reqData = reqResult.data;
+          const status = (reqData.status || '').toUpperCase();
+          if (status === 'PENDING') {
+            setOwnerApplicationSubmitted(true);
+          } else if (status === 'APPROVED' || status === 'ACCEPT') {
+            setIsOwner(true);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   const handleRoleSwitchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
@@ -206,13 +226,15 @@ const PlayerProfile: React.FC = () => {
 
 
     try {
-      let currentUserId: number | undefined;
-      const storedUser = localStorage.getItem("boxcricket_user");
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          currentUserId = parsed.id || parsed.userId || parsed.user_id;
-        } catch (e) { }
+      let currentUserId = getCurrentUserId() || undefined;
+      if (!currentUserId) {
+        const storedUser = localStorage.getItem("boxcricket_user");
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            currentUserId = parsed.id || parsed.userId || parsed.user_id;
+          } catch (e) { }
+        }
       }
       if (!currentUserId) {
         const rawId = localStorage.getItem("userId") || localStorage.getItem("user_id") || localStorage.getItem("id");

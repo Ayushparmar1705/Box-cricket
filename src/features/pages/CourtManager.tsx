@@ -34,7 +34,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 // Services
@@ -49,6 +49,7 @@ import {
   type SurfaceType,
 } from '../services/courtService';
 import { fetchMyVenuesApi, type VenueItem } from '../services/venueService';
+import { getCurrentUserId, isOwner } from '../services/authService';
 
 // Common Components
 import CommonModal from '../../Components/Common/CommonModal';
@@ -67,6 +68,9 @@ export default function CourtManager({
   standalone = false,
 }: CourtManagerProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOwnerPanel = location.pathname.includes('/owner-') || isOwner();
+  const currentOwnerId = isOwnerPanel ? getCurrentUserId() : null;
 
   // Data state
   const [courts, setCourts] = useState<CourtItem[]>([]);
@@ -172,9 +176,18 @@ export default function CourtManager({
         search: searchParam,
       });
 
-      setCourts(fetched);
-      if (onCourtsUpdated) {
-        onCourtsUpdated(fetched.length);
+      if (isOwnerPanel) {
+        const ownerVenueIds = new Set(venues.map((v) => String(v.id)));
+        const scopedCourts = fetched.filter((c) => ownerVenueIds.has(String(c.venue_id)));
+        setCourts(scopedCourts);
+        if (onCourtsUpdated) {
+          onCourtsUpdated(scopedCourts.length);
+        }
+      } else {
+        setCourts(fetched);
+        if (onCourtsUpdated) {
+          onCourtsUpdated(fetched.length);
+        }
       }
     } catch (err) {
       console.error('Error fetching filtered courts from backend:', err);
@@ -192,21 +205,33 @@ export default function CourtManager({
   // Load venues, categories, and initial courts
   const loadData = async () => {
     setIsLoading(true);
-    const [fetchedCourts, venuesRes, fetchedCategories] = await Promise.all([
-      fetchCourtsApi().catch(() => []),
-      fetchMyVenuesApi().catch(() => ({ data: [] })),
-      view().catch(() => []),
-    ]);
+    try {
+      const [fetchedCourts, venuesRes, fetchedCategories] = await Promise.all([
+        fetchCourtsApi().catch(() => []),
+        fetchMyVenuesApi(true, currentOwnerId).catch(() => ({ data: [] })),
+        view().catch(() => []),
+      ]);
 
-    setCourts(fetchedCourts);
-    const venueList = Array.isArray(venuesRes) ? venuesRes : (venuesRes?.data || []);
-    setVenues(venueList);
-    setCategories(fetchedCategories);
+      const venueList = Array.isArray(venuesRes) ? venuesRes : (venuesRes?.data || []);
+      setVenues(venueList);
+      setCategories(fetchedCategories);
 
-    if (onCourtsUpdated) {
-      onCourtsUpdated(fetchedCourts.length);
+      if (isOwnerPanel) {
+        const ownerVenueIds = new Set(venueList.map((v) => String(v.id)));
+        const scopedCourts = fetchedCourts.filter((c) => ownerVenueIds.has(String(c.venue_id)));
+        setCourts(scopedCourts);
+        if (onCourtsUpdated) {
+          onCourtsUpdated(scopedCourts.length);
+        }
+      } else {
+        setCourts(fetchedCourts);
+        if (onCourtsUpdated) {
+          onCourtsUpdated(fetchedCourts.length);
+        }
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -215,6 +240,12 @@ export default function CourtManager({
 
   // Filtered courts computation
   const filteredCourts = courts.filter((crt) => {
+    // Only show courts that belong to this owner's venues
+    if (isOwnerPanel) {
+      const ownerVenueIds = new Set(venues.map((v) => String(v.id)));
+      if (!ownerVenueIds.has(String(crt.venue_id))) return false;
+    }
+
     // Status Filter
     if (statusFilter !== 'ALL' && crt.status !== statusFilter) return false;
 
@@ -244,6 +275,10 @@ export default function CourtManager({
 
   // Open Add Modal
   const handleOpenAdd = () => {
+    if (isOwnerPanel && venues.length === 0) {
+      toast.error('Please create a venue first before adding courts');
+      return;
+    }
     const defaultVenue = venues[0];
     const defaultCat = categories[0];
     const catName = defaultCat ? (defaultCat.category_name || defaultCat.name) : 'Box Cricket';

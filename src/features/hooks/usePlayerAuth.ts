@@ -95,6 +95,11 @@ export const usePlayerAuth = () => {
         const roles = result?.roles || result?.user?.roles || ['PLAYER'];
         localStorage.setItem('roles', JSON.stringify(roles));
 
+        const uId = result?.userId || result?.user?.id || result?.id;
+        if (uId) {
+          localStorage.setItem('userId', String(uId));
+        }
+
         if (result?.user) {
           localStorage.setItem('boxcricket_user', JSON.stringify(result.user));
         } else {
@@ -137,6 +142,7 @@ export const usePlayerAuth = () => {
     signupFormData,
     handleLoginChange,
     loginFormData,
+    setLoginFormData,
     handleLogin
   };
 };

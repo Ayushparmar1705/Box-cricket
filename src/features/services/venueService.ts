@@ -159,14 +159,79 @@ export const createVenueApi = async (venueData: VenuePayload): Promise<VenueApiR
 };
 
 /**
+ * API #1b: UPDATE EXISTING VENUE DETAILS
+ * Endpoint: PUT http://localhost:3040/api/venues/update
+ */
+export const updateVenueApi = async (
+  venueId: number,
+  venueData: VenuePayload
+): Promise<VenueApiResponse<VenueItem>> => {
+  const url = `${baseUrl.venue}/api/venues/update`;
+
+  const venueName = venueData.venue_name || venueData.name || '';
+  const cityVal = String(venueData.city_id !== undefined ? venueData.city_id : venueData.city || 1);
+  const phoneVal = venueData.contact_number || venueData.phone_number || '';
+  const addressVal = venueData.address || '';
+  const amenitiesVal = venueData.venue_amenities || 'Floodlights, Synthetic Turf, Changing Room';
+  const opening_time = venueData.opening_time;
+  const closing_time = venueData.closing_time;
+
+  const formData = new FormData();
+  formData.append('venue_id', String(venueId));
+  formData.append('id', String(venueId));
+  formData.append('name', venueName);
+  formData.append('venue_name', venueName);
+  formData.append('city', cityVal);
+  formData.append('city_id', cityVal);
+  formData.append('description', venueData.description || '');
+  formData.append('address', addressVal);
+  formData.append('longitude', String(venueData.longitude));
+  formData.append('latitude', String(venueData.latitude));
+  formData.append('google_map_link', venueData.google_map_link || '');
+  formData.append('phone_number', phoneVal);
+  formData.append('contact_number', phoneVal);
+  formData.append('email', venueData.email || '');
+  formData.append('opening_time', opening_time);
+  formData.append('closing_time', closing_time);
+  formData.append('venue_amenities', amenitiesVal);
+  formData.append('cancellation_policy', venueData.cancellation_policy || '');
+
+  if (venueData.image && venueData.image instanceof File) {
+    formData.append('image', venueData.image);
+  }
+
+  const headers = getVenueAuthHeaders();
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: headers,
+    body: formData,
+  });
+
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const errorMsg = result.message || 'Failed to update venue';
+    throw new Error(errorMsg);
+  }
+
+  return result;
+};
+
+/**
  * API #2: FETCH VENUES FOR LOGGED-IN OWNER
  * Endpoint: GET http://localhost:3040/api/venues?status=true
  * Gets the list of venues for owner panel. Status defaults to true.
  *
  * @param status - Active status of venues to fetch (defaults to true)
+ * @param ownerId - Optional owner ID to filter venues strictly for that owner
  */
-export const fetchMyVenuesApi = async (status: boolean = true): Promise<VenueApiResponse<VenueItem[]>> => {
-  const url = `${baseUrl.venue}/api/venues?status=${status}`;
+export const fetchMyVenuesApi = async (
+  status: boolean = true,
+  ownerId?: number | null
+): Promise<VenueApiResponse<VenueItem[]>> => {
+  let url = `${baseUrl.venue}/api/venues?status=${status}`;
+  if (ownerId !== undefined && ownerId !== null) {
+    url += `&owner_id=${ownerId}`;
+  }
   const headers = getVenueAuthHeaders();
 
   const response = await fetch(url, {
@@ -246,8 +311,11 @@ export const updateVenueStatusApi = async (
   return result;
 };
 
-export const searchVenueApi = async (search: string) => {
-  const url = `${baseUrl.venue}/api/venues/search?search=${encodeURIComponent(search.trim())}`;
+export const searchVenueApi = async (search: string, ownerId?: number | null) => {
+  let url = `${baseUrl.venue}/api/venues/search?search=${encodeURIComponent(search.trim())}`;
+  if (ownerId !== undefined && ownerId !== null) {
+    url += `&owner_id=${ownerId}`;
+  }
   const headers = getVenueAuthHeaders();
 
   const response = await fetch(url, {
