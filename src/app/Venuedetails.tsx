@@ -1,3 +1,9 @@
+import {
+  convertDateToBackendFormat,
+  convertTo24HourTime,
+  createBooking,
+  processBookingWithPayment,
+} from '@/services/bookingService';
 import { venueDescription } from '@/services/venueService';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -5,6 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   Linking,
@@ -240,37 +247,70 @@ export default function Venuedetails() {
     currentCourt?.min_price || currentCourt?.pricing_rules?.[0]?.price || 1000;
   const totalPrice = courtHourlyRate * durationHours;
 
-  // Confirm booking action (Local booking - no backend dependency)
+  // Confirm booking action - calls Spring Boot Backend API
   const handleConfirmBooking = async () => {
     const timeToUse = selectedStartTime || availableStartTimes[0] || '06:00 PM';
     const endTime = calculateEndTime(timeToUse, durationHours);
     const displayTimeSlot = `${timeToUse} - ${endTime} (${durationHours} ${durationHours === 1 ? 'hour' : 'hours'})`;
 
-    const randomId = Math.floor(100000 + Math.random() * 900000);
-    const bookingDetails = {
-      bookingId: `BC-${randomId}`,
-      venueName: result?.name || 'Box Cricket Venue',
-      courtName: currentCourt?.court_name || `Court ${selectedCourtIndex + 1}`,
-      date: selectedDateStr,
-      timeSlot: displayTimeSlot,
-      duration: `${durationHours} ${durationHours === 1 ? 'hour' : 'hours'}`,
-      price: totalPrice,
-      bookingStatus: 'CONFIRMED',
-      createdAt: new Date().toISOString(),
-    };
-
-    // Save locally in AsyncStorage so it appears in My Bookings
+    // 1. Get logged-in user ID (or default to 1 for guest)
+    let currentUserId = 1;
     try {
-      const stored = await AsyncStorage.getItem('user_bookings');
-      const list = stored ? JSON.parse(stored) : [];
-      list.unshift(bookingDetails);
-      await AsyncStorage.setItem('user_bookings', JSON.stringify(list));
+      const storedUser = await AsyncStorage.getItem('userData');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        currentUserId = parsed?.user?.id || parsed?.id || 1;
+      }
     } catch (e) {
-      console.warn('Failed to save booking locally', e);
+      console.warn('Could not read user data, using guest id 1', e);
     }
 
-    setIsBookingModalVisible(false);
-    setBookingSuccessData(bookingDetails);
+    // 2. Prepare simple data for backend
+    const bookingPayload = {
+      userId: currentUserId,
+      venueId: Number(result?.id) || 1,
+      courtId: Number(currentCourt?.id) || 1,
+      bookingDate: convertDateToBackendFormat(selectedDateStr),
+      startTime: convertTo24HourTime(timeToUse),
+      duration: durationHours,
+      total: totalPrice,
+    };
+
+    try {
+      // 3. Process Booking + Payment in Backend (Saves into BOTH 'bookings' and 'payments' tables)
+      const confirmedData = await processBookingWithPayment(bookingPayload);
+
+      const bookingDetails = {
+        bookingId: `BC-${confirmedData.id || Math.floor(100000 + Math.random() * 900000)}`,
+        venueName: result?.name || 'Box Cricket Venue',
+        courtName: currentCourt?.court_name || `Court ${selectedCourtIndex + 1}`,
+        date: selectedDateStr,
+        timeSlot: displayTimeSlot,
+        duration: `${durationHours} ${durationHours === 1 ? 'hour' : 'hours'}`,
+        price: totalPrice,
+        bookingStatus: confirmedData.bookingStatus || 'CONFIRMED',
+        createdAt: new Date().toISOString(),
+      };
+
+      // 4. Save to local storage for instant offline viewing
+      try {
+        const stored = await AsyncStorage.getItem('user_bookings');
+        const list = stored ? JSON.parse(stored) : [];
+        list.unshift(bookingDetails);
+        await AsyncStorage.setItem('user_bookings', JSON.stringify(list));
+      } catch (e) {
+        console.warn('Failed to save booking locally', e);
+      }
+
+      setIsBookingModalVisible(false);
+      setBookingSuccessData(bookingDetails);
+    } catch (error: any) {
+      // If backend fails (e.g. duplicate slot or network issue), notify the user
+      Alert.alert(
+        'Booking Status',
+        error?.message || 'Could not complete booking. Please try another time slot.'
+      );
+    }
   };
 
   if (loading) {

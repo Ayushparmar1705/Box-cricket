@@ -1,4 +1,5 @@
 import BottomNavbar from '@/components/BottomNavbar';
+import { getUserBookings } from '@/services/bookingService';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -20,41 +21,46 @@ export default function BookingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'ALL' | 'CONFIRMED' | 'PENDING'>('ALL');
 
+  // Load bookings from Backend API (with local fallback)
+  const fetchMyBookings = async () => {
+    try {
+      // 1. Get logged-in user id
+      let currentUserId = 1;
+      const storedUser = await AsyncStorage.getItem('userData');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        currentUserId = parsed?.user?.id || parsed?.id || 1;
+      }
+
+      // 2. Fetch from backend API
+      const remoteBookings = await getUserBookings(currentUserId);
+
+      // 3. Check local storage
+      const localStored = await AsyncStorage.getItem('user_bookings');
+      const localBookings = localStored ? JSON.parse(localStored) : [];
+
+      if (remoteBookings && remoteBookings.length > 0) {
+        setBookings(remoteBookings);
+      } else {
+        setBookings(localBookings);
+      }
+    } catch (err) {
+      console.warn('Error loading bookings:', err);
+      const localStored = await AsyncStorage.getItem('user_bookings');
+      setBookings(localStored ? JSON.parse(localStored) : []);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    AsyncStorage.getItem('user_bookings')
-      .then((stored) => {
-        if (isMounted) {
-          setBookings(stored ? JSON.parse(stored) : []);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.warn('Error reading local bookings:', err);
-        if (isMounted) {
-          setBookings([]);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    fetchMyBookings();
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
-    AsyncStorage.getItem('user_bookings')
-      .then((stored) => {
-        setBookings(stored ? JSON.parse(stored) : []);
-      })
-      .catch(() => {
-        setBookings([]);
-      })
-      .finally(() => {
-        setRefreshing(false);
-      });
+    fetchMyBookings();
   };
 
   const filteredBookings = bookings.filter((b) => {
@@ -65,12 +71,18 @@ export default function BookingsScreen() {
   const renderBookingItem = ({ item }: { item: any }) => {
     const status = (item.bookingStatus || item.booking_status || 'PENDING').toUpperCase();
     const isConfirmed = status === 'CONFIRMED';
-    const bookingId = item.bookingid || item.id || 'N/A';
-    const venueName = item.venueName || item.venue_name || 'Box Cricket Turf';
-    const courtName = item.courtName || item.court_name || 'Pitch 1';
-    const date = item.bookingDate || item.booking_date || 'N/A';
-    const time = item.startTime && item.endTime ? `${item.startTime} - ${item.endTime}` : item.startTime || 'Time N/A';
-    const price = item.totalPrice || item.total_price || item.totalAmount || 0;
+    const bookingId = item.id || item.bookingid || item.bookingId || 'N/A';
+    const venueName = item.venueName || item.venue_name || (item.venueId ? `Venue #${item.venueId}` : 'Box Cricket Turf');
+    const courtName = item.courtName || item.court_name || (item.courtId ? `Court #${item.courtId}` : 'Pitch 1');
+    const date = item.bookingDate || item.booking_date || item.date || 'N/A';
+    const time =
+      item.timeSlot ||
+      (item.startTime && item.endTime
+        ? `${item.startTime} - ${item.endTime}`
+        : item.startTime
+        ? `${item.startTime} (${item.duration || 1} hr)`
+        : 'Time N/A');
+    const price = item.total || item.totalPrice || item.total_price || item.totalAmount || item.price || 0;
 
     return (
       <View style={styles.card}>
