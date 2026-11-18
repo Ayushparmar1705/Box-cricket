@@ -57,6 +57,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (userIdClaim == null) {
                 userIdClaim = claims.get("userId");
             }
+            if (userIdClaim == null) {
+                userIdClaim = claims.get("user_id");
+            }
+            if (userIdClaim == null) {
+                userIdClaim = claims.get("id");
+            }
             String principal = (userIdClaim != null) ? userIdClaim.toString() : claims.getSubject();
 
             if (principal == null || principal.isBlank()) {

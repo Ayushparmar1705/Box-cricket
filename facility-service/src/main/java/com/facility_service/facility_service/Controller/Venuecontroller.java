@@ -7,6 +7,7 @@ import java.util.Map;
 import com.facility_service.facility_service.dto.Requestdto.Updatevenuerequestdto;
 import com.facility_service.facility_service.dto.Responsedto.CourtResponseDto;
 import com.facility_service.facility_service.dto.Responsedto.Venueresponsedto;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ import com.facility_service.facility_service.Model.Venuemodel;
 import com.facility_service.facility_service.Services.Venueservice;
 import com.facility_service.facility_service.dto.Requestdto.Venuerequestdto;
 
-import jakarta.validation.Valid;*/
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/venues")
@@ -64,6 +65,9 @@ public class Venuecontroller {
      * - ?search=... (search by venue name)
      * - ?city=... (filter by city)
      * - ?status=... (true for active, false for inactive)
+     *
+     * ADMIN PANEL: add ?page=0&size=10 to get paginated results
+     * OWNER / PLAYER: no page/size needed — returns full list
      */
     @GetMapping({ "", "/search" })
     public ResponseEntity<Map<String, Object>> getVenues(
@@ -73,6 +77,8 @@ public class Venuecontroller {
             @RequestParam(name = "is_active", required = false) Boolean isActive,
             @RequestParam(name = "owner_id", required = false) Integer ownerId,
             @RequestParam(name = "ownerId", required = false) Integer ownerIdAlt,
+            @RequestParam(required = false) Integer page,   // optional — only for admin
+            @RequestParam(required = false) Integer size,   // optional — only for admin
             Authentication authentication) {
 
         Map<String, Object> response = new HashMap<>();
@@ -101,13 +107,32 @@ public class Venuecontroller {
                 }
             }
 
-            // Fetch venues list
-            List<Venueresponsedto> venues = service.getAllVenues(targetOwnerId, city, activeStatus, search, null);
+            // Check if the caller is SUPER_ADMIN AND has sent page/size params
+            boolean isAdmin = authentication != null &&
+                    authentication.getAuthorities().toString().contains("ROLE_SUPER_ADMIN");
 
-            response.put("status", 200);
-            response.put("message", "Venues fetched successfully");
-            response.put("data", venues);
-            response.put("totalItems", venues.size());
+            if (isAdmin && page != null && size != null) {
+                // ── ADMIN: return paginated result ──
+                Page<Venueresponsedto> venues = service.getAllVenuesPaginated(
+                        targetOwnerId, city, activeStatus, search, null, page, size);
+
+                response.put("status", 200);
+                response.put("message", "Venues fetched successfully");
+                response.put("data", venues.getContent());       // the list for this page
+                response.put("currentPage", venues.getNumber()); // which page (0-based)
+                response.put("totalItems", venues.getTotalElements()); // total venues in DB
+                response.put("totalPages", venues.getTotalPages());    // total number of pages
+            } else {
+                // ── OWNER / PLAYER: return simple full list ──
+                List<Venueresponsedto> venues = service.getAllVenues(
+                        targetOwnerId, city, activeStatus, search, null);
+
+                response.put("status", 200);
+                response.put("message", "Venues fetched successfully");
+                response.put("data", venues);
+                response.put("totalItems", venues.size());
+            }
+
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException err) {

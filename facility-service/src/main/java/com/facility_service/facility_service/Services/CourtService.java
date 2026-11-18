@@ -5,12 +5,10 @@ import com.cloudinary.utils.ObjectUtils;
 import com.facility_service.facility_service.Exception.ResourceNotFoundException;
 import com.facility_service.facility_service.Model.CourtEntity;
 import com.facility_service.facility_service.Model.CourtImageEntity;
+import com.facility_service.facility_service.Model.Venuemodel;
 import com.facility_service.facility_service.Repositry.CourtImageRepository;
 import com.facility_service.facility_service.Repositry.CourtRepository;
 import com.facility_service.facility_service.Repositry.Venuerepositry;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +67,15 @@ public class CourtService {
         return savedImages;
     }
 
+    public boolean doesOwnerOwnVenue(Integer venueId, Integer ownerId) {
+        if (venueId == null || ownerId == null) {
+            return false;
+        }
+        return venuerepositry.findById(venueId)
+                .map(v -> v.getOwner_id() == ownerId)
+                .orElse(false);
+    }
+
     @Transactional
     public CourtEntity createCourt(CourtEntity request, List<MultipartFile> files) {
         if (request.getVenueId() != null && !venuerepositry.existsById(request.getVenueId())) {
@@ -93,16 +100,52 @@ public class CourtService {
     }
 
     public List<CourtEntity> getCourtsByVenueId(Integer venueId, Boolean isActive) {
+        return getCourtsByVenueId(venueId, null, isActive);
+    }
+
+    public List<CourtEntity> getCourtsByVenueId(Integer venueId, Integer ownerId, Boolean isActive) {
+        if (ownerId != null) {
+            Venuemodel venue = venuerepositry.findById(venueId).orElse(null);
+            if (venue == null || venue.getOwner_id() != ownerId) {
+                return Collections.emptyList();
+            }
+        }
         if (isActive != null) {
             return courtRepository.findByVenueIdAndIsActive(venueId, isActive);
         }
         return courtRepository.findByVenueId(venueId);
     }
 
-    public Page<CourtEntity> getAllCourts(Integer venueId, Boolean isActive, String search, String court_name, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        Specification<CourtEntity> specification = Courtspecification.filter(venueId, isActive, search, court_name);
-        return courtRepository.findAll(specification, pageable);
+    // Get courts with all filters: venueId, ownerId, isActive, search, court_name
+    public List<CourtEntity> getAllCourts(Integer venueId, Integer ownerId, Boolean isActive, String search,
+            String court_name) {
+        Specification<CourtEntity> specification = Courtspecification.filter(venueId, ownerId, isActive, search,
+                court_name);
+        return courtRepository.findAll(specification);
+    }
+
+    // Overload without ownerId for backward compatibility
+    public List<CourtEntity> getAllCourts(Integer venueId, Boolean isActive, String search, String court_name) {
+        return getAllCourts(venueId, null, isActive, search, court_name);
+    }
+
+    // Alias methods for findByVenueOwnerUserId
+    public List<CourtEntity> findByVenueOwnerUserId(Integer venueId, Integer ownerId, Boolean isActive, String search,
+            String court_name) {
+        return getAllCourts(venueId, ownerId, isActive, search, court_name);
+    }
+
+    public List<CourtEntity> findByVenueOwnerUserId(Integer venueId, Boolean isActive, String search,
+            String court_name) {
+        return getAllCourts(venueId, null, isActive, search, court_name);
+    }
+
+    // Find courts by venue owner id (list)
+    public List<CourtEntity> findByVenueOwner_id(Integer ownerId) {
+        if (ownerId == null) {
+            return Collections.emptyList();
+        }
+        return courtRepository.findByVenueOwner_id(ownerId);
     }
 
     @Transactional

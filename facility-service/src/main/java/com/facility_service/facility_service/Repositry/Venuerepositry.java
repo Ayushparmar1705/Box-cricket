@@ -15,4 +15,9 @@ public interface Venuerepositry extends JpaRepository<Venuemodel, Integer>, JpaS
     List<Venuemodel> findByOwnerId(@Param("ownerId") int ownerId, @Param("status") boolean status);
 
     List<Venuemodel> findByNameContainingIgnoreCase(String search);
+
+    // Find all active venues that belong to a specific category
+    // We JOIN venue_categories list (from Venuemodel) and filter by categoryId
+    @Query("SELECT DISTINCT v FROM Venuemodel v JOIN v.venue_categories vc WHERE vc.categoryId = :categoryId AND v.active = true")
+    List<Venuemodel> findByCategoryId(@Param("categoryId") int categoryId);
 }

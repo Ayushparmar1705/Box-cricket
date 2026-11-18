@@ -29,7 +29,7 @@ services:
       - '3031:8081'
     environment:
       - SERVER_PORT=8081
-      - AUTH_SERVICE_URL=http://auth-service:8080
+      - AUTH_SERVICE_URL=https://backend-auth-service-i2yw.onrender.com
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
       - SPRING_DATASOURCE_USERNAME=neondb_owner
       - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
@@ -93,6 +93,29 @@ services:
       - CLOUDINARY_API_KEY=914174568446748
       - CLOUDINARY_API_SECRET=p2dCGEBFNQ85g4vUzjr6AvNWtQ8
       - JWT_SECRET=my-super-secret-key-my-super-secret-key-123456
+
+  # ─────────────────────────────────────────────
+  # BOOKING SERVICE
+  # localhost:3038  →  container:8088
+  # ─────────────────────────────────────────────
+  booking-service:
+    build:
+      context: ./bookingservice
+      dockerfile: Dockerfile
+    ports:
+      - '3038:3038'
+    depends_on:
+      - redis
+    environment:
+      - SERVER_PORT=3038
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ep-red-morning-b4ng7s53-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=neondb_owner
+      - SPRING_DATASOURCE_PASSWORD=npg_XD7MNR4ClvjK
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - RAZORPAY_API_KEY=rzp_test_U18nB21KqSUaAH
+      - RAZORPAY_API_SECRET=KmlAeQ6rNnnBUPulxtkCVQCR
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
   # ─────────────────────────────────────────────
   # STAFF SERVICE

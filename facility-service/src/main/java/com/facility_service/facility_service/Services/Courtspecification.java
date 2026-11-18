@@ -9,8 +9,10 @@ import java.util.List;
 
 public class Courtspecification {
 
+    // Overload with ownerId included
     public static Specification<CourtEntity> filter(
             Integer venueId,
+            Integer ownerId,
             Boolean isActive,
             String search,
             String courtname) {
@@ -22,12 +24,17 @@ public class Courtspecification {
                 predicates.add(cb.equal(root.get("venueId"), venueId));
             }
 
-            // 2. Filter by active / inactive status
+            // 2. Filter by venue owner ID (join with Venue to check owner_id)
+            if (ownerId != null) {
+                predicates.add(cb.equal(root.join("venue").get("owner_id"), ownerId));
+            }
+
+            // 3. Filter by active / inactive status
             if (isActive != null) {
                 predicates.add(cb.equal(root.get("isActive"), isActive));
             }
 
-            // 3. Filter by court name (partial, case-insensitive match)
+            // 4. Filter by court name (partial, case-insensitive match)
             if (courtname != null && !courtname.trim().isEmpty()) {
                 predicates.add(cb.like(
                         cb.lower(root.get("courtName")),
@@ -35,7 +42,7 @@ public class Courtspecification {
                 ));
             }
 
-            // 4. Keyword search across court name and description
+            // 5. Keyword search across court name and description
             if (search != null && !search.trim().isEmpty()) {
                 String keyword = "%" + search.trim().toLowerCase() + "%";
                 Predicate nameMatch = cb.like(cb.lower(root.get("courtName")), keyword);
@@ -45,5 +52,14 @@ public class Courtspecification {
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    // Overload without ownerId for backward compatibility
+    public static Specification<CourtEntity> filter(
+            Integer venueId,
+            Boolean isActive,
+            String search,
+            String courtname) {
+        return filter(venueId, null, isActive, search, courtname);
     }
 }
