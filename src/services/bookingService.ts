@@ -1,5 +1,6 @@
 import LIVE_URL from '../../Api';
 import { getValidToken } from '../utils/auth';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 // -------------------------------------------------------------
@@ -10,6 +11,7 @@ export interface BookingItem {
   bookingid?: number;
   userId: number;
   venueId: number;
+  ownerId?: number;
   courtId: number;
   bookingDate: string; // "YYYY-MM-DD" e.g., "2026-11-17"
   startTime: string;   // "HH:mm:ss" e.g., "18:00:00"
@@ -21,9 +23,9 @@ export interface BookingItem {
 }
 
 // -------------------------------------------------------------
-// Helper: Get Base URL for Booking Service
+// Helper: Get Base URL for Booking Service (Docker Port 3038)
 // -------------------------------------------------------------
-const BASE_URL = LIVE_URL.booking_service || 'http://192.168.1.4:8091';
+const BASE_URL = LIVE_URL.booking_service || 'http://192.168.1.4:3038';
 
 // -------------------------------------------------------------
 // 2. HELPER: Format 12-hour time ("06:00 PM") to 24-hour ("18:00:00")
@@ -64,7 +66,10 @@ export const convertDateToBackendFormat = (dateStr: string): string => {
 export const createBooking = async (bookingData: {
   userId: number;
   venueId: number;
+  ownerId?: number;
   courtId: number;
+  venueName?: string;
+  courtName?: string;
   bookingDate: string; // "YYYY-MM-DD"
   startTime: string;   // "HH:mm:ss"
   duration: number;
@@ -209,7 +214,10 @@ export const verifyPayment = async (verificationData: {
 export const processBookingWithPayment = async (params: {
   userId: number;
   venueId: number;
+  ownerId?: number;
   courtId: number;
+  venueName?: string;
+  courtName?: string;
   bookingDate: string; // "YYYY-MM-DD"
   startTime: string;   // "HH:mm:ss"
   duration: number;
@@ -219,7 +227,10 @@ export const processBookingWithPayment = async (params: {
   const savedBooking = await createBooking({
     userId: params.userId,
     venueId: params.venueId,
+    ownerId: params.ownerId,
     courtId: params.courtId,
+    venueName: params.venueName,
+    courtName: params.courtName,
     bookingDate: params.bookingDate,
     startTime: params.startTime,
     duration: params.duration,
@@ -232,10 +243,17 @@ export const processBookingWithPayment = async (params: {
   const orderData = await createPaymentOrder(bookingId, params.total);
   const razorpayOrderId = orderData.orderId;
 
-  // STEP 3: SHOW OFFICIAL RAZORPAY PAYMENT SCREEN (Mobile In-App Browser)
-  // This opens the real Razorpay checkout screen (Cards, UPI, Netbanking, Test mode)
-  const checkoutUrl = `${BASE_URL}/api/payments/checkout?bookingId=${bookingId}&orderId=${razorpayOrderId}&amount=${orderData.amount}&keyId=${orderData.keyId}`;
-  await WebBrowser.openBrowserAsync(checkoutUrl);
+  // STEP 3: SHOW OFFICIAL RAZORPAY PAYMENT SCREEN
+  // Uses openAuthSessionAsync with redirectUrl to AUTOMATICALLY close the browser when done!
+  const redirectUrl = Linking.createURL('payment-success');
+  const checkoutUrl = `${BASE_URL}/api/payments/checkout?bookingId=${bookingId}&orderId=${razorpayOrderId}&amount=${orderData.amount}&keyId=${orderData.keyId}&redirectUrl=${encodeURIComponent(redirectUrl)}`;
+
+  try {
+    await WebBrowser.openAuthSessionAsync(checkoutUrl, redirectUrl);
+  } catch (err) {
+    // Fallback if auth session is cancelled or not supported
+    await WebBrowser.openBrowserAsync(checkoutUrl);
+  }
 
   return {
     ...savedBooking,

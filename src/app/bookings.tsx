@@ -32,22 +32,12 @@ export default function BookingsScreen() {
         currentUserId = parsed?.user?.id || parsed?.id || 1;
       }
 
-      // 2. Fetch from backend API
+      // 2. Fetch directly from database backend API
       const remoteBookings = await getUserBookings(currentUserId);
-
-      // 3. Check local storage
-      const localStored = await AsyncStorage.getItem('user_bookings');
-      const localBookings = localStored ? JSON.parse(localStored) : [];
-
-      if (remoteBookings && remoteBookings.length > 0) {
-        setBookings(remoteBookings);
-      } else {
-        setBookings(localBookings);
-      }
+      setBookings(Array.isArray(remoteBookings) ? remoteBookings : []);
     } catch (err) {
-      console.warn('Error loading bookings:', err);
-      const localStored = await AsyncStorage.getItem('user_bookings');
-      setBookings(localStored ? JSON.parse(localStored) : []);
+      console.warn('Error loading bookings from database:', err);
+      setBookings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -55,6 +45,8 @@ export default function BookingsScreen() {
   };
 
   useEffect(() => {
+    // Clear old offline mock cache so only real database bookings appear
+    AsyncStorage.removeItem('user_bookings').catch(() => {});
     fetchMyBookings();
   }, []);
 
@@ -115,6 +107,18 @@ export default function BookingsScreen() {
 
         <Text style={styles.venueTitle}>{venueName}</Text>
         <Text style={styles.courtSub}>{courtName}</Text>
+
+        {/* Venue ID & Court ID Badges */}
+        <View style={styles.idChipRow}>
+          <View style={styles.idChip}>
+            <Ionicons name="business-outline" size={12} color="#183D30" />
+            <Text style={styles.idChipText}>Venue ID: {item.venueId || item.venue_id || 'N/A'}</Text>
+          </View>
+          <View style={styles.idChip}>
+            <Ionicons name="tennisball-outline" size={12} color="#183D30" />
+            <Text style={styles.idChipText}>Court ID: {item.courtId || item.court_id || 'N/A'}</Text>
+          </View>
+        </View>
 
         <View style={styles.cardDivider} />
 
@@ -321,6 +325,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     marginTop: 2,
+  },
+  idChipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 6,
+  },
+  idChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    gap: 4,
+  },
+  idChipText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
   },
   cardDivider: {
     height: 1,

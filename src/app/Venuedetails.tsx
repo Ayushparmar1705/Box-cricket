@@ -269,7 +269,10 @@ export default function Venuedetails() {
     const bookingPayload = {
       userId: currentUserId,
       venueId: Number(result?.id) || 1,
+      ownerId: Number(result?.owner_id || result?.ownerId) || 1,
       courtId: Number(currentCourt?.id) || 1,
+      venueName: result?.name || 'Box Cricket Turf',
+      courtName: currentCourt?.court_name || `Court ${selectedCourtIndex + 1}`,
       bookingDate: convertDateToBackendFormat(selectedDateStr),
       startTime: convertTo24HourTime(timeToUse),
       duration: durationHours,
@@ -282,6 +285,8 @@ export default function Venuedetails() {
 
       const bookingDetails = {
         bookingId: `BC-${confirmedData.id || Math.floor(100000 + Math.random() * 900000)}`,
+        venueId: Number(result?.id) || 1,
+        courtId: Number(currentCourt?.id) || 1,
         venueName: result?.name || 'Box Cricket Venue',
         courtName: currentCourt?.court_name || `Court ${selectedCourtIndex + 1}`,
         date: selectedDateStr,
@@ -291,16 +296,6 @@ export default function Venuedetails() {
         bookingStatus: confirmedData.bookingStatus || 'CONFIRMED',
         createdAt: new Date().toISOString(),
       };
-
-      // 4. Save to local storage for instant offline viewing
-      try {
-        const stored = await AsyncStorage.getItem('user_bookings');
-        const list = stored ? JSON.parse(stored) : [];
-        list.unshift(bookingDetails);
-        await AsyncStorage.setItem('user_bookings', JSON.stringify(list));
-      } catch (e) {
-        console.warn('Failed to save booking locally', e);
-      }
 
       setIsBookingModalVisible(false);
       setBookingSuccessData(bookingDetails);
@@ -811,12 +806,14 @@ export default function Venuedetails() {
               <View style={styles.ticketRow}>
                 <Text style={styles.ticketLabel}>Venue</Text>
                 <Text style={styles.ticketValue} numberOfLines={1}>
-                  {bookingSuccessData?.venueName}
+                  {bookingSuccessData?.venueName} {bookingSuccessData?.venueId ? `(#${bookingSuccessData.venueId})` : ''}
                 </Text>
               </View>
               <View style={styles.ticketRow}>
                 <Text style={styles.ticketLabel}>Court</Text>
-                <Text style={styles.ticketValue}>{bookingSuccessData?.courtName}</Text>
+                <Text style={styles.ticketValue}>
+                  {bookingSuccessData?.courtName} {bookingSuccessData?.courtId ? `(#${bookingSuccessData.courtId})` : ''}
+                </Text>
               </View>
               <View style={styles.ticketRow}>
                 <Text style={styles.ticketLabel}>Date</Text>
